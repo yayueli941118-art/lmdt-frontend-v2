@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
+import IndividualLab from '../views/IndividualLab.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
 
   // 核心实验室
-  { path: '/lab/individual', name: 'Individual', component: () => import('../views/Placeholder.vue'), meta: { title: '👤 个体职业实验室' } },
+  { path: '/lab/individual', name: 'Individual', component: IndividualLab, meta: { title: '👤 个体职业实验室' } },
   { path: '/lab/enterprise', name: 'Enterprise', component: () => import('../views/Placeholder.vue'), meta: { title: '🏭 企业市场实验室' } },
   { path: '/lab/macro', name: 'Macro', component: () => import('../views/Placeholder.vue'), meta: { title: '🌍 宏观政策实验室' } },
 
