@@ -125,7 +125,7 @@ import axios from 'axios'
 
 VChart.registerECharts(echarts)
 
-const API = 'http://localhost:8000'
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const educationLabelMap = { 9: '初中', 12: '高中', 15: '大专', 16: '本科', 19: '硕士', 22: '博士' }
 
