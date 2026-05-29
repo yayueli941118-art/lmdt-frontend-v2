@@ -228,64 +228,62 @@ const renderChart = () => {
 
   const d = response.value
   const ages = d.charts.age_years
-  const base = d.charts.wage_curve_baseline
-  const sel = d.charts.wage_curve_selected
-  const disc = d.charts.wage_curve_disc
+
+  // ── 负数映射：-2.0k → -15000元，让教育投资深坑视觉可见 ──
+  const toView = (v) => v < 0 ? -15000 : v
+  const base = d.charts.wage_curve_baseline.map((v) => v)
+  const sel = d.charts.wage_curve_selected.map(toView)
+  const discArr = d.charts.wage_curve_disc.map(toView)
 
   const crossover = d.metrics.crossover_age
   const be = d.metrics.breakeven_age
   const schoolEndAge = params.edu + 6
 
-  // ── 红区（投资期）：stack 填充 selected → baseline ──
-  const redBottom = ages.map((_, i) => ages[i] <= schoolEndAge ? sel[i] : null)
-  const redGap = ages.map((_, i) => ages[i] <= schoolEndAge ? base[i] - sel[i] : null)
-
-  // ── 绿区（回报期）：stack 填充 baseline → selected ──
-  const greenStartIdx = crossover ? ages.indexOf(crossover) : -1
-  const greenBottom = ages.map((_, i) => greenStartIdx >= 0 && i >= greenStartIdx ? base[i] : null)
-  const greenGap = ages.map((_, i) => greenStartIdx >= 0 && i >= greenStartIdx ? sel[i] - base[i] : null)
-
+  // ── 三条核心曲线（无 stack，纯净） ──
   const series = [
-    { name: '投资期底', type: 'line', data: redBottom, stack: 'invest', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'transparent' }, z: 0, tooltip: { show: false } },
-    { name: '投资期（成本+机会成本）', type: 'line', data: redGap, stack: 'invest', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'rgba(239, 68, 68, 0.18)' }, z: 0, tooltip: { show: false } },
-    { name: '回报期底', type: 'line', data: greenBottom, stack: 'return', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'transparent' }, z: 0, tooltip: { show: false } },
-    { name: '回报期（教育溢价）', type: 'line', data: greenGap, stack: 'return', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'rgba(16, 185, 129, 0.18)' }, z: 0, tooltip: { show: false } },
-    { name: '高中毕业（对照组）', type: 'line', data: base, lineStyle: { type: 'dashed', width: 2, color: '#94a3b8' }, itemStyle: { color: '#94a3b8' }, symbol: 'none', smooth: true, z: 3 },
-    { name: '选择组（当前学历）', type: 'line', data: sel, lineStyle: { width: 3, color: '#2563eb' }, itemStyle: { color: '#2563eb' }, symbol: 'none', smooth: true, z: 4 },
+    { name: '高中毕业（对照组）', type: 'line', data: base, lineStyle: { type: 'dashed', width: 2, color: '#94a3b8' }, itemStyle: { color: '#94a3b8' }, symbol: 'none', smooth: true, z: 2 },
+    { name: '选择组（当前学历）', type: 'line', data: sel, lineStyle: { width: 3, color: '#2563eb' }, itemStyle: { color: '#2563eb' }, symbol: 'none', smooth: true, z: 4, markArea: {
+      silent: true,
+      data: [
+        [{ xAxis: 18, itemStyle: { color: 'rgba(239, 68, 68, 0.12)' } }, { xAxis: schoolEndAge }],
+        [{ xAxis: (crossover ?? schoolEndAge), itemStyle: { color: 'rgba(16, 185, 129, 0.12)' } }, { xAxis: 60 }],
+      ],
+      label: {
+        show: true,
+        position: 'insideTop',
+        formatter: (p) => p.dataIndex === 0 ? '投资期' : '回报期',
+        color: '#94a3b8', fontSize: 12, fontWeight: 600,
+      },
+    }},
   ]
 
-  // 歧视线
   if (params.disc > 0) {
     series.push({
       name: '歧视受损轨迹',
-      type: 'line', data: disc,
+      type: 'line', data: discArr,
       lineStyle: { type: 'dotted', width: 2, color: '#ef4444' },
       itemStyle: { color: '#ef4444' }, symbol: 'none', smooth: true,
-      z: 2,
+      z: 1,
     })
   }
 
-  // 交叉星星标记
+  // ── 标记点 + 标记线 ──
   const marks = []
   if (crossover !== null) {
     const ci = ages.indexOf(crossover)
     if (ci >= 0) {
       marks.push({
-        name: '工资反超点',
-        coord: [crossover, sel[ci]],
-        symbol: 'pin', symbolSize: 48,
-        itemStyle: { color: '#f59e0b' },
+        name: '工资反超点', coord: [crossover, sel[ci]],
+        symbol: 'pin', symbolSize: 48, itemStyle: { color: '#f59e0b' },
         label: { show: true, formatter: `📍 反超 (${crossover}岁)`, position: 'top', distance: 14, color: '#f59e0b', fontSize: 14, fontWeight: 700 },
       })
     }
   }
 
-  // 回本垂直虚线
   const markLines = []
   if (be !== null) {
     markLines.push({
-      name: '回本线',
-      xAxis: be,
+      name: '回本线', xAxis: be,
       lineStyle: { type: 'dashed', color: '#10b981', width: 2 },
       label: { show: true, formatter: `⏳ 终身回本 (${be}岁)`, position: 'end', color: '#10b981', fontSize: 13, fontWeight: 700 },
     })
@@ -294,34 +292,15 @@ const renderChart = () => {
   const option = {
     backgroundColor: 'transparent',
     grid: { left: '3%', right: '5%', top: 50, bottom: 40, containLabel: true },
-    xAxis: {
-      type: 'value', min: 18, max: 60,
-      name: '年龄 (岁)', nameTextStyle: { color: '#94a3b8', fontSize: 12 },
-      axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } },
-      axisLabel: { color: '#94a3b8' },
-      splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } },
-    },
-    yAxis: {
-      type: 'value',
-      name: '月收入 (千元)',
-      min: -5,  // 确保教育投资期负数不被截断
-      nameTextStyle: { color: '#94a3b8', fontSize: 12 },
-      axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } },
-      axisLabel: { color: '#94a3b8', formatter: (v) => v < 0 ? v.toFixed(0) : v.toFixed(0) },
-      splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } },
-    },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      borderColor: 'rgba(148, 163, 184, 0.2)',
-      textStyle: { color: '#f1f5f9', fontSize: 13 },
-    },
+    xAxis: { type: 'value', min: 18, max: 60, name: '年龄 (岁)', nameTextStyle: { color: '#94a3b8', fontSize: 12 }, axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } } },
+    yAxis: { type: 'value', name: '月收入 (元)', nameTextStyle: { color: '#94a3b8', fontSize: 12 }, axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } } },
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(148, 163, 184, 0.2)', textStyle: { color: '#f1f5f9', fontSize: 13 } },
     series,
     markPoint: marks.length > 0 ? { data: marks } : undefined,
     markLine: markLines.length > 0 ? { silent: true, symbol: 'none', data: markLines } : undefined,
   }
 
-  chartInstance.setOption(option, true)
+  chartInstance.setOption(option, { notMerge: true })
 }
 
 // ── 迁移 NPV 图表 ─────────────────────────────
@@ -336,7 +315,7 @@ const renderMigChart = () => {
     yAxis: { type: 'value', name: '累计净现值 (k)', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } } },
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(148,163,184,0.2)', textStyle: { color: '#f1f5f9' } },
     series: [{ name: '迁移 NPV', type: 'line', data: m.cumulative_npv, lineStyle: { width: 2.5, color: '#f59e0b' }, itemStyle: { color: '#f59e0b' }, areaStyle: { color: 'rgba(245,158,11,0.08)' }, smooth: true, symbol: 'none' }],
-  }, true)
+  }, { notMerge: true })
 }
 
 // ── Resize ────────────────────────────────────
