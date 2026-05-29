@@ -126,6 +126,10 @@
             <span class="metric-value metric-blue">{{ response.metrics.crossover_age !== null ? response.metrics.crossover_age + ' 岁' : '—' }}</span>
           </div>
           <div class="metric-card">
+            <span class="metric-label">教育内部收益率 (IRR)</span>
+            <span class="metric-value metric-green">{{ (response.metrics.irr_pct || 0).toFixed(2) }}%</span>
+          </div>
+          <div class="metric-card">
             <span class="metric-label">歧视折损率</span>
             <span class="metric-value metric-red">{{ response.metrics.discrimination_loss_pct }}%</span>
           </div>
@@ -158,16 +162,48 @@
           <div ref="migChartDom" class="chart-container chart-container-mig"></div>
         </div>
 
-        <!-- 底部说明 -->
+        <!-- 动态经济学诊断 -->
         <div class="insight-box">
-          <p v-if="response?.metrics?.breakeven_age !== null">
-            📊 <strong>经济学洞察：</strong>选择{{ eduLabels[params.edu] }}学历，
-            在 <strong>{{ response.metrics.crossover_age }}岁</strong> 你的月工资首次超过高中生，
-            在 <strong>{{ response.metrics.breakeven_age }}岁</strong> 你的终身总资产越过盈亏线——
-            在此之前，你经历了 <strong>{{ response.metrics.breakeven_age - params.edu - 6 }}年</strong> 的工作来弥补教育期间的机会成本和直接成本。
+          <!-- 学历溢价 + Signaling -->
+          <p v-if="params.edu >= 16 && response?.metrics?.lifetime_premium_pct > 30">
+            🎓 <strong>教育溢价与信号功能 (Signaling)：</strong>选择该学历使你的终身收入提升了 <strong>{{ response.metrics.lifetime_premium_pct }}%</strong>。这不仅是因为你的生产率得到了实质提升，更是因为高学历发挥了强大的<strong>信号功能</strong>，向雇主证明了你具有较低的培训成本和更高的学习能力，从而打破了信息不对称。
           </p>
-          <p v-else>
-            💡 拖动左侧滑块，观察不同学历和培训选择如何改变你一生的收入轨迹。
+
+          <!-- 一般培训 -->
+          <p v-if="params.train_type.includes('一般')">
+            🏋️ <strong>一般培训 (General Training)：</strong>你全额承担了培训的隐性成本（表现为前期更低的起点工资），因此你也获得了全部收益（曲线整体上移）。你可以带着这些通用技能随时在劳动力市场中溢价跳槽。
+          </p>
+
+          <!-- 特殊培训 -->
+          <p v-if="params.train_type.includes('特殊')">
+            🔧 <strong>特殊培训 (Specific Training)：</strong>你与企业共同分担了成本与收益。前期你在"交学费"，后期企业为防你跳槽给予了工资补偿（曲线斜率变陡）。这是典型的劳资双方锁定契约。
+          </p>
+
+          <!-- 迁移诊断 -->
+          <p v-if="params.migrate && response?.migration?.is_calculated">
+            ✈️ <strong>空间套利 (Spatial Arbitrage)：</strong>{{ response.migration.is_worth_it ? '迁移决策净现值为正——大城市的高工资溢价足以覆盖你的搬迁和心理适应成本，劳动力流动实现了帕累托改进。' : '当前迁移决策净现值为负——工资溢价不足以弥补搬迁成本，建议等待更好的套利窗口。' }}
+          </p>
+
+          <!-- 默认提示 -->
+          <p v-if="!params.train_type.includes('一般') && !params.train_type.includes('特殊') && !(params.edu >= 16 && response?.metrics?.lifetime_premium_pct > 30) && !params.migrate">
+            💡 <strong>你的职业决策诊断：</strong>拖动左侧滑块，系统将根据明瑟工资方程、人力资本理论和迁移NPV模型，为你生成专业的劳动经济学诊断报告。
+          </p>
+        </div>
+
+        <!-- 课程思政：新人力资本理论 -->
+        <div class="insight-box insight-sizheng">
+          <p>
+            🏛️ <strong>深度思考：人力资本投资的社会意义</strong>
+          </p>
+          <p>
+            经济学家 Schultz、Becker 与 Mincer 奠定了"教育即投资"的经典框架——但在这些可量化的工资曲线背后，还有一座巨大的"人力资本冰山"。
+          </p>
+          <p>
+            <strong>冰山下的"新人力资本"：非认知能力 (Non-cognitive Skills)</strong><br/>
+            现代经济学与心理学研究（如著名的 Perry Preschool 派瑞学前项目、Heckman 的长期追踪实验）证明：决定你终生收入与社会阶层的，不仅是图表上的"学历"和"工龄"（认知能力），更是难以被直接量化的<strong>非认知能力</strong>。你的毅力 (Grit)、情绪稳定性、自控力以及与他人协作的精神，才是你在面对技术变革和失业冲击时，最坚实的人力资本底座。
+          </p>
+          <p>
+            🇨🇳 在中国"新质生产力"与"共同富裕"的宏大叙事下，这意味着：教育政策不能仅关注"多上几年学"，更要关注人格塑造与社会情感能力的培育——让每一个人都拥有对抗结构性失业的韧性。
           </p>
         </div>
       </main>
@@ -461,7 +497,7 @@ watch(gateUnlocked, (val) => { if (val) nextTick(() => debounceFetch()) })
 /* ── 右侧主体 ──────────────────────────────── */
 .lab-main { min-width: 0; }
 
-.metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.metrics-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
 .metric-card {
   background: var(--bg-card); backdrop-filter: blur(10px);
   border: 1px solid var(--border-subtle); border-radius: 12px;
@@ -498,10 +534,13 @@ watch(gateUnlocked, (val) => { if (val) nextTick(() => debounceFetch()) })
 
 .insight-box {
   background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
-  border-radius: 12px; padding: 18px 20px;
+  border-radius: 12px; padding: 18px 20px; margin-bottom: 12px;
   font-size: 14px; color: var(--text-secondary); line-height: 1.7;
 }
 .insight-box strong { color: var(--text-primary); }
+.insight-sizheng {
+  background: rgba(139,92,246,0.05); border-color: rgba(139,92,246,0.15);
+}
 
 /* ── 响应式 ────────────────────────────────── */
 @media (max-width: 900px) {
