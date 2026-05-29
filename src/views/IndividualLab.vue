@@ -164,7 +164,7 @@
             📊 <strong>经济学洞察：</strong>选择{{ eduLabels[params.edu] }}学历，
             在 <strong>{{ response.metrics.crossover_age }}岁</strong> 你的月工资首次超过高中生，
             在 <strong>{{ response.metrics.breakeven_age }}岁</strong> 你的终身总资产越过盈亏线——
-            在此之前，你经历了 <strong>{{ response.metrics.breakeven_age - edu }}年</strong> 的"净回报期"来弥补教育期间的机会成本和直接成本。
+            在此之前，你经历了 <strong>{{ response.metrics.breakeven_age - params.edu - 6 }}年</strong> 的工作来弥补教育期间的机会成本和直接成本。
           </p>
           <p v-else>
             💡 拖动左侧滑块，观察不同学历和培训选择如何改变你一生的收入轨迹。
@@ -231,65 +231,27 @@ const renderChart = () => {
   const base = d.charts.wage_curve_baseline
   const sel = d.charts.wage_curve_selected
   const disc = d.charts.wage_curve_disc
-  const selGross = d.charts.wage_curve_selected_gross || sel
 
   const crossover = d.metrics.crossover_age
   const be = d.metrics.breakeven_age
+  const schoolEndAge = params.edu + 6
 
-  // 找红区结束（毕业年龄 = edu）
-  const schoolEndAge = params.edu
-  const schoolEndIdx = ages.indexOf(schoolEndAge)
+  // ── 红区（投资期）：stack 填充 selected → baseline ──
+  const redBottom = ages.map((_, i) => ages[i] <= schoolEndAge ? sel[i] : null)
+  const redGap = ages.map((_, i) => ages[i] <= schoolEndAge ? base[i] - sel[i] : null)
 
-  // 红区数据（18 到 edu：选择组低于基线 = 投资期）
-  const redZoneData = ages.map((age, i) => {
-    if (age <= schoolEndAge) return base[i]  // 选择组在上学，基线在上方 → 红区填充到基线
-    return null
-  })
-
-  // 绿区数据（工资反超后：选择组高于基线）
+  // ── 绿区（回报期）：stack 填充 baseline → selected ──
   const greenStartIdx = crossover ? ages.indexOf(crossover) : -1
-  const greenZoneData = ages.map((age, i) => {
-    if (greenStartIdx >= 0 && i >= greenStartIdx) return base[i]  // 绿区填充到基线
-    return null
-  })
+  const greenBottom = ages.map((_, i) => greenStartIdx >= 0 && i >= greenStartIdx ? base[i] : null)
+  const greenGap = ages.map((_, i) => greenStartIdx >= 0 && i >= greenStartIdx ? sel[i] - base[i] : null)
 
   const series = [
-    // 红区填充（投资期阴影）
-    {
-      name: '投资期',
-      type: 'line', data: redZoneData,
-      lineStyle: { color: 'transparent', width: 0 },
-      symbol: 'none',
-      areaStyle: { color: 'rgba(239, 68, 68, 0.12)', origin: sel },
-      z: 0,
-      tooltip: { show: false },
-    },
-    // 绿区填充（回报期阴影）
-    {
-      name: '回报期',
-      type: 'line', data: greenZoneData,
-      lineStyle: { color: 'transparent', width: 0 },
-      symbol: 'none',
-      areaStyle: { color: 'rgba(16, 185, 129, 0.12)', origin: sel },
-      z: 0,
-      tooltip: { show: false },
-    },
-    // 对照组：灰虚线
-    {
-      name: '高中毕业（对照组）',
-      type: 'line', data: base,
-      lineStyle: { type: 'dashed', width: 2, color: '#94a3b8' },
-      itemStyle: { color: '#94a3b8' }, symbol: 'none', smooth: true,
-      z: 3,
-    },
-    // 选择组：蓝实线
-    {
-      name: '选择组（当前学历）',
-      type: 'line', data: sel,
-      lineStyle: { width: 3, color: '#2563eb' },
-      itemStyle: { color: '#2563eb' }, symbol: 'none', smooth: true,
-      z: 4,
-    },
+    { name: '投资期底', type: 'line', data: redBottom, stack: 'invest', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'transparent' }, z: 0, tooltip: { show: false } },
+    { name: '投资期（成本+机会成本）', type: 'line', data: redGap, stack: 'invest', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'rgba(239, 68, 68, 0.18)' }, z: 0, tooltip: { show: false } },
+    { name: '回报期底', type: 'line', data: greenBottom, stack: 'return', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'transparent' }, z: 0, tooltip: { show: false } },
+    { name: '回报期（教育溢价）', type: 'line', data: greenGap, stack: 'return', lineStyle: { color: 'transparent' }, symbol: 'none', areaStyle: { color: 'rgba(16, 185, 129, 0.18)' }, z: 0, tooltip: { show: false } },
+    { name: '高中毕业（对照组）', type: 'line', data: base, lineStyle: { type: 'dashed', width: 2, color: '#94a3b8' }, itemStyle: { color: '#94a3b8' }, symbol: 'none', smooth: true, z: 3 },
+    { name: '选择组（当前学历）', type: 'line', data: sel, lineStyle: { width: 3, color: '#2563eb' }, itemStyle: { color: '#2563eb' }, symbol: 'none', smooth: true, z: 4 },
   ]
 
   // 歧视线
