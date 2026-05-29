@@ -303,8 +303,8 @@ const renderChart = () => {
     },
     yAxis: {
       type: 'value',
-      name: '月收入 (元)',
-      min: (d) => Math.min(d.min, -5000),
+      name: '月收入 (千元)',
+      min: -5,  // 确保教育投资期负数不被截断
       nameTextStyle: { color: '#94a3b8', fontSize: 12 },
       axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } },
       axisLabel: { color: '#94a3b8', formatter: (v) => v < 0 ? v.toFixed(0) : v.toFixed(0) },
