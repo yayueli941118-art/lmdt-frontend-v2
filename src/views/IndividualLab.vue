@@ -229,11 +229,11 @@ const renderChart = () => {
   const d = response.value
   const ages = d.charts.age_years
 
-  // ── 负数映射：-2.0k → -15000元，让教育投资深坑视觉可见 ──
+  // ── 负数映射 + 二维坐标组装 [age, value] ──
   const toView = (v) => v < 0 ? -15000 : v
-  const base = d.charts.wage_curve_baseline.map((v) => v)
-  const sel = d.charts.wage_curve_selected.map(toView)
-  const discArr = d.charts.wage_curve_disc.map(toView)
+  const base = d.charts.wage_curve_baseline.map((v, i) => [ages[i], v])
+  const sel = d.charts.wage_curve_selected.map((v, i) => [ages[i], toView(v)])
+  const discArr = d.charts.wage_curve_disc.map((v, i) => [ages[i], toView(v)])
 
   const crossover = d.metrics.crossover_age
   const be = d.metrics.breakeven_age
@@ -245,13 +245,13 @@ const renderChart = () => {
     { name: '选择组（当前学历）', type: 'line', data: sel, lineStyle: { width: 3, color: '#2563eb' }, itemStyle: { color: '#2563eb' }, symbol: 'none', smooth: true, z: 4, markArea: {
       silent: true,
       data: [
-        [{ xAxis: 18, itemStyle: { color: 'rgba(239, 68, 68, 0.12)' } }, { xAxis: schoolEndAge }],
-        [{ xAxis: (crossover ?? schoolEndAge), itemStyle: { color: 'rgba(16, 185, 129, 0.12)' } }, { xAxis: 60 }],
+        [{ name: '投资期', xAxis: 18, itemStyle: { color: 'rgba(239, 68, 68, 0.12)' } }, { xAxis: schoolEndAge }],
+        [{ name: '回报期', xAxis: (crossover ?? schoolEndAge), itemStyle: { color: 'rgba(16, 185, 129, 0.12)' } }, { xAxis: 60 }],
       ],
       label: {
         show: true,
         position: 'insideTop',
-        formatter: (p) => p.dataIndex === 0 ? '投资期' : '回报期',
+        formatter: (p) => p.name || '',
         color: '#94a3b8', fontSize: 12, fontWeight: 600,
       },
     }},
@@ -273,7 +273,7 @@ const renderChart = () => {
     const ci = ages.indexOf(crossover)
     if (ci >= 0) {
       marks.push({
-        name: '工资反超点', coord: [crossover, sel[ci]],
+        name: '工资反超点', coord: sel[ci],  // [age, value] 二维坐标
         symbol: 'pin', symbolSize: 48, itemStyle: { color: '#f59e0b' },
         label: { show: true, formatter: `📍 反超 (${crossover}岁)`, position: 'top', distance: 14, color: '#f59e0b', fontSize: 14, fontWeight: 700 },
       })
