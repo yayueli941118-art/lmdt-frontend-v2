@@ -359,6 +359,7 @@ const renderChart = () => {
     yAxis: {
       type: 'value',
       name: '月工资指数',
+      min: 'dataMin',  // 不从 0 开始，放大视觉差距
       nameTextStyle: { color: '#94a3b8', fontSize: 12 },
       axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } },
       axisLabel: { color: '#94a3b8' },
