@@ -85,24 +85,46 @@
           <template v-if="params.migrate">
             <div class="param-group">
               <label class="param-label">
-                <span class="param-icon">💰</span> 月薪溢价
+                <span class="param-icon">📅</span> 迁移发生年龄
+                <span class="param-val">{{ params.migrate_age }}岁</span>
+              </label>
+              <input type="range" v-model.number="params.migrate_age" :min="params.edu + 6" max="60" step="1" @input="debounceFetch" class="slider slider-gold" />
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:4px"><span>{{ params.edu + 6 }}岁</span><span>60岁</span></div>
+            </div>
+            <div class="param-group">
+              <label class="param-label"><span class="param-icon">💰</span> 月薪溢价
                 <span class="param-val">{{ params.w_diff }}k</span>
               </label>
               <input type="range" v-model.number="params.w_diff" min="2" max="30" step="1" @input="debounceFetch" class="slider slider-gold" />
             </div>
             <div class="param-group">
-              <label class="param-label">
-                <span class="param-icon">🚚</span> 搬迁成本
+              <label class="param-label"><span class="param-icon">🚚</span> 搬迁成本
                 <span class="param-val">{{ params.c_move }}k</span>
               </label>
               <input type="range" v-model.number="params.c_move" min="5" max="80" step="1" @input="debounceFetch" class="slider" />
             </div>
             <div class="param-group">
-              <label class="param-label">
-                <span class="param-icon">💆</span> 心理成本
+              <label class="param-label"><span class="param-icon">💆</span> 心理成本
                 <span class="param-val">{{ params.c_psych }}k/年</span>
               </label>
               <input type="range" v-model.number="params.c_psych" min="0" max="30" step="1" @input="debounceFetch" class="slider" />
+            </div>
+
+            <!-- 家庭联合迁移 -->
+            <div class="param-group">
+              <label class="param-label"><span class="param-icon">💍</span> 家庭联合迁移</label>
+              <label class="toggle-wrap">
+                <input type="checkbox" v-model="params.family_migrate" @change="debounceFetch" class="toggle-input" />
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="toggle-text">{{ params.family_migrate ? '已开启' : '已关闭' }}</span>
+              </label>
+            </div>
+            <div v-if="params.family_migrate" class="param-group">
+              <label class="param-label">
+                <span class="param-icon">💔</span> 配偶月薪损失
+                <span class="param-val">{{ params.spouse_loss }}k/月</span>
+              </label>
+              <input type="range" v-model.number="params.spouse_loss" min="2" max="15" step="1" @input="debounceFetch" class="slider slider-red" />
             </div>
           </template>
 
@@ -180,7 +202,13 @@
           </p>
 
           <!-- 迁移诊断 -->
-          <p v-if="params.migrate && response?.migration?.is_calculated">
+          <p v-if="params.migrate && params.migrate_age > 35 && response?.migration && !response.migration.is_worth_it">
+            ⏳ <strong>生命周期约束：</strong>你的迁移投资无法回本。经济学证明，随着年龄增长，回收投资的剩余工作年限锐减。这就是为什么劳动力流动主要集中在青年群体。
+          </p>
+          <p v-else-if="params.migrate && params.family_migrate && response?.migration && !response.migration.is_worth_it">
+            ⚖️ <strong>跟随迁移者效应 (Tied Mover)：</strong>虽然你个人的迁移收益可能为正，但由于配偶的职业中断成本过高，家庭总收益为负。在 HR 实践中，忽视双职工家庭的联动效应，是异地外派失败的核心原因。
+          </p>
+          <p v-else-if="params.migrate && response?.migration?.is_calculated">
             ✈️ <strong>空间套利 (Spatial Arbitrage)：</strong>{{ response.migration.is_worth_it ? '迁移决策净现值为正——大城市的高工资溢价足以覆盖你的搬迁和心理适应成本，劳动力流动实现了帕累托改进。' : '当前迁移决策净现值为负——工资溢价不足以弥补搬迁成本，建议等待更好的套利窗口。' }}
           </p>
 
@@ -233,7 +261,8 @@ const trainTypes = ['无额外培训', '一般培训 (通用技能)', '特殊培
 
 const params = reactive({
   edu: 16, exp_peak: 40, train_type: '无额外培训',
-  disc: 10.0, migrate: false, w_diff: 10.0, c_move: 25.0, c_psych: 8.0,
+  disc: 10.0, migrate: false, migrate_age: 22, w_diff: 10.0, c_move: 25.0, c_psych: 8.0,
+  family_migrate: false, spouse_loss: 3.0,
 })
 
 const response = ref(null)
