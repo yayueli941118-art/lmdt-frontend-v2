@@ -611,5 +611,10 @@ const scrollToChapters = () => {
   .hero-stat-divider { width: 40px; height: 1px; }
   .footer-main { grid-template-columns: 1fr; gap: 24px; }
   .footer-meta { text-align: left; }
+  .hero { padding: 60px 16px; min-height: auto; }
+  .section { padding: 40px 16px; }
+  .matrix-table { overflow-x: auto; }
+  .matrix-table table { min-width: 600px; }
+  .hero-desc br { display: none; }
 }
 </style>
