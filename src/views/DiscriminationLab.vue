@@ -90,6 +90,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart } from 'echarts/charts'
@@ -97,7 +98,6 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 use([BarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const discPct = ref(20)
 const eduGap = ref(2)
@@ -157,7 +157,7 @@ async function run() {
   loading.value = true
   try {
     const payload = generateData()
-    const { data } = await axios.post(`${API}/api/v2/discrimination/decompose`, payload)
+    const { data } = await axios.post(apiUrl('/api/v2/discrimination/decompose'), payload)
     result.value = data
   } catch (e) { console.error(e) }
   finally { loading.value = false }

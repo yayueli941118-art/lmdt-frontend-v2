@@ -92,6 +92,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -99,7 +100,6 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const wage_initial = ref(32)
 const wage_new = ref(54)
@@ -136,7 +136,7 @@ const supplyCurveOption = computed(() => {
 async function run() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/supply/decompose`, {
+    const { data } = await axios.post(apiUrl('/api/v2/supply/decompose'), {
       wage_initial: wage_initial.value,
       wage_new: wage_new.value,
       beta: beta.value,

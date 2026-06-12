@@ -16,6 +16,7 @@ const routes = [
   { path: '/lab/migration', name: 'Migration', component: () => import('../views/MigrationLab.vue'), meta: { title: '✈️ 迁移决策仿真' } },
   { path: '/lab/wage', name: 'Wage', component: () => import('../views/WageLab.vue'), meta: { title: '💰 工资决定与收入差距' } },
   { path: '/lab/discrimination', name: 'Discrimination', component: () => import('../views/DiscriminationLab.vue'), meta: { title: '🚫 歧视经济学实验' } },
+  { path: '/lab/income-distribution', name: 'IncomeDistribution', component: () => import('../views/IncomeDistributionLab.vue'), meta: { title: '📊 收入分配实验室' } },
   { path: '/lab/unemployment', name: 'Unemployment', component: () => import('../views/UnemploymentLab.vue'), meta: { title: '📉 失业经济学' } },
 ]
 

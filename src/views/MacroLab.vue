@@ -65,6 +65,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -72,7 +73,6 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const aiRisk = ref(30); const mismatchIndex = ref(0.5); const loading = ref(false); const result = ref(null)
 const policies = [
@@ -106,7 +106,7 @@ const beveridgeChart = computed(() => {
 async function run() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/macro/beveridge`, {
+    const { data } = await axios.post(apiUrl('/api/v2/macro/beveridge'), {
       ai_risk: aiRisk.value, mismatch_index: mismatchIndex.value, active_policies: activePolicies.value
     })
     result.value = data

@@ -100,6 +100,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -107,7 +108,6 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const edu = ref(16); const exp = ref(5); const industry = ref('信息技术'); const region = ref('一线城市')
 const loading = ref(false); const result = ref(null)
@@ -145,7 +145,7 @@ const decileChart = computed(() => {
 async function run() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/wage/distribution`, {
+    const { data } = await axios.post(apiUrl('/api/v2/wage/distribution'), {
       edu_years: edu.value, exp_years: exp.value, industry: industry.value, region: region.value
     })
     result.value = data
@@ -156,7 +156,7 @@ async function run() {
 async function runMincer() {
   loading2.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/wage/mincer`, {
+    const { data } = await axios.post(apiUrl('/api/v2/wage/mincer'), {
       edu_years: edu.value, exp_years: exp.value, gender: gender.value, ownership: ownership.value, union_member: unionMember.value
     })
     mincerResult.value = data

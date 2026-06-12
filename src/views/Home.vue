@@ -31,12 +31,12 @@
         </div>
         <div class="hero-stats">
           <div class="hero-stat">
-            <span class="hero-stat-num">8</span>
+            <span class="hero-stat-num">9</span>
             <span class="hero-stat-label">教材章节</span>
           </div>
           <div class="hero-stat-divider"></div>
           <div class="hero-stat">
-            <span class="hero-stat-num">11</span>
+            <span class="hero-stat-num">12</span>
             <span class="hero-stat-label">交互实验</span>
           </div>
           <div class="hero-stat-divider"></div>
@@ -92,11 +92,11 @@
       </div>
     </section>
 
-    <!-- ===== 八大深度教学专题 ===== -->
+    <!-- ===== 深度教学专题 ===== -->
     <section id="chapters" class="section">
       <div class="section-header">
         <span class="section-tag">教学专题</span>
-        <h2 class="section-title">八章全覆盖 · 按教材章节索引</h2>
+        <h2 class="section-title">九章全覆盖 · 按教材章节索引</h2>
       </div>
       <div class="mini-grid">
         <div class="mini-card mini-card-cyan" @click="$router.push('/lab/supply')">
@@ -124,8 +124,13 @@
           <strong>劳动力市场歧视</strong>
           <p>贝克尔偏见模型 · 统计性歧视 · 政策组合实验</p>
         </div>
-        <div class="mini-card mini-card-indigo" @click="$router.push('/lab/unemployment')">
+        <div class="mini-card mini-card-green" @click="$router.push('/lab/income-distribution')">
           <span class="mini-card-chapter">Ch.08</span>
+          <strong>收入分配实验室</strong>
+          <p>洛伦兹曲线 · 基尼系数 · 技能溢价 · 共同富裕政策调节</p>
+        </div>
+        <div class="mini-card mini-card-indigo" @click="$router.push('/lab/unemployment')">
+          <span class="mini-card-chapter">Ch.09</span>
           <strong>失业经济学</strong>
           <p>失业类型诊断 · 保留工资 · 贝弗里奇曲线</p>
         </div>
@@ -136,7 +141,7 @@
     <section class="section">
       <div class="section-header">
         <span class="section-tag">课程矩阵</span>
-        <h2 class="section-title">教材全覆盖 · 八章映射</h2>
+        <h2 class="section-title">教材全覆盖 · 九章映射</h2>
       </div>
       <div class="matrix-table">
         <table>
@@ -189,6 +194,11 @@
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.08</span></td>
+              <td>收入分配</td>
+              <td class="matrix-link" @click="$router.push('/lab/income-distribution')">📊 收入分配实验室</td>
+            </tr>
+            <tr>
+              <td><span class="matrix-chapter">Ch.09</span></td>
               <td>失业</td>
               <td>
                 <span class="matrix-link" @click="$router.push('/lab/unemployment')">📉 失业经济学</span>
@@ -214,7 +224,7 @@
           <p class="footer-author">课程负责人 / 系统设计：黎雅月</p>
         </div>
         <div class="footer-meta">
-          <p>11 个交互式实验模块 · 8 章教材全覆盖</p>
+          <p>12 个交互式实验模块 · 9 章教材全覆盖</p>
           <p class="footer-tags">
             🇨🇳 融入「新质生产力」「乡村振兴」「共同富裕」等国家战略
           </p>
@@ -257,6 +267,7 @@ const scrollToChapters = () => {
   --accent-purple: #8b5cf6;
   --accent-gold: #f59e0b;
   --accent-red: #ef4444;
+  --accent-green: #16a34a;
   --accent-indigo: #6366f1;
   --border-subtle: rgba(148, 163, 184, 0.08);
 
@@ -527,6 +538,8 @@ const scrollToChapters = () => {
 .mini-card-gold { border-left: 3px solid var(--accent-gold); }
 .mini-card-red .mini-card-chapter { color: var(--accent-red); }
 .mini-card-red { border-left: 3px solid var(--accent-red); }
+.mini-card-green .mini-card-chapter { color: var(--accent-green); }
+.mini-card-green { border-left: 3px solid var(--accent-green); }
 .mini-card-indigo .mini-card-chapter { color: var(--accent-indigo); }
 .mini-card-indigo { border-left: 3px solid var(--accent-indigo); }
 

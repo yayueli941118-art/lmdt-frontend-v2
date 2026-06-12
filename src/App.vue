@@ -9,6 +9,7 @@
       <router-link to="/lab/supply">劳动供给</router-link>
       <router-link to="/lab/wage">工资收入</router-link>
       <router-link to="/lab/discrimination">歧视经济</router-link>
+      <router-link to="/lab/income-distribution">收入分配</router-link>
       <router-link to="/lab/unemployment">失业</router-link>
       <router-link to="/lab/migration">迁移</router-link>
     </nav>

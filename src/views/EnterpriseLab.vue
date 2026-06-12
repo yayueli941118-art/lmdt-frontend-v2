@@ -85,6 +85,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart, BarChart } from 'echarts/charts'
@@ -92,7 +93,6 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const K = ref(500); const sigma = ref(1.2); const techType = ref('中性技术'); const loading = ref(false)
 const L = ref(100); const Kmax = ref(2000); const loading2 = ref(false)
@@ -138,7 +138,7 @@ const factorChart = computed(() => {
 async function runDemand() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/demand/curve`, {
+    const { data } = await axios.post(apiUrl('/api/v2/demand/curve'), {
       K: K.value, sigma: sigma.value, prod_price: 1.0, tech_type: techType.value
     })
     demandResult.value = data
@@ -150,7 +150,7 @@ async function runFactor() {
   loading2.value = true
   try {
     const kv = Array.from({length: 20}, (_, i) => Math.round(100 + (Kmax.value - 100) * i / 19))
-    const { data } = await axios.post(`${API}/api/v2/demand/factor-allocation`, {
+    const { data } = await axios.post(apiUrl('/api/v2/demand/factor-allocation'), {
       L: L.value, K_values: kv, sigma: sigma.value
     })
     factorResult.value = data

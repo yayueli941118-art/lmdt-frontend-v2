@@ -68,6 +68,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import VChart from 'vue-echarts'
 import * as echarts from 'echarts'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 
 // 注册 echarts 组件
 VChart.registerECharts(echarts)
@@ -75,8 +76,6 @@ VChart.registerECharts(echarts)
 // ==========================================
 // 状态
 // ==========================================
-const API_BASE_RAW = import.meta.env.VITE_API_BASE_URL
-const API_BASE = API_BASE_RAW != null ? API_BASE_RAW : 'http://localhost:8000'
 
 const params = ref({
   ai_risk: 30,
@@ -106,7 +105,7 @@ function debouncedFetch() {
 async function fetchSimulate() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API_BASE}/api/v1/macro-lab/simulate`, {
+    const { data } = await axios.post(apiUrl('/api/v1/macro-lab/simulate'), {
       ai_risk: params.value.ai_risk,
       mismatch_index: params.value.mismatch_index,
       active_policies: [...policySet.value],

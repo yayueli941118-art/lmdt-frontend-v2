@@ -81,6 +81,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -88,7 +89,6 @@ import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const edu = ref(16); const expPeak = ref(30); const trainType = ref('一般培训'); const disc = ref(10)
 const migrateAge = ref(25); const wDiff = ref(3000); const cMove = ref(20000); const familyMigrate = ref(false)
@@ -128,7 +128,7 @@ const npvChart = computed(() => {
 async function run() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/micro/simulate`, {
+    const { data } = await axios.post(apiUrl('/api/v1/individual-lab/simulate'), {
       edu: edu.value, exp_peak: expPeak.value, train_type: trainType.value,
       disc: disc.value, migrate: true, migrate_age: migrateAge.value,
       w_diff: wDiff.value, c_move: cMove.value, c_psych: 3000,

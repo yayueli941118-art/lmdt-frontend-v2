@@ -75,6 +75,56 @@
           <span class="stat-val">{{ mwResult.affected_worker_pct }}%</span>
         </div>
       </div>
+
+      <!-- DMP 搜寻匹配 -->
+      <div class="section-divider"><span>🔎 DMP 搜寻匹配机制</span></div>
+      <div class="lab-controls">
+        <div class="control-group">
+          <label>失业人数 <span class="val">{{ dmpUnemployed }}万</span></label>
+          <input type="range" v-model.number="dmpUnemployed" min="20" max="300" step="10">
+        </div>
+        <div class="control-group">
+          <label>岗位空缺 <span class="val">{{ dmpVacancies }}万</span></label>
+          <input type="range" v-model.number="dmpVacancies" min="20" max="300" step="10">
+        </div>
+        <div class="control-group">
+          <label>匹配效率 <span class="val">{{ dmpEfficiency }}</span></label>
+          <input type="range" v-model.number="dmpEfficiency" min="0.2" max="1" step="0.05">
+        </div>
+        <div class="control-group">
+          <label>岗位分离率 <span class="val">{{ (dmpSeparation * 100).toFixed(1) }}%</span></label>
+          <input type="range" v-model.number="dmpSeparation" min="0.005" max="0.08" step="0.005">
+        </div>
+        <button class="btn-run dmp-btn" @click="runDmp" :disabled="loading3">
+          {{ loading3 ? '…' : '▶ 匹配模拟' }}
+        </button>
+      </div>
+
+      <div v-if="dmpResult" class="dmp-layout">
+        <div class="cards-row compact">
+          <div class="stat-card">
+            <span class="stat-label">市场紧张度 θ</span>
+            <span class="stat-val">{{ dmpResult.theta }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">求职成功率</span>
+            <span class="stat-val">{{ dmpResult.job_finding_rate }}%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">岗位填补率</span>
+            <span class="stat-val">{{ dmpResult.vacancy_filling_rate }}%</span>
+          </div>
+          <div class="stat-card warn">
+            <span class="stat-label">稳态失业率</span>
+            <span class="stat-val">{{ dmpResult.steady_unemployment_rate }}%</span>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>匹配效率提升如何降低稳态失业率</h3>
+          <v-chart :option="dmpChart" autoresize style="height:280px" />
+        </div>
+        <p class="policy-note">{{ dmpResult.diagnosis }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -82,6 +132,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -89,12 +140,13 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const naturalRate = ref(5); const minWage = ref(28); const benefit = ref(2500); const mismatch = ref(0.8); const aiRisk = ref(30)
 const loading = ref(false); const result = ref(null)
 const avgWage = ref(54); const employment = ref(870)
 const loading2 = ref(false); const mwResult = ref(null)
+const dmpUnemployed = ref(120); const dmpVacancies = ref(80); const dmpEfficiency = ref(0.65); const dmpSeparation = ref(0.025)
+const loading3 = ref(false); const dmpResult = ref(null)
 
 const uChart = computed(() => {
   if (!result.value) return {}
@@ -108,10 +160,25 @@ const uChart = computed(() => {
   }
 })
 
+const dmpChart = computed(() => {
+  if (!dmpResult.value) return {}
+  return {
+    backgroundColor: 'transparent',
+    grid: { top: 24, right: 24, bottom: 34, left: 52 },
+    xAxis: { name: '匹配效率', axisLabel: { color: '#666' }, data: dmpResult.value.curve.map(p => p.matching_efficiency) },
+    yAxis: { name: '比率(%)', axisLabel: { color: '#666' } },
+    tooltip: { trigger: 'axis' },
+    series: [
+      { name: '求职成功率', type: 'line', data: dmpResult.value.curve.map(p => p.job_finding_rate), lineStyle: { color: '#06b6d4', width: 2 }, symbol: 'none' },
+      { name: '稳态失业率', type: 'line', data: dmpResult.value.curve.map(p => p.steady_unemployment_rate), lineStyle: { color: '#f59e0b', width: 2 }, areaStyle: { color: 'rgba(245,158,11,0.08)' }, symbol: 'none' },
+    ]
+  }
+})
+
 async function run() {
   loading.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/macro/unemployment`, {
+    const { data } = await axios.post(apiUrl('/api/v2/macro/unemployment'), {
       natural_rate: naturalRate.value, min_wage: minWage.value,
       unemployment_benefit: benefit.value, skill_mismatch: mismatch.value,
       ai_risk: aiRisk.value, labor_demand_shock: 0
@@ -124,12 +191,27 @@ async function run() {
 async function runMinWage() {
   loading2.value = true
   try {
-    const { data } = await axios.post(`${API}/api/v2/macro/min-wage-impact`, {
+    const { data } = await axios.post(apiUrl('/api/v2/macro/min-wage-impact'), {
       min_wage: minWage.value, avg_wage: avgWage.value, employment: employment.value
     })
     mwResult.value = data
   } catch(e) { console.error(e) }
   finally { loading2.value = false }
+}
+
+async function runDmp() {
+  loading3.value = true
+  try {
+    const { data } = await axios.post(apiUrl('/api/v2/macro/dmp'), {
+      unemployed: dmpUnemployed.value,
+      vacancies: dmpVacancies.value,
+      matching_efficiency: dmpEfficiency.value,
+      separation_rate: dmpSeparation.value,
+      alpha: 0.5,
+    })
+    dmpResult.value = data
+  } catch(e) { console.error(e) }
+  finally { loading3.value = false }
 }
 </script>
 
@@ -147,7 +229,9 @@ async function runMinWage() {
 .btn-run { padding: 10px 24px; border: none; border-radius: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .3s; white-space: nowrap; }
 .btn-run:hover { box-shadow: 0 8px 24px rgba(239,68,68,.35); transform: translateY(-1px); }
 .btn-run:disabled { opacity: .5; cursor: not-allowed; }
+.dmp-btn { background: linear-gradient(135deg, #06b6d4, #2563eb); }
 .cards-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
+.cards-row.compact { grid-template-columns: repeat(4, 1fr); }
 .stat-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1); border-radius: 12px; padding: 12px; text-align: center; }
 .stat-card.warn { border-color: rgba(239,68,68,0.3); }
 .stat-label { display: block; font-size: 11px; color: #64748b; margin-bottom: 4px; }
@@ -156,5 +240,6 @@ async function runMinWage() {
 .chart-card h3 { color: #94a3b8; font-size: 14px; font-weight: 700; margin: 0 0 12px; }
 .section-divider { display: flex; align-items: center; gap: 16px; margin: 36px 0 20px; color: #94a3b8; font-size: 15px; font-weight: 700; }
 .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(148,163,184,0.08); }
-@media (max-width: 768px) { .cards-row { grid-template-columns: repeat(2, 1fr); } }
+.policy-note { margin: -8px 0 28px; padding: 14px 16px; border-radius: 10px; color: #cbd5e1; background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.18); line-height: 1.7; font-size: 14px; }
+@media (max-width: 768px) { .cards-row, .cards-row.compact { grid-template-columns: repeat(2, 1fr); } }
 </style>

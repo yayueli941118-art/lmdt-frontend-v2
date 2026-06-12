@@ -243,9 +243,8 @@
 import { ref, reactive, watch, onMounted, nextTick, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
+import { apiUrl } from '../lib/api'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL
-const API = API_BASE != null ? API_BASE : 'http://localhost:8000'
 
 // ── 预测门禁 ──────────────────────────────────
 const gateOptions = ['10%–20%', '30%–50%', '50%–60%', '60%–80%']
@@ -274,7 +273,7 @@ const debounceFetch = () => { clearTimeout(debounceTimer); debounceTimer = setTi
 
 const fetchData = async () => {
   try {
-    const { data } = await axios.post(`${API}/api/v1/individual-lab/simulate`, { ...params })
+    const { data } = await axios.post(apiUrl('/api/v1/individual-lab/simulate'), { ...params })
     response.value = data
     await nextTick()
     renderChart()
