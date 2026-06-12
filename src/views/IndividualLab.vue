@@ -244,7 +244,8 @@ import { ref, reactive, watch, onMounted, nextTick, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+const API = API_BASE != null ? API_BASE : 'http://localhost:8000'
 
 // ── 预测门禁 ──────────────────────────────────
 const gateOptions = ['10%–20%', '30%–50%', '50%–60%', '60%–80%']

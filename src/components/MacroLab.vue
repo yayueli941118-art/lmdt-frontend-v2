@@ -75,7 +75,8 @@ VChart.registerECharts(echarts)
 // ==========================================
 // 状态
 // ==========================================
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_RAW = import.meta.env.VITE_API_BASE_URL
+const API_BASE = API_BASE_RAW != null ? API_BASE_RAW : 'http://localhost:8000'
 
 const params = ref({
   ai_risk: 30,
