@@ -9,7 +9,7 @@
 
     <section class="teaching-strip">
       <div>
-        <span>课堂问题</span>
+        <span>核心问题</span>
         <strong>技术进步为什么可能扩大收入差距？</strong>
       </div>
       <div>
@@ -40,6 +40,12 @@
         <input type="range" v-model.number="educationEqualizer" min="0" max="60" step="5">
       </div>
     </div>
+
+    <LearningTaskCard
+      task="调整技能溢价、收入集中度和再分配政策，观察收入分配是否更均衡。"
+      observe="重点看洛伦兹曲线、基尼系数和低收入组增益。"
+      :conclusion="incomeConclusion"
+    />
 
     <div class="cards-row">
       <div class="stat-card">
@@ -86,6 +92,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -166,6 +173,10 @@ const metrics = computed(() => {
     p90p10: (quantile(policy, 0.9) / quantile(policy, 0.1)).toFixed(2),
     bottomGain: (((bottomPolicy / bottomMarket) - 1) * 100).toFixed(1),
   }
+})
+
+const incomeConclusion = computed(() => {
+  return `当前政策后基尼系数为 ${metrics.value.policyGini}，P90/P10 为 ${metrics.value.p90p10}，低收入组收入提升 ${metrics.value.bottomGain}%。`
 })
 
 const lorenzOption = computed(() => {

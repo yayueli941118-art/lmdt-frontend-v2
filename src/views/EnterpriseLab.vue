@@ -29,6 +29,12 @@
       </button>
     </div>
 
+    <LearningTaskCard
+      task="调整资本存量、替代弹性和技术类型，观察企业劳动需求如何变化。"
+      observe="重点看工资率变化时劳动需求曲线的位置和斜率。"
+      :conclusion="demandConclusion"
+    />
+
     <div v-if="demandResult" class="lab-results">
       <div class="chart-card">
         <h3>劳动需求曲线 (VMP)</h3>
@@ -62,6 +68,12 @@
         {{ loading2 ? '更新中…' : '手动刷新' }}
       </button>
     </div>
+
+    <LearningTaskCard
+      task="调整劳动力和资本范围，寻找更合适的资本—劳动配置。"
+      observe="先看最优 K/L 比，再比较产出与边际产品变化。"
+      :conclusion="factorConclusion"
+    />
 
     <div v-if="factorResult" class="lab-results">
       <div class="factor-summary">
@@ -103,6 +115,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart, BarChart } from 'echarts/charts'
@@ -116,6 +129,19 @@ const L = ref(100); const Kmax = ref(2000); const loading2 = ref(false)
 const demandResult = ref(null); const factorResult = ref(null)
 let demandTimer = null
 let factorTimer = null
+
+const demandConclusion = computed(() => {
+  const equilibria = demandResult.value?.equilibria || []
+  const first = equilibria[0]
+  const last = equilibria[equilibria.length - 1]
+  if (!first || !last) return ''
+  return `当前技术设定下，工资率从${first.wage}元/h变化到${last.wage}元/h时，劳动需求从${first.labor_hours}人变化到${last.labor_hours}人。`
+})
+
+const factorConclusion = computed(() => {
+  if (!factorResult.value) return ''
+  return `当前 L=${L.value} 时，模型给出的最优 K/L 比约为 ${factorResult.value.optimal_k_l}，对应推荐资本约 ${suggestedCapital.value}。`
+})
 
 const demandChart = computed(() => {
   if (!demandResult.value) return {}

@@ -82,6 +82,12 @@
 
       <!-- 右侧：图表区 (8/12) -->
       <main class="lab-main">
+        <LearningTaskCard
+          task="调整教育年限、培训类型和歧视折损，观察人力资本投资回报。"
+          observe="重点看回本年龄、工资反超年龄、IRR 和终身收入溢价。"
+          :conclusion="individualConclusion"
+        />
+
         <!-- 指标卡片行 -->
         <div v-if="response" class="metrics-row">
           <div class="metric-card">
@@ -165,10 +171,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted, nextTick, onUnmounted } from 'vue'
+import { ref, reactive, watch, onMounted, nextTick, onUnmounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 
 
 // ── 预测门禁 ──────────────────────────────────
@@ -190,6 +197,13 @@ const params = reactive({
 })
 
 const response = ref(null)
+
+const individualConclusion = computed(() => {
+  if (!response.value) return ''
+  const m = response.value.metrics
+  const payback = m.breakeven_age !== null ? `${m.breakeven_age}岁回本` : '观察期内未回本'
+  return `当前学历方案带来 ${m.lifetime_premium_pct}% 的终身收入溢价，${payback}，教育内部收益率约为 ${(m.irr_pct || 0).toFixed(2)}%。`
+})
 
 // ── 300ms 防抖 ────────────────────────────────
 let debounceTimer = null

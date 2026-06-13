@@ -38,6 +38,12 @@
       </button>
     </section>
 
+    <LearningTaskCard
+      task="调整迁移年龄、工资溢价和迁移成本，先判断是否值得迁移。"
+      observe="重点看累计 NPV 是否穿过 0 线，以及回本时间是否足够早。"
+      :conclusion="migrationConclusion"
+    />
+
     <section v-if="decision" class="decision-panel" :class="decisionClass">
       <div>
         <span class="decision-eyebrow">迁移建议</span>
@@ -115,6 +121,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -175,6 +182,11 @@ const decision = computed(() => {
     title: '暂不建议迁移',
     reason: `当前工资溢价不足以覆盖搬迁、适应和家庭联动成本，60 岁前累计 NPV 仍为负。`,
   }
+})
+
+const migrationConclusion = computed(() => {
+  if (!decision.value) return ''
+  return `${decision.value.title}：${decision.value.reason}`
 })
 
 const decisionClass = computed(() => `decision-${decision.value?.level || 'watch'}`)

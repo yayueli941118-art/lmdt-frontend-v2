@@ -22,6 +22,12 @@
       </button>
     </div>
 
+    <LearningTaskCard
+      task="调整歧视程度和教育差距，观察工资差异可解释部分与不可解释部分的变化。"
+      observe="重点区分禀赋差异、系数差异和不可解释差异。"
+      :conclusion="discriminationConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <!-- 总览 -->
       <div class="cards-row">
@@ -95,6 +101,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart } from 'echarts/charts'
@@ -108,6 +115,12 @@ const eduGap = ref(2)
 const loading = ref(false)
 const result = ref(null)
 let debounceTimer = null
+
+const discriminationConclusion = computed(() => {
+  if (!result.value) return ''
+  const d = result.value.decomposition
+  return `当前工资差距为 ${d.total_gap_pct}%，其中可解释部分为 ${d.explained_pct}%，不可解释部分为 ${d.unexplained_pct}%。`
+})
 
 const decompChart = computed(() => {
   if (!result.value) return {}

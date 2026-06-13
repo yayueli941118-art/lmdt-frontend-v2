@@ -32,6 +32,12 @@
       </button>
     </div>
 
+    <LearningTaskCard
+      task="调整教育、经验、行业和地区，观察工资分布与收入差距如何改变。"
+      observe="重点看预测月薪、基尼系数和 P90/P10 的同步变化。"
+      :conclusion="wageConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <div class="cards-row">
         <div class="stat-card">
@@ -105,6 +111,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -119,6 +126,12 @@ const gender = ref('all'); const ownership = ref('private'); const unionMember =
 const loading2 = ref(false); const mincerResult = ref(null)
 let wageTimer = null
 let mincerTimer = null
+
+const wageConclusion = computed(() => {
+  if (!result.value) return ''
+  const s = result.value.statistics
+  return `当前设定下，预测月薪均值为${s.mean}元，基尼系数为${s.gini}，P90/P10 为 ${s.p90_p10_ratio} 倍。`
+})
 
 const industries = ['信息技术','金融业','制造业','建筑业','批发零售','住宿餐饮','教育','医疗','交通运输','农业']
 const regions = ['一线城市','新一线城市','二线城市','三线及以下']

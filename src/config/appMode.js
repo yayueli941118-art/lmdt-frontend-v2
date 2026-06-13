@@ -40,7 +40,7 @@ export const appProfile = {
   competition: {
     ...common,
     heroBadge: '劳动经济学数字化教学创新展示',
-    heroDesc: '围绕“预测—仿真—解释—反思—评价”的教学闭环，将抽象曲线转化为可操作、可观察、可讨论的课堂实验',
+    heroDesc: '围绕“预测—仿真—解释—反思—评价”的教学闭环，将抽象曲线转化为可操作、可观察、可讨论的学习实验',
     footerSchool: '西南交通大学希望学院 · 商学院',
     footerCourse: '《劳动经济学》数字化教学创新案例',
     footerAuthor: '课程负责人 / 系统设计：黎雅月',

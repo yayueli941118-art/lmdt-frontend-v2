@@ -32,6 +32,12 @@
       </button>
     </div>
 
+    <LearningTaskCard
+      task="调整自然失业率、最低工资、救济和技能错配，观察失业结构如何变化。"
+      observe="重点区分摩擦性、结构性、技术性和周期性失业。"
+      :conclusion="unemploymentConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <div class="cards-row">
         <div class="stat-card" v-for="(v,k) in result.breakdown" :key="k">
@@ -100,6 +106,12 @@
         </button>
       </div>
 
+      <LearningTaskCard
+        task="调整失业人数、岗位空缺和匹配效率，观察搜寻匹配机制。"
+        observe="重点看市场紧张度、求职成功率和稳态失业率。"
+        :conclusion="dmpConclusion"
+      />
+
       <div v-if="dmpResult" class="dmp-layout">
         <div class="cards-row compact">
           <div class="stat-card">
@@ -136,6 +148,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -153,6 +166,24 @@ const loading3 = ref(false); const dmpResult = ref(null)
 let uTimer = null
 let mwTimer = null
 let dmpTimer = null
+
+const unemploymentConclusion = computed(() => {
+  if (!result.value) return ''
+  const labelMap = {
+    frictional: '摩擦性',
+    structural: '结构性',
+    minimum_wage_effect: '最低工资',
+    technological: '技术性',
+    cyclical: '周期性',
+  }
+  const [key, value] = Object.entries(result.value.breakdown).sort((a, b) => b[1] - a[1])[0]
+  return `当前失业结构中，${labelMap[key] || key}失业贡献最高，约为 ${value}%。`
+})
+
+const dmpConclusion = computed(() => {
+  if (!dmpResult.value) return ''
+  return `当前市场紧张度 θ=${dmpResult.value.theta}，求职成功率为 ${dmpResult.value.job_finding_rate}%，稳态失业率为 ${dmpResult.value.steady_unemployment_rate}%。`
+})
 
 const uChart = computed(() => {
   if (!result.value) return {}

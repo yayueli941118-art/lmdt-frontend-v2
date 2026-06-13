@@ -28,6 +28,12 @@
       </button>
     </div>
 
+    <LearningTaskCard
+      task="调整 AI 冲击、技能错配和政策组合，观察贝弗里奇曲线如何移动。"
+      observe="重点看失业率、空缺率和自然失业率之间的缺口。"
+      :conclusion="macroConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <!-- 诊断卡 -->
       <div class="diagnosis-card" :class="'diag-' + result.diagnosis_level.toLowerCase()">
@@ -70,6 +76,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -86,6 +93,12 @@ const policies = [
 ]
 const activePolicies = ref([])
 let debounceTimer = null
+
+const macroConclusion = computed(() => {
+  if (!result.value) return ''
+  const gap = (result.value.u_current - result.value.u_natural).toFixed(1)
+  return `当前失业率为 ${result.value.u_current}%，比自然失业率高 ${gap} 个百分点，诊断结果为：${result.value.diagnosis_text}`
+})
 
 const beveridgeChart = computed(() => {
   if (!result.value) return {}

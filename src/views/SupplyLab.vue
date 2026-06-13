@@ -25,6 +25,12 @@
       </button>
     </div>
 
+    <LearningTaskCard
+      task="调整工资率和闲暇偏好，判断工资上涨是否一定会增加劳动供给。"
+      observe="比较替代效应、收入效应和总效应的方向。"
+      :conclusion="supplyConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <!-- 效应卡片 -->
       <div class="cards-row">
@@ -97,6 +103,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import LearningTaskCard from '../components/LearningTaskCard.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -111,6 +118,14 @@ const beta = ref(0.4)
 const loading = ref(false)
 const result = ref(null)
 let debounceTimer = null
+
+const supplyConclusion = computed(() => {
+  if (!result.value) return ''
+  const e = result.value.effects
+  const direction = e.total_effect_hours > 0 ? '增加' : e.total_effect_hours < 0 ? '减少' : '基本不变'
+  const bend = e.backward_bending ? '，并出现向后弯曲特征' : ''
+  return `当前参数下，劳动供给${direction}${Math.abs(e.total_effect_hours)}小时，主导力量是${e.dominant_effect}${bend}。`
+})
 
 const supplyCurveOption = computed(() => {
   if (!result.value) return {}
