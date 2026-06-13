@@ -73,61 +73,6 @@
             <input type="range" v-model.number="params.exp_peak" min="5" max="40" step="1" @input="debounceFetch" class="slider" />
           </div>
 
-          <div class="param-group">
-            <label class="param-label"><span class="param-icon">✈️</span> 城市迁移模拟</label>
-            <label class="toggle-wrap">
-              <input type="checkbox" v-model="params.migrate" @change="debounceFetch" class="toggle-input" />
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <span class="toggle-text">{{ params.migrate ? '已开启' : '已关闭' }}</span>
-            </label>
-          </div>
-
-          <template v-if="params.migrate">
-            <div class="param-group">
-              <label class="param-label">
-                <span class="param-icon">📅</span> 迁移发生年龄
-                <span class="param-val">{{ params.migrate_age }}岁</span>
-              </label>
-              <input type="range" v-model.number="params.migrate_age" :min="params.edu + 6" max="60" step="1" @input="debounceFetch" class="slider slider-gold" />
-              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:4px"><span>{{ params.edu + 6 }}岁</span><span>60岁</span></div>
-            </div>
-            <div class="param-group">
-              <label class="param-label"><span class="param-icon">💰</span> 月薪溢价
-                <span class="param-val">{{ params.w_diff }}k</span>
-              </label>
-              <input type="range" v-model.number="params.w_diff" min="2" max="30" step="1" @input="debounceFetch" class="slider slider-gold" />
-            </div>
-            <div class="param-group">
-              <label class="param-label"><span class="param-icon">🚚</span> 搬迁成本
-                <span class="param-val">{{ params.c_move }}k</span>
-              </label>
-              <input type="range" v-model.number="params.c_move" min="5" max="80" step="1" @input="debounceFetch" class="slider" />
-            </div>
-            <div class="param-group">
-              <label class="param-label"><span class="param-icon">💆</span> 心理成本
-                <span class="param-val">{{ params.c_psych }}k/年</span>
-              </label>
-              <input type="range" v-model.number="params.c_psych" min="0" max="30" step="1" @input="debounceFetch" class="slider" />
-            </div>
-
-            <!-- 家庭联合迁移 -->
-            <div class="param-group">
-              <label class="param-label"><span class="param-icon">💍</span> 家庭联合迁移</label>
-              <label class="toggle-wrap">
-                <input type="checkbox" v-model="params.family_migrate" @change="debounceFetch" class="toggle-input" />
-                <span class="toggle-track"><span class="toggle-thumb"></span></span>
-                <span class="toggle-text">{{ params.family_migrate ? '已开启' : '已关闭' }}</span>
-              </label>
-            </div>
-            <div v-if="params.family_migrate" class="param-group">
-              <label class="param-label">
-                <span class="param-icon">💔</span> 配偶月薪损失
-                <span class="param-val">{{ params.spouse_loss }}k/月</span>
-              </label>
-              <input type="range" v-model.number="params.spouse_loss" min="2" max="15" step="1" @input="debounceFetch" class="slider slider-red" />
-            </div>
-          </template>
-
           <div v-if="response" class="sidebar-callout" :class="response.metrics.lifetime_premium_pct >= 0 ? 'callout-green' : 'callout-red'">
             <span class="callout-num">{{ response.metrics.lifetime_premium_pct >= 0 ? '+' : '' }}{{ response.metrics.lifetime_premium_pct }}%</span>
             <span class="callout-label">一生总收入溢价</span>
@@ -175,15 +120,6 @@
           </div>
         </div>
 
-        <!-- 迁移 NPV 图表 -->
-        <div v-if="params.migrate && response?.migration?.is_calculated" class="chart-card">
-          <h3 class="chart-subtitle">✈️ 城市迁移 · 净现值累积曲线</h3>
-          <div :class="response.migration.is_worth_it ? 'migration-worth' : 'migration-not-worth'">
-            {{ response.migration.is_worth_it ? '✅ 迁移决策值得 — 净现值为正' : '❌ 迁移决策不值得 — 净现值为负' }}
-          </div>
-          <div ref="migChartDom" class="chart-container chart-container-mig"></div>
-        </div>
-
         <!-- 动态经济学诊断 -->
         <div class="insight-box">
           <!-- 学历溢价 + Signaling -->
@@ -201,20 +137,9 @@
             🔧 <strong>特殊培训 (Specific Training)：</strong>你与企业共同分担了成本与收益。前期你在"交学费"，后期企业为防你跳槽给予了工资补偿（曲线斜率变陡）。这是典型的劳资双方锁定契约。
           </p>
 
-          <!-- 迁移诊断 -->
-          <p v-if="params.migrate && params.migrate_age > 35 && response?.migration && !response.migration.is_worth_it">
-            ⏳ <strong>生命周期约束：</strong>你的迁移投资无法回本。经济学证明，随着年龄增长，回收投资的剩余工作年限锐减。这就是为什么劳动力流动主要集中在青年群体。
-          </p>
-          <p v-else-if="params.migrate && params.family_migrate && response?.migration && !response.migration.is_worth_it">
-            ⚖️ <strong>跟随迁移者效应 (Tied Mover)：</strong>虽然你个人的迁移收益可能为正，但由于配偶的职业中断成本过高，家庭总收益为负。在 HR 实践中，忽视双职工家庭的联动效应，是异地外派失败的核心原因。
-          </p>
-          <p v-else-if="params.migrate && response?.migration?.is_calculated">
-            ✈️ <strong>空间套利 (Spatial Arbitrage)：</strong>{{ response.migration.is_worth_it ? '迁移决策净现值为正——大城市的高工资溢价足以覆盖你的搬迁和心理适应成本，劳动力流动实现了帕累托改进。' : '当前迁移决策净现值为负——工资溢价不足以弥补搬迁成本，建议等待更好的套利窗口。' }}
-          </p>
-
           <!-- 默认提示 -->
-          <p v-if="!params.train_type.includes('一般') && !params.train_type.includes('特殊') && !(params.edu >= 16 && response?.metrics?.lifetime_premium_pct > 30) && !params.migrate">
-            💡 <strong>你的职业决策诊断：</strong>拖动左侧滑块，系统将根据明瑟工资方程、人力资本理论和迁移NPV模型，为你生成专业的劳动经济学诊断报告。
+          <p v-if="!params.train_type.includes('一般') && !params.train_type.includes('特殊') && !(params.edu >= 16 && response?.metrics?.lifetime_premium_pct > 30)">
+            💡 <strong>你的人力资本决策诊断：</strong>拖动左侧滑块，系统将根据明瑟工资方程、人力资本理论和教育投资回报模型，为你生成专业的劳动经济学诊断报告。
           </p>
         </div>
 
@@ -261,8 +186,7 @@ const trainTypes = ['无额外培训', '一般培训 (通用技能)', '特殊培
 
 const params = reactive({
   edu: 16, exp_peak: 40, train_type: '无额外培训',
-  disc: 10.0, migrate: false, migrate_age: 22, w_diff: 10.0, c_move: 25.0, c_psych: 8.0,
-  family_migrate: false, spouse_loss: 3.0,
+  disc: 10.0,
 })
 
 const response = ref(null)
@@ -277,15 +201,12 @@ const fetchData = async () => {
     response.value = data
     await nextTick()
     renderChart()
-    if (params.migrate) renderMigChart()
   } catch (e) { console.error('API error:', e) }
 }
 
 // ── ECharts 图表 ──────────────────────────────
 const chartDom = ref(null)
-const migChartDom = ref(null)
 let chartInstance = null
-let migChartInstance = null
 
 const renderChart = () => {
   if (!chartDom.value || !response.value) return
@@ -368,25 +289,10 @@ const renderChart = () => {
   chartInstance.setOption(option, { notMerge: true })
 }
 
-// ── 迁移 NPV 图表 ─────────────────────────────
-const renderMigChart = () => {
-  if (!migChartDom.value || !response.value?.migration?.is_calculated) return
-  if (!migChartInstance) migChartInstance = echarts.init(migChartDom.value)
-  const m = response.value.migration
-  migChartInstance.setOption({
-    backgroundColor: 'transparent',
-    grid: { left: '3%', right: '4%', top: 30, bottom: 30, containLabel: true },
-    xAxis: { type: 'value', name: '年份', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } } },
-    yAxis: { type: 'value', name: '累计净现值 (k)', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } } },
-    tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(148,163,184,0.2)', textStyle: { color: '#f1f5f9' } },
-    series: [{ name: '迁移 NPV', type: 'line', data: m.cumulative_npv, lineStyle: { width: 2.5, color: '#f59e0b' }, itemStyle: { color: '#f59e0b' }, areaStyle: { color: 'rgba(245,158,11,0.08)' }, smooth: true, symbol: 'none' }],
-  }, { notMerge: true })
-}
-
 // ── Resize ────────────────────────────────────
-const handleResize = () => { chartInstance?.resize(); migChartInstance?.resize() }
+const handleResize = () => { chartInstance?.resize() }
 onMounted(() => window.addEventListener('resize', handleResize))
-onUnmounted(() => { window.removeEventListener('resize', handleResize); chartInstance?.dispose(); migChartInstance?.dispose() })
+onUnmounted(() => { window.removeEventListener('resize', handleResize); chartInstance?.dispose() })
 
 watch(gateUnlocked, (val) => { if (val) nextTick(() => debounceFetch()) })
 </script>
@@ -558,9 +464,6 @@ watch(gateUnlocked, (val) => { if (val) nextTick(() => debounceFetch()) })
 .legend-patch-green { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); }
 
 .chart-subtitle { font-size: 18px; font-weight: 700; margin: 0 0 12px; }
-.migration-worth { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #10b981; margin-bottom: 12px; display: inline-block; }
-.migration-not-worth { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #ef4444; margin-bottom: 12px; display: inline-block; }
-
 .insight-box {
   background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
   border-radius: 12px; padding: 18px 20px; margin-bottom: 12px;
