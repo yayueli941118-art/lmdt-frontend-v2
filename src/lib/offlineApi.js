@@ -275,7 +275,9 @@ function individual(p) {
   const selectedDisc = selected.map(v => v < 0 ? v : v * (1 - disc / 100))
   const premium = ((selected.reduce((a, b) => a + b, 0) / base.reduce((a, b) => a + b, 0)) - 1) * 100
   const migrationYears = p.migrate ? Array.from({ length: Math.max(0, 60 - Number(p.migrate_age || 28)) }, (_, i) => Number(p.migrate_age || 28) + i + 1) : []
-  const migrationNpv = migrationYears.map((_, i) => round((Number(p.w_diff || 0) * 12 - Number(p.c_psych || 0)) * (i + 1) - Number(p.c_move || 0)))
+  const spouseAnnualLoss = p.family_migrate ? Number(p.spouse_loss || 0) * 12 : 0
+  const annualNet = Number(p.w_diff || 0) * 12 - Number(p.c_psych || 0) - spouseAnnualLoss
+  const migrationNpv = migrationYears.map((_, i) => round(annualNet * (i + 1) - Number(p.c_move || 0)))
   return {
     status: 'success',
     metrics: { lifetime_premium_pct: round(premium), discrimination_loss_pct: disc, vs_china_baseline_pct: 0, china_baseline_value: 9200, breakeven_age: 34, crossover_age: gradAge, irr_pct: round(Math.max(0, premium / 12)) },
