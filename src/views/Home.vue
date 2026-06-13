@@ -95,7 +95,7 @@
     <!-- ===== 深度教学专题 ===== -->
     <section id="chapters" class="section">
       <div class="section-header">
-        <span class="section-tag">教学专题</span>
+        <span class="section-tag">专题实验</span>
         <h2 class="section-title">九章全覆盖 · 按教材章节索引</h2>
       </div>
       <div class="mini-grid">

@@ -105,7 +105,7 @@
     </div>
 
     <section v-if="decision" class="teaching-note">
-      <strong>课堂讲解抓手：</strong>
+      <strong>思考：</strong>
       迁移不是“工资高就去”，而是空间套利的净现值问题。年轻、工资溢价高、一次性成本低、家庭联动损失小，NPV 曲线更快穿过 0 线；反之，即使工资上涨，也可能因为回收期太短或家庭成本太高而不迁移。
     </section>
   </div>

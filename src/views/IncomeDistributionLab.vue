@@ -73,7 +73,7 @@
 
     <section class="insight-panel">
       <div>
-        <span class="panel-label">教学提示</span>
+        <span class="panel-label">观察提示</span>
         <p>当技能溢价和平台收入集中度上升时，曲线向右下方弯曲，说明同样比例人口获得的累计收入下降；提高教育机会与转移支付会把曲线推回平等线附近。</p>
       </div>
       <div>

@@ -146,7 +146,7 @@
         <!-- 课程思政：新人力资本理论 -->
         <div class="insight-box insight-sizheng">
           <p>
-            🏛️ <strong>课堂追问：人力资本投资的社会意义</strong>
+            🏛️ <strong>思考：人力资本投资的社会意义</strong>
           </p>
           <p>
             Schultz、Becker 与 Mincer 奠定了“教育即投资”的经典框架。但在工资曲线之外，学生还可以继续追问：教育真正提升的，是否只是一张文凭和几个工资系数？
