@@ -58,25 +58,38 @@
         <label>资本范围 <span class="val">100~{{ Kmax }}</span></label>
         <input type="range" v-model.number="Kmax" min="500" max="5000" step="100">
       </div>
-      <button class="btn-run" style="background:linear-gradient(135deg,#06b6d4,#0891b2)" @click="runFactor" :disabled="loading2">
-        {{ loading2 ? '实时更新中…' : '刷新要素配置' }}
+      <button class="btn-run secondary" @click="runFactor" :disabled="loading2">
+        {{ loading2 ? '更新中…' : '手动刷新' }}
       </button>
     </div>
 
     <div v-if="factorResult" class="lab-results">
-      <div class="cards-row">
-        <div class="stat-card">
+      <div class="factor-summary">
+        <div class="stat-card highlight">
           <span class="stat-label">最优 K/L 比</span>
           <span class="stat-val">{{ factorResult.optimal_k_l }}</span>
+          <span class="stat-sub">当前 L={{ L }}，推荐资本约 {{ suggestedCapital }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">最大产出</span>
           <span class="stat-val">{{ Math.max(...factorResult.output).toFixed(0) }}</span>
+          <span class="stat-sub">资本继续增加仍会增产，但效率递减</span>
+        </div>
+        <div class="summary-copy">
+          <strong>怎么读：</strong>
+          先看蓝色产出曲线找到规模变化，再看下面两条边际产品线判断“追加资本是否还划算”。当 MPK 逐步走低时，学生能直观看到边际报酬递减。
         </div>
       </div>
-      <div class="chart-card">
-        <h3>产出 & 边际产品 vs 资本投入</h3>
-        <v-chart :option="factorChart" autoresize style="height:300px" />
+
+      <div class="factor-chart-grid">
+        <div class="chart-card">
+          <h3>产出随资本投入增加</h3>
+          <v-chart :option="outputChart" autoresize style="height:280px" />
+        </div>
+        <div class="chart-card">
+          <h3>边际产品变化</h3>
+          <v-chart :option="marginalChart" autoresize style="height:280px" />
+        </div>
       </div>
 
       <p class="policy-note">
@@ -122,22 +135,44 @@ const demandChart = computed(() => {
   }
 })
 
-const factorChart = computed(() => {
+const suggestedCapital = computed(() => {
+  if (!factorResult.value) return 0
+  return Math.round(Number(factorResult.value.optimal_k_l || 0) * L.value)
+})
+
+const outputChart = computed(() => {
   if (!factorResult.value) return {}
   const r = factorResult.value
   return {
     backgroundColor: 'transparent',
-    grid: { top: 20, right: 60, bottom: 30, left: 50 },
-    legend: { textStyle: { color: '#666' }, data: ['产出', 'MPL', 'MPK'] },
-    xAxis: { name: '资本 K', nameTextStyle: { color: '#888' }, axisLabel: { color: '#666' }, data: r.capital.map(String) },
-    yAxis: [{ type: 'value', name: '产出', nameTextStyle: { color: '#888' }, axisLabel: { color: '#666' } },
-            { type: 'value', name: '边际产品', nameTextStyle: { color: '#888' }, axisLabel: { color: '#666' } }],
+    grid: { top: 26, right: 18, bottom: 42, left: 54 },
+    xAxis: { name: '资本 K', nameGap: 24, nameTextStyle: { color: '#64748b' }, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' }, data: r.capital.map(String) },
+    yAxis: { name: '产出', nameTextStyle: { color: '#64748b' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.12)' } }, axisLabel: { color: '#94a3b8' } },
+    tooltip: { trigger: 'axis' },
+    series: [{
+      name: '产出',
+      type: 'bar',
+      data: r.output,
+      barMaxWidth: 28,
+      itemStyle: { color: '#2563eb', borderRadius: [5, 5, 0, 0] },
+    }]
+  }
+})
+
+const marginalChart = computed(() => {
+  if (!factorResult.value) return {}
+  const r = factorResult.value
+  return {
+    backgroundColor: 'transparent',
+    grid: { top: 40, right: 20, bottom: 42, left: 48 },
+    legend: { top: 0, right: 0, itemWidth: 12, itemHeight: 8, textStyle: { color: '#94a3b8' }, data: ['MPL', 'MPK'] },
+    xAxis: { name: '资本 K', nameGap: 24, nameTextStyle: { color: '#64748b' }, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' }, data: r.capital.map(String) },
+    yAxis: { name: '边际产品', nameTextStyle: { color: '#64748b' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.12)' } }, axisLabel: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
     series: [
-      { name: '产出', type: 'bar', data: r.output, itemStyle: { color: 'rgba(59,130,246,0.3)' } },
-      { name: 'MPL', type: 'line', yAxisIndex: 1, data: r.mpl, lineStyle: { color: '#06b6d4', width: 2 }, symbol: 'none' },
-      { name: 'MPK', type: 'line', yAxisIndex: 1, data: r.mpk, lineStyle: { color: '#f59e0b', width: 2 }, symbol: 'none' },
-    ]
+      { name: 'MPL', type: 'line', data: r.mpl, smooth: true, lineStyle: { color: '#06b6d4', width: 3 }, symbol: 'none' },
+      { name: 'MPK', type: 'line', data: r.mpk, smooth: true, lineStyle: { color: '#f59e0b', width: 3 }, symbol: 'none' },
+    ],
   }
 })
 
@@ -197,22 +232,29 @@ onMounted(() => {
 .control-group select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.2); background: #1e293b; color: #e2e8f0; font-size: 13px; }
 .control-group .hint { font-size: 11px; color: #64748b; margin-top: 4px; }
 .btn-run { padding: 12px 28px; border: none; border-radius: 10px; background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: all .3s; white-space: nowrap; }
+.btn-run.secondary { background: rgba(6,182,212,0.14); border: 1px solid rgba(6,182,212,0.28); color: #67e8f9; }
 .btn-run:hover { box-shadow: 0 8px 24px rgba(6,182,212,.35); transform: translateY(-1px); }
 .btn-run:disabled { opacity: .5; cursor: not-allowed; }
 
 .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
 .stat-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1); border-radius: 12px; padding: 16px; text-align: center; }
+.stat-card.highlight { border-color: rgba(6,182,212,0.28); background: rgba(6,182,212,0.08); }
 .stat-label { display: block; font-size: 12px; color: #64748b; margin-bottom: 4px; }
 .stat-val { font-size: 22px; font-weight: 900; color: #f1f5f9; display: block; }
 .stat-sub { display: block; font-size: 12px; color: #64748b; margin-top: 2px; }
+.factor-summary { display: grid; grid-template-columns: 180px 180px 1fr; gap: 12px; align-items: stretch; margin-bottom: 20px; }
+.summary-copy { min-height: 100%; border-radius: 12px; padding: 16px 18px; color: #94a3b8; line-height: 1.7; font-size: 13px; background: rgba(15,23,42,0.58); border: 1px solid rgba(148,163,184,0.1); }
+.summary-copy strong { color: #e2e8f0; }
+.factor-chart-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 16px; }
 
-.chart-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+.chart-card { box-sizing: border-box; min-width: 0; background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
 .chart-card h3 { color: #94a3b8; font-size: 14px; font-weight: 700; margin: 0 0 12px; }
 
 .section-divider { display: flex; align-items: center; gap: 16px; margin: 48px 0 24px; color: #94a3b8; font-size: 15px; font-weight: 700; }
 .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(148,163,184,0.08); }
 .policy-note { margin: -8px 0 24px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.16); border-radius: 12px; padding: 14px 16px; }
 
+@media (max-width: 900px) { .factor-summary, .factor-chart-grid { grid-template-columns: 1fr; } }
 @media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } }
+@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } .factor-summary { gap: 10px; } }
 </style>
