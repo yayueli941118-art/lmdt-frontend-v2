@@ -2,7 +2,8 @@
   <div class="app-shell">
     <!-- 桌面端顶部导航 -->
     <nav class="desktop-nav">
-      <router-link to="/" class="nav-brand">LMDT 2.0</router-link>
+      <router-link to="/" class="nav-brand">{{ appProfile.brandShort }}</router-link>
+      <span v-if="modeLabel" class="mode-badge">{{ modeLabel }}</span>
       <router-link to="/lab/individual">个体实验室</router-link>
       <router-link to="/lab/enterprise">企业市场</router-link>
       <router-link to="/lab/macro">宏观政策</router-link>
@@ -39,6 +40,12 @@
     </nav>
   </div>
 </template>
+
+<script setup>
+import { appProfile, modeLabel } from './config/appMode'
+
+document.title = `${appProfile.brandShort} · ${appProfile.brandFull}`
+</script>
 
 <style>
 /* ── 全局重置 ─────────────────────────── */
@@ -80,6 +87,17 @@ body {
   margin-right: 12px; letter-spacing: -0.5px;
 }
 .desktop-nav .nav-brand:hover { background: transparent; color: #60a5fa; }
+.mode-badge {
+  margin-right: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #67e8f9;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.22);
+  white-space: nowrap;
+}
 
 .main-content { flex: 1; }
 

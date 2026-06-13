@@ -7,7 +7,7 @@
         <span class="banner-sub">Macro Lab · Beveridge Curve</span>
       </div>
       <div class="banner-right">
-        西南交通大学希望学院 · 黎雅月
+        {{ macroIdentity }}
       </div>
     </header>
 
@@ -69,9 +69,11 @@ import VChart from 'vue-echarts'
 import * as echarts from 'echarts'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import { appProfile, isAnonymous } from '../config/appMode'
 
 // 注册 echarts 组件
 VChart.registerECharts(echarts)
+const macroIdentity = isAnonymous ? appProfile.footerCourse : `${appProfile.footerSchool} · ${appProfile.footerAuthor.replace('课程负责人 / 系统设计：', '')}`
 
 // ==========================================
 // 状态

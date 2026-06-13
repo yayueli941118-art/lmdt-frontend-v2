@@ -10,15 +10,14 @@
       <div class="hero-content">
         <div class="hero-badge">
           <span class="hero-badge-dot"></span>
-          西南交通大学希望学院 · 商学院
+          {{ appProfile.heroBadge }}
         </div>
         <h1 class="hero-title">
-          <span class="hero-title-line">劳动力市场</span>
-          <span class="hero-title-line hero-title-accent">数字孪生沙盘</span>
+          <span class="hero-title-line">{{ appProfile.titleLines[0] }}</span>
+          <span class="hero-title-line hero-title-accent">{{ appProfile.titleLines[1] }}</span>
         </h1>
         <p class="hero-desc">
-          基于劳动经济学核心理论的交互式仿真平台，将贝弗里奇曲线、明瑟方程、CES 生产函数<br />
-          等经典模型转化为可视化、可调控的数字化实验场景
+          {{ appProfile.heroDesc }}
         </p>
         <div class="hero-actions">
           <button class="hero-btn hero-btn-primary" @click="scrollToLabs">
@@ -45,6 +44,13 @@
             <span class="hero-stat-label">专业定制</span>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section v-if="isCompetition || isAnonymous" class="showcase-strip">
+      <div class="showcase-item" v-for="step in showcaseSteps" :key="step.title">
+        <strong>{{ step.title }}</strong>
+        <span>{{ step.desc }}</span>
       </div>
     </section>
 
@@ -215,13 +221,13 @@
     <footer class="footer">
       <div class="footer-main">
         <div class="footer-brand">
-          <span class="footer-logo">LMDT</span>
-          <span class="footer-version">v2.0.1 · build 2026.05</span>
+          <span class="footer-logo">{{ appProfile.brandShort }}</span>
+          <span class="footer-version">{{ appProfile.footerVersion }}</span>
         </div>
         <div class="footer-info">
-          <p class="footer-school">西南交通大学希望学院 · 商学院</p>
-          <p class="footer-course">《劳动经济学》核心课程 · 人力资源管理专业</p>
-          <p class="footer-author">课程负责人 / 系统设计：黎雅月</p>
+          <p class="footer-school">{{ appProfile.footerSchool }}</p>
+          <p class="footer-course">{{ appProfile.footerCourse }}</p>
+          <p class="footer-author">{{ appProfile.footerAuthor }}</p>
         </div>
         <div class="footer-meta">
           <p>12 个交互式实验模块 · 9 章教材全覆盖</p>
@@ -232,14 +238,16 @@
       </div>
       <div class="footer-divider"></div>
       <div class="footer-bottom">
-        <span>© 2026 LMDT · Labor Market Digital Twin</span>
-        <span>Powered by Vue 3 + FastAPI + Render/Vercel</span>
+        <span>© 2026 {{ appProfile.brandShort }} · Labor Market Digital Twin</span>
+        <span>{{ appProfile.footerPowered }}</span>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup>
+import { appProfile, isAnonymous, isCompetition, showcaseSteps } from '../config/appMode'
+
 const scrollToLabs = () => {
   document.getElementById('labs')?.scrollIntoView({ behavior: 'smooth' })
 }
@@ -328,6 +336,34 @@ const scrollToChapters = () => {
 }
 .hero-content {
   text-align: center; max-width: 820px;
+}
+.showcase-strip {
+  max-width: 1120px;
+  margin: -80px auto 80px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+.showcase-item {
+  background: rgba(30, 41, 59, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 10px;
+  padding: 16px;
+}
+.showcase-item strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.showcase-item span {
+  display: block;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.65;
 }
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -625,6 +661,7 @@ const scrollToChapters = () => {
   .footer-main { grid-template-columns: 1fr; gap: 24px; }
   .footer-meta { text-align: left; }
   .hero { padding: 60px 16px; min-height: auto; }
+  .showcase-strip { grid-template-columns: 1fr; margin: -24px auto 40px; padding: 0 16px; }
   .section { padding: 40px 16px; }
   .matrix-table { overflow-x: auto; }
   .matrix-table table { min-width: 600px; }
