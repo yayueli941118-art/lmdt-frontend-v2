@@ -24,7 +24,7 @@
         </div>
       </div>
       <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '计算中…' : '▶ 运行贝弗里奇模拟' }}
+        {{ loading ? '实时更新中…' : '刷新贝弗里奇模拟' }}
       </button>
     </div>
 
@@ -58,12 +58,16 @@
         <h3>贝弗里奇曲线 (UV图)</h3>
         <v-chart :option="beveridgeChart" autoresize style="height:340px" />
       </div>
+
+      <p class="policy-note">
+        课堂追问：贝弗里奇曲线外移时，问题往往不只是“岗位少”，还包括技能、地区和信息错配。就业优先政策的落点，可以具体化为培训补贴、公共就业服务和岗位信息平台。
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
@@ -81,6 +85,7 @@ const policies = [
   { value: '技能重塑补贴', label: '技能重塑补贴' },
 ]
 const activePolicies = ref([])
+let debounceTimer = null
 
 const beveridgeChart = computed(() => {
   if (!result.value) return {}
@@ -113,6 +118,14 @@ async function run() {
   } catch(e) { console.error(e) }
   finally { loading.value = false }
 }
+
+function scheduleRun() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(run, 220)
+}
+
+watch([aiRisk, mismatchIndex, activePolicies], scheduleRun, { deep: true })
+onMounted(run)
 </script>
 
 <style scoped>
@@ -149,5 +162,7 @@ async function run() {
 .stat-val { font-size: 22px; font-weight: 900; color: #f1f5f9; display: block; }
 .chart-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
 .chart-card h3 { color: #94a3b8; font-size: 14px; font-weight: 700; margin: 0 0 12px; }
-@media (max-width: 768px) { .cards-row { grid-template-columns: repeat(2, 1fr); } }
+.policy-note { margin: -8px 0 24px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.16); border-radius: 12px; padding: 14px 16px; }
+@media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .diagnosis-card { align-items: flex-start; flex-direction: column; } .cards-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } }
 </style>

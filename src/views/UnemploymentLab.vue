@@ -28,7 +28,7 @@
         <input type="range" v-model.number="aiRisk" min="0" max="100" step="5">
       </div>
       <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '…' : '▶ 失业率模拟' }}
+        {{ loading ? '实时更新中…' : '刷新失业率' }}
       </button>
     </div>
 
@@ -57,7 +57,7 @@
           <input type="range" v-model.number="employment" min="100" max="5000" step="50">
         </div>
         <button class="btn-run" style="background:linear-gradient(135deg,#ef4444,#dc2626)" @click="runMinWage" :disabled="loading2">
-          {{ loading2 ? '…' : '▶ 冲击分析' }}
+          {{ loading2 ? '实时更新中…' : '刷新冲击分析' }}
         </button>
       </div>
 
@@ -96,7 +96,7 @@
           <input type="range" v-model.number="dmpSeparation" min="0.005" max="0.08" step="0.005">
         </div>
         <button class="btn-run dmp-btn" @click="runDmp" :disabled="loading3">
-          {{ loading3 ? '…' : '▶ 匹配模拟' }}
+          {{ loading3 ? '实时更新中…' : '刷新匹配模拟' }}
         </button>
       </div>
 
@@ -124,13 +124,16 @@
           <v-chart :option="dmpChart" autoresize style="height:280px" />
         </div>
         <p class="policy-note">{{ dmpResult.diagnosis }}</p>
+        <p class="policy-note">
+          课堂追问：降低失业率不只靠压低工资。公共就业服务、职业培训和岗位信息透明化，会直接提高匹配效率，让“有人找不到工作、企业招不到人”的矛盾更容易被学生看见。
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
@@ -147,6 +150,9 @@ const avgWage = ref(54); const employment = ref(870)
 const loading2 = ref(false); const mwResult = ref(null)
 const dmpUnemployed = ref(120); const dmpVacancies = ref(80); const dmpEfficiency = ref(0.65); const dmpSeparation = ref(0.025)
 const loading3 = ref(false); const dmpResult = ref(null)
+let uTimer = null
+let mwTimer = null
+let dmpTimer = null
 
 const uChart = computed(() => {
   if (!result.value) return {}
@@ -213,6 +219,33 @@ async function runDmp() {
   } catch(e) { console.error(e) }
   finally { loading3.value = false }
 }
+
+function scheduleRun() {
+  clearTimeout(uTimer)
+  uTimer = setTimeout(run, 220)
+}
+
+function scheduleMinWage() {
+  clearTimeout(mwTimer)
+  mwTimer = setTimeout(runMinWage, 220)
+}
+
+function scheduleDmp() {
+  clearTimeout(dmpTimer)
+  dmpTimer = setTimeout(runDmp, 220)
+}
+
+watch([naturalRate, minWage, benefit, mismatch, aiRisk], () => {
+  scheduleRun()
+  scheduleMinWage()
+})
+watch([avgWage, employment], scheduleMinWage)
+watch([dmpUnemployed, dmpVacancies, dmpEfficiency, dmpSeparation], scheduleDmp)
+onMounted(() => {
+  run()
+  runMinWage()
+  runDmp()
+})
 </script>
 
 <style scoped>
@@ -241,5 +274,6 @@ async function runDmp() {
 .section-divider { display: flex; align-items: center; gap: 16px; margin: 36px 0 20px; color: #94a3b8; font-size: 15px; font-weight: 700; }
 .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(148,163,184,0.08); }
 .policy-note { margin: -8px 0 28px; padding: 14px 16px; border-radius: 10px; color: #cbd5e1; background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.18); line-height: 1.7; font-size: 14px; }
-@media (max-width: 768px) { .cards-row, .cards-row.compact { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row, .cards-row.compact { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .cards-row, .cards-row.compact { grid-template-columns: 1fr; } .chart-card { padding: 14px; } }
 </style>

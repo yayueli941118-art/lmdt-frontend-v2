@@ -34,7 +34,7 @@
         <input type="range" v-model.number="spouseLoss" min="0" max="120000" step="5000">
       </div>
       <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '计算中...' : '重新模拟' }}
+        {{ loading ? '实时更新中...' : '刷新模拟' }}
       </button>
     </section>
 

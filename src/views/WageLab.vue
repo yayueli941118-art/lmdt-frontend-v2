@@ -28,7 +28,7 @@
         </select>
       </div>
       <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '计算中…' : '▶ 模拟工资分布' }}
+        {{ loading ? '实时更新中…' : '刷新工资分布' }}
       </button>
     </div>
 
@@ -83,7 +83,7 @@
           <label><input type="checkbox" v-model="unionMember"> 工会成员</label>
         </div>
         <button class="btn-run" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)" @click="runMincer" :disabled="loading2">
-          {{ loading2 ? '…' : '▶ 扩展明瑟方程' }}
+          {{ loading2 ? '实时更新中…' : '刷新明瑟方程' }}
         </button>
       </div>
 
@@ -93,12 +93,16 @@
           <span class="decomp-val">{{ typeof v === 'number' ? v.toFixed(3) : v }}</span>
         </div>
       </div>
+
+      <p class="policy-note">
+        课堂追问：工资差距要先拆开看，哪些来自教育和经验回报，哪些来自行业、地区与制度性差异。共同富裕不是抹平激励，而是让努力和能力有更公平的回报通道。
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
@@ -113,6 +117,8 @@ const edu = ref(16); const exp = ref(5); const industry = ref('信息技术'); c
 const loading = ref(false); const result = ref(null)
 const gender = ref('all'); const ownership = ref('private'); const unionMember = ref(false)
 const loading2 = ref(false); const mincerResult = ref(null)
+let wageTimer = null
+let mincerTimer = null
 
 const industries = ['信息技术','金融业','制造业','建筑业','批发零售','住宿餐饮','教育','医疗','交通运输','农业']
 const regions = ['一线城市','新一线城市','二线城市','三线及以下']
@@ -163,6 +169,26 @@ async function runMincer() {
   } catch(e) { console.error(e) }
   finally { loading2.value = false }
 }
+
+function scheduleWage() {
+  clearTimeout(wageTimer)
+  wageTimer = setTimeout(run, 220)
+}
+
+function scheduleMincer() {
+  clearTimeout(mincerTimer)
+  mincerTimer = setTimeout(runMincer, 220)
+}
+
+watch([edu, exp, industry, region], () => {
+  scheduleWage()
+  scheduleMincer()
+})
+watch([gender, ownership, unionMember], scheduleMincer)
+onMounted(() => {
+  run()
+  runMincer()
+})
 </script>
 
 <style scoped>
@@ -196,6 +222,8 @@ async function runMincer() {
 .decomp-item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid rgba(148,163,184,0.04); }
 .decomp-key { color: #64748b; text-transform: capitalize; }
 .decomp-val { color: #06b6d4; font-weight: 600; }
+.policy-note { margin: -4px 0 24px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.16); border-radius: 12px; padding: 14px 16px; }
 
-@media (max-width: 768px) { .cards-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } .decomp-item { align-items: flex-start; flex-direction: column; gap: 3px; } }
 </style>

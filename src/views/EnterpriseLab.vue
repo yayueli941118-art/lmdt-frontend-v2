@@ -25,7 +25,7 @@
         </select>
       </div>
       <button class="btn-run" @click="runDemand" :disabled="loading">
-        {{ loading ? '计算中…' : '▶ 计算需求曲线' }}
+        {{ loading ? '实时更新中…' : '刷新需求曲线' }}
       </button>
     </div>
 
@@ -59,7 +59,7 @@
         <input type="range" v-model.number="Kmax" min="500" max="5000" step="100">
       </div>
       <button class="btn-run" style="background:linear-gradient(135deg,#06b6d4,#0891b2)" @click="runFactor" :disabled="loading2">
-        {{ loading2 ? '计算中…' : '▶ 要素配置分析' }}
+        {{ loading2 ? '实时更新中…' : '刷新要素配置' }}
       </button>
     </div>
 
@@ -78,12 +78,16 @@
         <h3>产出 & 边际产品 vs 资本投入</h3>
         <v-chart :option="factorChart" autoresize style="height:300px" />
       </div>
+
+      <p class="policy-note">
+        课堂追问：技术进步不只是“机器替代人”。当资本和劳动形成互补，企业的关键选择会转向岗位再设计、技能培训和人机协同，让效率提升转化为更高质量的就业。
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
@@ -97,6 +101,8 @@ use([LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, Canv
 const K = ref(500); const sigma = ref(1.2); const techType = ref('中性技术'); const loading = ref(false)
 const L = ref(100); const Kmax = ref(2000); const loading2 = ref(false)
 const demandResult = ref(null); const factorResult = ref(null)
+let demandTimer = null
+let factorTimer = null
 
 const demandChart = computed(() => {
   if (!demandResult.value) return {}
@@ -157,6 +163,23 @@ async function runFactor() {
   } catch(e) { console.error(e) }
   finally { loading2.value = false }
 }
+
+function scheduleDemand() {
+  clearTimeout(demandTimer)
+  demandTimer = setTimeout(runDemand, 220)
+}
+
+function scheduleFactor() {
+  clearTimeout(factorTimer)
+  factorTimer = setTimeout(runFactor, 220)
+}
+
+watch([K, sigma, techType], scheduleDemand)
+watch([L, Kmax, sigma], scheduleFactor)
+onMounted(() => {
+  runDemand()
+  runFactor()
+})
 </script>
 
 <style scoped>
@@ -188,6 +211,8 @@ async function runFactor() {
 
 .section-divider { display: flex; align-items: center; gap: 16px; margin: 48px 0 24px; color: #94a3b8; font-size: 15px; font-weight: 700; }
 .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(148,163,184,0.08); }
+.policy-note { margin: -8px 0 24px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.16); border-radius: 12px; padding: 14px 16px; }
 
-@media (max-width: 768px) { .cards-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } }
 </style>

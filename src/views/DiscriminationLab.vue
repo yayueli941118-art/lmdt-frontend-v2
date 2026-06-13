@@ -18,7 +18,7 @@
         <div class="hint">A组与B组的平均受教育年限差异</div>
       </div>
       <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '计算中…' : '▶ 运行 Oaxaca-Blinder 分解' }}
+        {{ loading ? '实时更新中…' : '刷新分解' }}
       </button>
     </div>
 
@@ -83,12 +83,16 @@
           </tbody>
         </table>
       </div>
+
+      <p class="policy-note">
+        课堂追问：歧视不是有效率的市场选择，它会压低一部分劳动者的人力资本回报，也会让企业错过真实生产率。公平就业政策的意义，可以从这里转化为可观察的工资分解。
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
@@ -103,6 +107,7 @@ const discPct = ref(20)
 const eduGap = ref(2)
 const loading = ref(false)
 const result = ref(null)
+let debounceTimer = null
 
 const decompChart = computed(() => {
   if (!result.value) return {}
@@ -142,11 +147,12 @@ const varChart = computed(() => {
 })
 
 function generateData() {
-  const n = 10
-  const eduA = Array(n).fill(0).map(() => Math.round(12 + Math.random() * (16 - 12 - eduGap.value)))
-  const eduB = Array(n).fill(0).map(() => Math.round(12 + Math.random() * (16 - 12 + eduGap.value * 0.5)))
-  const expA = Array(n).fill(0).map(() => Math.round(3 + Math.random() * 15))
-  const expB = Array(n).fill(0).map(() => Math.round(3 + Math.random() * 15))
+  const n = 12
+  const wave = i => (Math.sin(i * 1.91) + 1) / 2
+  const eduA = Array(n).fill(0).map((_, i) => Math.round(12 + wave(i) * Math.max(0, 4 - eduGap.value)))
+  const eduB = Array(n).fill(0).map((_, i) => Math.round(12 + eduGap.value + wave(i + 3) * 4))
+  const expA = Array(n).fill(0).map((_, i) => Math.round(3 + wave(i + 7) * 15))
+  const expB = Array(n).fill(0).map((_, i) => Math.round(3 + wave(i + 11) * 15))
   const baseA = 5000, baseB = 6000
   const wageA = eduA.map((e,i) => Math.round((baseA + e * 200 + expA[i] * 150) * (1 - discPct.value / 100)))
   const wageB = eduB.map((e,i) => Math.round(baseB + e * 350 + expB[i] * 200))
@@ -162,6 +168,14 @@ async function run() {
   } catch (e) { console.error(e) }
   finally { loading.value = false }
 }
+
+function scheduleRun() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(run, 220)
+}
+
+watch([discPct, eduGap], scheduleRun)
+onMounted(run)
 </script>
 
 <style scoped>
@@ -200,5 +214,7 @@ async function run() {
 .coef-table { width: 100%; border-collapse: collapse; }
 .coef-table th, .coef-table td { padding: 8px 12px; text-align: right; font-size: 12px; color: #94a3b8; border-bottom: 1px solid rgba(148,163,184,0.06); }
 .coef-table th:first-child, .coef-table td:first-child { text-align: left; color: #3b82f6; font-weight: 700; }
-@media (max-width: 768px) { .cards-row { grid-template-columns: repeat(2, 1fr); } .group-compare { flex-direction: column; } }
+.policy-note { margin: -8px 0 24px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.16); border-radius: 12px; padding: 14px 16px; }
+@media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row { grid-template-columns: repeat(2, 1fr); } .group-compare { flex-direction: column; align-items: stretch; } .vs-tag { text-align: center; } .coef-table { min-width: 560px; } .chart-card { overflow-x: auto; } }
+@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } }
 </style>

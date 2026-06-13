@@ -21,7 +21,7 @@
         <div class="hint">β 越大 → 越偏好闲暇 → 劳动供给越少</div>
       </div>
       <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '计算中…' : '▶ 运行模拟' }}
+        {{ loading ? '实时更新中…' : '刷新模拟' }}
       </button>
     </div>
 
@@ -85,12 +85,16 @@
           <div class="point-row"><span>闲暇</span><span>{{ result.point_C.leisure_hours }}h</span></div>
         </div>
       </div>
+
+      <p class="policy-note">
+        课堂追问：工资提高不一定意味着劳动时间无限增加。体面劳动既关注收入，也关注休息、家庭责任和劳动者福祉，这正是劳动供给曲线背后的现实含义。
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import VChart from 'vue-echarts'
@@ -106,6 +110,7 @@ const wage_new = ref(54)
 const beta = ref(0.4)
 const loading = ref(false)
 const result = ref(null)
+let debounceTimer = null
 
 const supplyCurveOption = computed(() => {
   if (!result.value) return {}
@@ -149,6 +154,14 @@ async function run() {
     loading.value = false
   }
 }
+
+function scheduleRun() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(run, 220)
+}
+
+watch([wage_initial, wage_new, beta], scheduleRun)
+onMounted(run)
 </script>
 
 <style scoped>
@@ -188,5 +201,7 @@ async function run() {
 .point-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #94a3b8; }
 .point-row span:last-child { color: #e2e8f0; font-weight: 600; }
 .point-arrow { font-size: 20px; color: #64748b; flex-shrink: 0; }
-@media (max-width: 768px) { .cards-row { grid-template-columns: repeat(2, 1fr); } .three-points { flex-direction: column; } }
+.policy-note { margin: -16px 0 36px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.16); border-radius: 12px; padding: 14px 16px; }
+@media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row { grid-template-columns: repeat(2, 1fr); } .three-points { flex-direction: column; } .point-card { width: 100%; box-sizing: border-box; } }
+@media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } }
 </style>
