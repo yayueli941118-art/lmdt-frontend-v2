@@ -2,7 +2,7 @@ const MODES = new Set(['teaching', 'competition', 'anonymous'])
 
 function readModeFromUrl() {
   const searchMode = new URLSearchParams(window.location.search).get('mode')
-  const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : ''
+  const hashQuery = window.location.hash.includes('?') ? window.location.hash.slice(window.location.hash.indexOf('?') + 1) : ''
   const hashMode = new URLSearchParams(hashQuery).get('mode')
   const mode = hashMode || searchMode || 'teaching'
   return MODES.has(mode) ? mode : 'teaching'
