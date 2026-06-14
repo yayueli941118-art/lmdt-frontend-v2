@@ -54,6 +54,15 @@
       </div>
     </section>
 
+    <section class="workbench-entry">
+      <div class="workbench-entry-copy">
+        <span>课程报告工作台</span>
+        <h2>岗位劳动力市场预测报告工作台</h2>
+        <p>采集招聘样本，统计薪酬与技能需求，并结合 LMDT 仿真生成课程报告。</p>
+      </div>
+      <router-link to="/report/workbench" class="workbench-entry-btn">进入工作台</router-link>
+    </section>
+
     <!-- ===== 三大核心实验室 ===== -->
     <section id="labs" class="section">
       <div class="section-header">
@@ -365,6 +374,50 @@ const scrollToChapters = () => {
   font-size: 13px;
   line-height: 1.65;
 }
+.workbench-entry {
+  max-width: 1120px;
+  margin: -44px auto 72px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+  border-radius: 16px;
+  border: 1px solid rgba(6, 182, 212, 0.22);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(59, 130, 246, 0.08));
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
+}
+.workbench-entry-copy span {
+  display: block;
+  margin-bottom: 6px;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 900;
+}
+.workbench-entry-copy h2 {
+  margin: 0 0 8px;
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 900;
+}
+.workbench-entry-copy p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.workbench-entry-btn {
+  flex: 0 0 auto;
+  border-radius: 10px;
+  padding: 12px 18px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
+}
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(59, 130, 246, 0.12);
@@ -662,6 +715,8 @@ const scrollToChapters = () => {
   .footer-meta { text-align: left; }
   .hero { padding: 60px 16px; min-height: auto; }
   .showcase-strip { grid-template-columns: 1fr; margin: -24px auto 40px; padding: 0 16px; }
+  .workbench-entry { flex-direction: column; align-items: flex-start; margin: 0 16px 40px; }
+  .workbench-entry-btn { width: 100%; text-align: center; box-sizing: border-box; }
   .section { padding: 40px 16px; }
   .matrix-table { overflow-x: auto; }
   .matrix-table table { min-width: 600px; }

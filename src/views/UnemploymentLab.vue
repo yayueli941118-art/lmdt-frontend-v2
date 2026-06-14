@@ -38,6 +38,13 @@
       :conclusion="unemploymentConclusion"
     />
 
+    <ExperimentRecordPanel
+      experiment-name="失业经济学"
+      :parameters="recordParameters"
+      :metrics="recordMetrics"
+      :conclusion="combinedConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <div class="cards-row">
         <div class="stat-card" v-for="(v,k) in result.breakdown" :key="k">
@@ -149,6 +156,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -183,6 +191,32 @@ const unemploymentConclusion = computed(() => {
 const dmpConclusion = computed(() => {
   if (!dmpResult.value) return ''
   return `当前市场紧张度 θ=${dmpResult.value.theta}，求职成功率为 ${dmpResult.value.job_finding_rate}%，稳态失业率为 ${dmpResult.value.steady_unemployment_rate}%。`
+})
+
+const combinedConclusion = computed(() => [unemploymentConclusion.value, dmpConclusion.value].filter(Boolean).join(' '))
+
+const recordParameters = computed(() => ({
+  '自然失业率': `${naturalRate.value}%`,
+  '最低工资': `${minWage.value} 元/小时`,
+  '失业救济': `${benefit.value} 元/月`,
+  '技能错配': mismatch.value,
+  'AI冲击': `${aiRisk.value}%`,
+  'DMP失业人数': dmpUnemployed.value,
+  'DMP岗位空缺': dmpVacancies.value,
+  '匹配效率': dmpEfficiency.value,
+}))
+
+const recordMetrics = computed(() => {
+  const metrics = {}
+  if (result.value) {
+    metrics['主导失业类型'] = unemploymentConclusion.value.replace(/^当前失业结构中，/, '')
+  }
+  if (dmpResult.value) {
+    metrics['市场紧张度θ'] = dmpResult.value.theta
+    metrics['求职成功率'] = `${dmpResult.value.job_finding_rate}%`
+    metrics['稳态失业率'] = `${dmpResult.value.steady_unemployment_rate}%`
+  }
+  return metrics
 })
 
 const uChart = computed(() => {

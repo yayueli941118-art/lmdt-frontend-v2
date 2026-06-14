@@ -13,6 +13,7 @@
       <router-link to="/lab/income-distribution">收入分配</router-link>
       <router-link to="/lab/unemployment">失业</router-link>
       <router-link to="/lab/migration">迁移</router-link>
+      <router-link to="/report/workbench">报告工作台</router-link>
     </nav>
 
     <main class="main-content">
@@ -36,6 +37,10 @@
       <router-link to="/lab/macro" class="mobile-nav-item">
         <span class="mobile-nav-icon">🌍</span>
         <span>宏观</span>
+      </router-link>
+      <router-link to="/report/workbench" class="mobile-nav-item">
+        <span class="mobile-nav-icon">📝</span>
+        <span>报告</span>
       </router-link>
     </nav>
   </div>

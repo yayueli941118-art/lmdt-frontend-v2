@@ -38,6 +38,13 @@
       :conclusion="wageConclusion"
     />
 
+    <ExperimentRecordPanel
+      experiment-name="工资决定与收入差距"
+      :parameters="recordParameters"
+      :metrics="recordMetrics"
+      :conclusion="wageConclusion"
+    />
+
     <div v-if="result" class="lab-results">
       <div class="cards-row">
         <div class="stat-card">
@@ -112,6 +119,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -135,6 +143,26 @@ const wageConclusion = computed(() => {
 
 const industries = ['信息技术','金融业','制造业','建筑业','批发零售','住宿餐饮','教育','医疗','交通运输','农业']
 const regions = ['一线城市','新一线城市','二线城市','三线及以下']
+
+const recordParameters = computed(() => ({
+  '受教育年限': `${edu.value} 年`,
+  '工作经验': `${exp.value} 年`,
+  '行业': industry.value,
+  '地区': region.value,
+  '对比性别': gender.value === 'all' ? '全部' : gender.value === 'male' ? '男性' : '女性',
+  '所有制': ownership.value,
+  '工会成员': unionMember.value ? '是' : '否',
+}))
+
+const recordMetrics = computed(() => {
+  if (!result.value) return {}
+  return {
+    '预测月薪均值': `${result.value.statistics.mean} 元`,
+    '中位数': `${result.value.statistics.median} 元`,
+    '基尼系数': result.value.statistics.gini,
+    'P90/P10': `${result.value.statistics.p90_p10_ratio} 倍`,
+  }
+})
 
 const histChart = computed(() => {
   if (!result.value) return {}

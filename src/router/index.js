@@ -4,6 +4,7 @@ import IndividualLab from '../views/IndividualLab.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
+  { path: '/report/workbench', name: 'ReportWorkbench', component: () => import('../views/ReportWorkbench.vue'), meta: { title: '岗位劳动力市场预测报告工作台' } },
 
   // 核心实验室
   { path: '/lab/individual', name: 'Individual', component: IndividualLab, meta: { title: '👤 个体职业实验室' } },
