@@ -6,6 +6,8 @@
       <p>贝弗里奇曲线 · 结构性失业诊断 · AI 冲击 · 政策组合实验</p>
     </div>
 
+    <LabDashboardLayout>
+      <template #controls>
     <div class="lab-controls">
       <div class="control-group">
         <label>AI冲击 <span class="val">{{ aiRisk }}%</span></label>
@@ -27,13 +29,17 @@
         {{ loading ? '实时更新中…' : '刷新贝弗里奇模拟' }}
       </button>
     </div>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="调整 AI 冲击、技能错配和政策组合，观察贝弗里奇曲线如何移动。"
       observe="重点看失业率、空缺率和自然失业率之间的缺口。"
       :conclusion="macroConclusion"
     />
+      </template>
 
+      <template #primary>
     <div v-if="result" class="lab-results">
       <!-- 诊断卡 -->
       <div class="diagnosis-card" :class="'diag-' + result.diagnosis_level.toLowerCase()">
@@ -69,6 +75,8 @@
         思考：贝弗里奇曲线外移时，问题往往不只是“岗位少”，还包括技能、地区和信息错配。就业优先政策的落点，可以具体化为培训补贴、公共就业服务和岗位信息平台。
       </p>
     </div>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -77,6 +85,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -142,7 +151,7 @@ onMounted(run)
 </script>
 
 <style scoped>
-.lab { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px; }
 .lab-header { margin-bottom: 32px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 32px; font-weight: 900; margin: 12px 0 8px; color: #f1f5f9; }

@@ -6,75 +6,88 @@
       <p>明瑟方程扩展 · 工资分布模拟 · 基尼系数 · 行业/地区/所有制溢价</p>
     </div>
 
-    <div class="lab-controls">
-      <div class="control-group">
-        <label>受教育年限 <span class="val">{{ edu }}</span></label>
-        <input type="range" v-model.number="edu" min="9" max="22" step="1">
-      </div>
-      <div class="control-group">
-        <label>工作经验 <span class="val">{{ exp }}</span></label>
-        <input type="range" v-model.number="exp" min="0" max="40" step="1">
-      </div>
-      <div class="control-group">
-        <label>行业</label>
-        <select v-model="industry">
-          <option v-for="ind in industries" :key="ind" :value="ind">{{ ind }}</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label>地区</label>
-        <select v-model="region">
-          <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-        </select>
-      </div>
-      <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '实时更新中…' : '刷新工资分布' }}
-      </button>
-    </div>
-
-    <LearningTaskCard
-      task="调整教育、经验、行业和地区，观察工资分布与收入差距如何改变。"
-      observe="重点看预测月薪、基尼系数和 P90/P10 的同步变化。"
-      :conclusion="wageConclusion"
-    />
-
-    <ExperimentRecordPanel
-      experiment-name="工资决定与收入差距"
-      :parameters="recordParameters"
-      :metrics="recordMetrics"
-      :conclusion="wageConclusion"
-    />
-
-    <div v-if="result" class="lab-results">
-      <div class="cards-row">
-        <div class="stat-card">
-          <span class="stat-label">预测月薪</span>
-          <span class="stat-val">{{ result.statistics.mean }}元</span>
+    <LabDashboardLayout>
+      <template #controls>
+        <div class="lab-controls">
+          <div class="control-group">
+            <label>受教育年限 <span class="val">{{ edu }}</span></label>
+            <input type="range" v-model.number="edu" min="9" max="22" step="1">
+          </div>
+          <div class="control-group">
+            <label>工作经验 <span class="val">{{ exp }}</span></label>
+            <input type="range" v-model.number="exp" min="0" max="40" step="1">
+          </div>
+          <div class="control-group">
+            <label>行业</label>
+            <select v-model="industry">
+              <option v-for="ind in industries" :key="ind" :value="ind">{{ ind }}</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>地区</label>
+            <select v-model="region">
+              <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
+            </select>
+          </div>
+          <button class="btn-run" @click="run" :disabled="loading">
+            {{ loading ? '实时更新中…' : '刷新工资分布' }}
+          </button>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">中位数</span>
-          <span class="stat-val">{{ result.statistics.median }}元</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">基尼系数</span>
-          <span class="stat-val">{{ result.statistics.gini }}</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">P90/P10</span>
-          <span class="stat-val">{{ result.statistics.p90_p10_ratio }}x</span>
-        </div>
-      </div>
+      </template>
 
-      <div class="chart-card">
-        <h3>工资分布直方图</h3>
-        <v-chart :option="histChart" autoresize style="height:300px" />
-      </div>
+      <template #task>
+        <LearningTaskCard
+          task="调整教育、经验、行业和地区，观察工资分布与收入差距如何改变。"
+          observe="重点看预测月薪、基尼系数和 P90/P10 的同步变化。"
+          :conclusion="wageConclusion"
+        />
+      </template>
 
-      <!-- 十分位数 -->
-      <div class="chart-card">
-        <h3>十分位数分布</h3>
-        <v-chart :option="decileChart" autoresize style="height:220px" />
-      </div>
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="工资决定与收入差距"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="wageConclusion"
+        />
+      </template>
+
+      <template #metrics>
+        <div v-if="result" class="cards-row">
+          <div class="stat-card">
+            <span class="stat-label">预测月薪</span>
+            <span class="stat-val">{{ result.statistics.mean }}元</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">中位数</span>
+            <span class="stat-val">{{ result.statistics.median }}元</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">基尼系数</span>
+            <span class="stat-val">{{ result.statistics.gini }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">P90/P10</span>
+            <span class="stat-val">{{ result.statistics.p90_p10_ratio }}x</span>
+          </div>
+        </div>
+      </template>
+
+      <template #primary>
+        <div v-if="result" class="chart-pair">
+          <div class="chart-card">
+            <h3>工资分布直方图</h3>
+            <v-chart :option="histChart" autoresize style="height:340px" />
+          </div>
+          <div class="chart-card">
+            <h3>十分位数分布</h3>
+            <v-chart :option="decileChart" autoresize style="height:260px" />
+          </div>
+        </div>
+      </template>
+
+      <template #secondary>
+        <div v-if="result" class="lab-results">
 
       <!-- 行业/地区对比 -->
       <div class="section-divider"><span>🏢 行业 & 地区对比</span></div>
@@ -111,6 +124,8 @@
         思考：工资差距要先拆开看，哪些来自教育和经验回报，哪些来自行业、地区与制度性差异。共同富裕不是抹平激励，而是让努力和能力有更公平的回报通道。
       </p>
     </div>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -120,6 +135,7 @@ import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -233,7 +249,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.lab { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px; }
 .lab-header { margin-bottom: 32px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 32px; font-weight: 900; margin: 12px 0 8px; color: #f1f5f9; }
@@ -256,6 +272,7 @@ onMounted(() => {
 
 .chart-card { background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
 .chart-card h3 { color: #94a3b8; font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+.chart-pair { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 16px; min-width: 0; }
 
 .section-divider { display: flex; align-items: center; gap: 16px; margin: 48px 0 24px; color: #94a3b8; font-size: 15px; font-weight: 700; }
 .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(148,163,184,0.08); }
@@ -265,6 +282,7 @@ onMounted(() => {
 .decomp-val { color: #06b6d4; font-weight: 600; }
 .policy-note { margin: -4px 0 24px; color: #94a3b8; font-size: 13px; line-height: 1.8; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.16); border-radius: 12px; padding: 14px 16px; }
 
+@media (max-width: 900px) { .chart-pair { grid-template-columns: 1fr; } }
 @media (max-width: 768px) { .lab { padding: 28px 16px; } .lab-header h1 { font-size: 26px; } .lab-controls { display: grid; grid-template-columns: 1fr; } .cards-row { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 520px) { .cards-row { grid-template-columns: 1fr; } .chart-card { padding: 14px; } .decomp-item { align-items: flex-start; flex-direction: column; gap: 3px; } }
 </style>

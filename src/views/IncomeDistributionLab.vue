@@ -22,6 +22,8 @@
       </div>
     </section>
 
+    <LabDashboardLayout>
+      <template #controls>
     <div class="lab-controls">
       <div class="control-group">
         <label>技能溢价 <span class="val">{{ skillPremium }}%</span></label>
@@ -40,13 +42,17 @@
         <input type="range" v-model.number="educationEqualizer" min="0" max="60" step="5">
       </div>
     </div>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="调整技能溢价、收入集中度和再分配政策，观察收入分配是否更均衡。"
       observe="重点看洛伦兹曲线、基尼系数和低收入组增益。"
       :conclusion="incomeConclusion"
     />
+      </template>
 
+      <template #metrics>
     <div class="cards-row">
       <div class="stat-card">
         <span class="stat-label">市场收入 Gini</span>
@@ -65,7 +71,9 @@
         <span class="stat-val">+{{ metrics.bottomGain }}%</span>
       </div>
     </div>
+      </template>
 
+      <template #primary>
     <div class="lab-results two-col">
       <div class="chart-card">
         <h3>洛伦兹曲线：市场分配 vs 政策调节后</h3>
@@ -76,7 +84,9 @@
         <v-chart :option="decileOption" autoresize style="height:340px" />
       </div>
     </div>
+      </template>
 
+      <template #secondary>
     <section class="insight-panel">
       <div>
         <span class="panel-label">观察提示</span>
@@ -87,12 +97,15 @@
         <p>学生可以看到，高质量发展需要效率，也需要通过教育、培训、社会保障和初次分配制度改善，让发展成果更公平地惠及劳动者。</p>
       </div>
     </section>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -213,7 +226,7 @@ const decileOption = computed(() => ({
 </script>
 
 <style scoped>
-.lab { max-width: 1180px; margin: 0 auto; padding: 40px 24px 72px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px 72px; }
 .lab-header { margin-bottom: 24px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .chapter-kicker { margin-top: 18px; color: #16a34a; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }

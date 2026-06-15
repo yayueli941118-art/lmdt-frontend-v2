@@ -6,6 +6,8 @@
       <p>CES 劳动需求曲线 · 希克斯-马歇尔派生需求定律 · 替代弹性对就业的影响</p>
     </div>
 
+    <LabDashboardLayout>
+      <template #controls>
     <div class="lab-controls">
       <div class="control-group">
         <label>资本存量 K <span class="val">{{ K }}</span></label>
@@ -28,13 +30,17 @@
         {{ loading ? '实时更新中…' : '刷新需求曲线' }}
       </button>
     </div>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="调整资本存量、替代弹性和技术类型，观察企业劳动需求如何变化。"
       observe="重点看工资率变化时劳动需求曲线的位置和斜率。"
       :conclusion="demandConclusion"
     />
+      </template>
 
+      <template #primary>
     <div v-if="demandResult" class="lab-results">
       <div class="chart-card">
         <h3>劳动需求曲线 (VMP)</h3>
@@ -49,6 +55,9 @@
         </div>
       </div>
     </div>
+      </template>
+
+      <template #secondary>
 
     <!-- 要素配置 -->
     <div class="section-divider">
@@ -108,6 +117,8 @@
         思考：技术进步不只是“机器替代人”。当资本和劳动形成互补，企业的关键选择会转向岗位再设计、技能培训和人机协同，让效率提升转化为更高质量的就业。
       </p>
     </div>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -116,6 +127,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart, BarChart } from 'echarts/charts'
@@ -244,7 +256,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.lab { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px; }
 .lab-header { margin-bottom: 32px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 32px; font-weight: 900; margin: 12px 0 8px; color: #f1f5f9; }

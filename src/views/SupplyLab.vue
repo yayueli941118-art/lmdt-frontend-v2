@@ -6,6 +6,8 @@
       <p>收入效应 vs 替代效应分解 · Cobb-Douglas 效用函数 · 向后弯曲劳动供给曲线</p>
     </div>
 
+    <LabDashboardLayout>
+      <template #controls>
     <div class="lab-controls">
       <div class="control-group">
         <label>初始工资率 <span class="val">{{ wage_initial }} 元/小时</span></label>
@@ -24,13 +26,17 @@
         {{ loading ? '实时更新中…' : '刷新模拟' }}
       </button>
     </div>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="调整工资率和闲暇偏好，判断工资上涨是否一定会增加劳动供给。"
       observe="比较替代效应、收入效应和总效应的方向。"
       :conclusion="supplyConclusion"
     />
+      </template>
 
+      <template #primary>
     <div v-if="result" class="lab-results">
       <!-- 效应卡片 -->
       <div class="cards-row">
@@ -96,6 +102,8 @@
         思考：工资提高不一定意味着劳动时间无限增加。体面劳动既关注收入，也关注休息、家庭责任和劳动者福祉，这正是劳动供给曲线背后的现实含义。
       </p>
     </div>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -104,6 +112,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -180,7 +189,7 @@ onMounted(run)
 </script>
 
 <style scoped>
-.lab { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px; }
 .lab-header { margin-bottom: 32px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; transition: color .2s; }
 .back-link:hover { color: #94a3b8; }

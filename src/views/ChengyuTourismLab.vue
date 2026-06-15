@@ -6,6 +6,8 @@
       <p>岗位需求预测 · 技能缺口诊断 · 薪酬吸引力模拟 · 政策情景比较</p>
     </div>
 
+    <LabDashboardLayout>
+      <template #controls>
     <section class="lab-controls">
       <div class="control-group">
         <label>城市</label>
@@ -43,20 +45,26 @@
         {{ loading ? '实时更新中…' : '刷新仿真' }}
       </button>
     </section>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="设置城市、业态、游客增长和数字化水平，预测成渝文旅产业不同岗位的需求变化。"
       observe="重点观察数字化水平提高后，数字营销、数据分析、智慧景区运营等岗位是否上升。"
       :conclusion="tourismConclusion"
     />
+      </template>
 
+      <template #record>
     <ExperimentRecordPanel
       experiment-name="成渝文旅产业劳动力需求预测"
       :parameters="recordParameters"
       :metrics="recordMetrics"
       :conclusion="tourismConclusion"
     />
+      </template>
 
+      <template #metrics>
     <section class="cards-row">
       <div class="stat-card">
         <span class="stat-label">总岗位需求</span>
@@ -79,7 +87,9 @@
         <span class="stat-val small">{{ result?.policies.recommended || '待计算' }}</span>
       </div>
     </section>
+      </template>
 
+      <template #primary>
     <section class="section-block">
       <div class="section-head">
         <span>A</span>
@@ -99,7 +109,9 @@
         </div>
       </div>
     </section>
+      </template>
 
+      <template #secondary>
     <section class="section-block">
       <div class="section-head">
         <span>B</span>
@@ -196,6 +208,8 @@
         课堂讨论：培训补贴更偏向补齐学生和劳动者能力，数字化投资会推高数字岗位需求，区域人才流动便利化则有助于缓解成都与重庆之间的人才错配。组合政策通常更适合“需求扩张 + 技能升级”同时发生的文旅场景。
       </p>
     </section>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -205,6 +219,7 @@ import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, GaugeChart } from 'echarts/charts'
@@ -412,7 +427,7 @@ onMounted(run)
 </script>
 
 <style scoped>
-.lab { max-width: 1180px; margin: 0 auto; padding: 40px 24px 72px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px 72px; }
 .lab-header { margin-bottom: 28px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .lab-header h1 { margin: 12px 0 8px; color: #f8fafc; font-size: 34px; font-weight: 900; }

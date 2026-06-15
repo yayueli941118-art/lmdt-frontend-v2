@@ -6,57 +6,70 @@
       <p>摩擦性/结构性/周期性失业分解 · 自然失业率 · 最低工资冲击 · 贝弗里奇曲线</p>
     </div>
 
-    <div class="lab-controls">
-      <div class="control-group">
-        <label>自然失业率 <span class="val">{{ naturalRate }}%</span></label>
-        <input type="range" v-model.number="naturalRate" min="3" max="8" step="0.5">
-      </div>
-      <div class="control-group">
-        <label>最低工资 <span class="val">{{ minWage }}元/h</span></label>
-        <input type="range" v-model.number="minWage" min="15" max="60" step="1">
-      </div>
-      <div class="control-group">
-        <label>失业救济 <span class="val">{{ benefit }}元/月</span></label>
-        <input type="range" v-model.number="benefit" min="1000" max="6000" step="200">
-      </div>
-      <div class="control-group">
-        <label>技能错配 <span class="val">{{ mismatch }}</span></label>
-        <input type="range" v-model.number="mismatch" min="0" max="2" step="0.1">
-      </div>
-      <div class="control-group">
-        <label>AI冲击 <span class="val">{{ aiRisk }}%</span></label>
-        <input type="range" v-model.number="aiRisk" min="0" max="100" step="5">
-      </div>
-      <button class="btn-run" @click="run" :disabled="loading">
-        {{ loading ? '实时更新中…' : '刷新失业率' }}
-      </button>
-    </div>
-
-    <LearningTaskCard
-      task="调整自然失业率、最低工资、救济和技能错配，观察失业结构如何变化。"
-      observe="重点区分摩擦性、结构性、技术性和周期性失业。"
-      :conclusion="unemploymentConclusion"
-    />
-
-    <ExperimentRecordPanel
-      experiment-name="失业经济学"
-      :parameters="recordParameters"
-      :metrics="recordMetrics"
-      :conclusion="combinedConclusion"
-    />
-
-    <div v-if="result" class="lab-results">
-      <div class="cards-row">
-        <div class="stat-card" v-for="(v,k) in result.breakdown" :key="k">
-          <span class="stat-label">{{ {frictional:'摩擦性',structural:'结构性',minimum_wage_effect:'最低工资',technological:'技术性',cyclical:'周期性'}[k] || k }}</span>
-          <span class="stat-val">{{ v }}%</span>
+    <LabDashboardLayout>
+      <template #controls>
+        <div class="lab-controls">
+          <div class="control-group">
+            <label>自然失业率 <span class="val">{{ naturalRate }}%</span></label>
+            <input type="range" v-model.number="naturalRate" min="3" max="8" step="0.5">
+          </div>
+          <div class="control-group">
+            <label>最低工资 <span class="val">{{ minWage }}元/h</span></label>
+            <input type="range" v-model.number="minWage" min="15" max="60" step="1">
+          </div>
+          <div class="control-group">
+            <label>失业救济 <span class="val">{{ benefit }}元/月</span></label>
+            <input type="range" v-model.number="benefit" min="1000" max="6000" step="200">
+          </div>
+          <div class="control-group">
+            <label>技能错配 <span class="val">{{ mismatch }}</span></label>
+            <input type="range" v-model.number="mismatch" min="0" max="2" step="0.1">
+          </div>
+          <div class="control-group">
+            <label>AI冲击 <span class="val">{{ aiRisk }}%</span></label>
+            <input type="range" v-model.number="aiRisk" min="0" max="100" step="5">
+          </div>
+          <button class="btn-run" @click="run" :disabled="loading">
+            {{ loading ? '实时更新中…' : '刷新失业率' }}
+          </button>
         </div>
-      </div>
+      </template>
 
-      <div class="chart-card">
-        <h3>失业率动态收敛 (48个月)</h3>
-        <v-chart :option="uChart" autoresize style="height:280px" />
-      </div>
+      <template #task>
+        <LearningTaskCard
+          task="调整自然失业率、最低工资、救济和技能错配，观察失业结构如何变化。"
+          observe="重点区分摩擦性、结构性、技术性和周期性失业。"
+          :conclusion="unemploymentConclusion"
+        />
+      </template>
+
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="失业经济学"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="combinedConclusion"
+        />
+      </template>
+
+      <template #metrics>
+        <div v-if="result" class="cards-row">
+          <div class="stat-card" v-for="(v,k) in result.breakdown" :key="k">
+            <span class="stat-label">{{ {frictional:'摩擦性',structural:'结构性',minimum_wage_effect:'最低工资',technological:'技术性',cyclical:'周期性'}[k] || k }}</span>
+            <span class="stat-val">{{ v }}%</span>
+          </div>
+        </div>
+      </template>
+
+      <template #primary>
+        <div v-if="result" class="chart-card">
+          <h3>失业率动态收敛 (48个月)</h3>
+          <v-chart :option="uChart" autoresize style="height:360px" />
+        </div>
+      </template>
+
+      <template #secondary>
+        <div v-if="result" class="lab-results">
 
       <!-- 最低工资冲击 -->
       <div class="section-divider"><span>⚡ 最低工资冲击分析</span></div>
@@ -148,6 +161,8 @@
         </p>
       </div>
     </div>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -157,6 +172,7 @@ import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
@@ -314,7 +330,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.lab { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px; }
 .lab-header { margin-bottom: 32px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 32px; font-weight: 900; margin: 12px 0 8px; color: #f1f5f9; }

@@ -6,6 +6,8 @@
       <p>把“要不要去大城市”拆成工资溢价、一次性成本、心理成本、家庭联动和回本窗口。</p>
     </div>
 
+    <LabDashboardLayout>
+      <template #controls>
     <section class="control-band">
       <div class="control-group">
         <label>迁移年龄 <span>{{ migrateAge }} 岁</span></label>
@@ -37,13 +39,17 @@
         {{ loading ? '实时更新中...' : '刷新模拟' }}
       </button>
     </section>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="调整迁移年龄、工资溢价和迁移成本，先判断是否值得迁移。"
       observe="重点看累计 NPV 是否穿过 0 线，以及回本时间是否足够早。"
       :conclusion="migrationConclusion"
     />
+      </template>
 
+      <template #primary>
     <section v-if="decision" class="decision-panel" :class="decisionClass">
       <div>
         <span class="decision-eyebrow">迁移建议</span>
@@ -114,6 +120,8 @@
       <strong>思考：</strong>
       迁移不是“工资高就去”，而是空间套利的净现值问题。年轻、工资溢价高、一次性成本低、家庭联动损失小，NPV 曲线更快穿过 0 线；反之，即使工资上涨，也可能因为回收期太短或家庭成本太高而不迁移。
     </section>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -122,6 +130,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -281,7 +290,7 @@ onMounted(run)
 </script>
 
 <style scoped>
-.lab { max-width: 1180px; margin: 0 auto; padding: 40px 24px 56px; color: #f1f5f9; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px 56px; color: #f1f5f9; }
 .lab-header { margin-bottom: 28px; }
 .back-link { color: #94a3b8; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 34px; font-weight: 900; margin: 12px 0 8px; letter-spacing: 0; }

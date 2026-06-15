@@ -6,6 +6,8 @@
       <p>Oaxaca-Blinder 工资分解 · 三因素分解（禀赋/系数/交互） · 贝克尔偏见模型</p>
     </div>
 
+    <LabDashboardLayout>
+      <template #controls>
     <div class="lab-controls">
       <div class="control-group">
         <label>歧视程度 <span class="val">{{ discPct }}%</span></label>
@@ -21,13 +23,17 @@
         {{ loading ? '实时更新中…' : '刷新分解' }}
       </button>
     </div>
+      </template>
 
+      <template #task>
     <LearningTaskCard
       task="调整歧视程度和教育差距，观察工资差异可解释部分与不可解释部分的变化。"
       observe="重点区分禀赋差异、系数差异和不可解释差异。"
       :conclusion="discriminationConclusion"
     />
+      </template>
 
+      <template #primary>
     <div v-if="result" class="lab-results">
       <!-- 总览 -->
       <div class="cards-row">
@@ -94,6 +100,8 @@
         思考：歧视不是有效率的市场选择，它会压低一部分劳动者的人力资本回报，也会让企业错过真实生产率。公平就业政策的意义，可以从这里转化为可观察的工资分解。
       </p>
     </div>
+      </template>
+    </LabDashboardLayout>
   </div>
 </template>
 
@@ -102,6 +110,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import LabDashboardLayout from '../components/LabDashboardLayout.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart } from 'echarts/charts'
@@ -192,7 +201,7 @@ onMounted(run)
 </script>
 
 <style scoped>
-.lab { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.lab { max-width: 1280px; margin: 0 auto; padding: 40px 24px; }
 .lab-header { margin-bottom: 32px; }
 .back-link { color: #64748b; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 32px; font-weight: 900; margin: 12px 0 8px; color: #f1f5f9; }
