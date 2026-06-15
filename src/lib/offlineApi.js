@@ -312,6 +312,160 @@ function discrimination(p) {
   }
 }
 
+function chengyuTourism(p) {
+  const city = p.city || '成渝双城联动'
+  const sector = p.sector || '会展节庆'
+  const touristGrowth = Number(p.tourist_growth ?? 15)
+  const digitalLevel = Number(p.digital_level ?? 55)
+  const eventIntensity = Number(p.event_intensity ?? 60)
+  const seasonality = p.seasonality || '中'
+  const salary = Number(p.salary ?? 7500)
+  const stability = Number(p.stability ?? 65)
+  const training = Number(p.training ?? 55)
+  const promotion = Number(p.promotion ?? 60)
+  const policy = p.policy || '组合政策'
+
+  const cityBase = {
+    成都: 1.08,
+    重庆: 1.02,
+    成渝双城联动: 1.18,
+  }[city] || 1
+  const sectorBase = {
+    景区运营: 1.08,
+    会展节庆: 1.14,
+    研学旅行: 1.05,
+    夜间文旅: 1.1,
+    数字文博: 1.12,
+    智慧景区: 1.16,
+  }[sector] || 1
+  const seasonMult = { 低: 0.96, 中: 1, 高: 1.07 }[seasonality] || 1
+  const growthFactor = 1 + touristGrowth / 100
+  const digitalFactor = digitalLevel / 100
+  const eventFactor = eventIntensity / 100
+
+  const jobBase = [
+    { name: '服务运营', base: 130, visitor: 0.75, digital: 0.12, event: 0.34, skill: '服务运营能力' },
+    { name: '活动策划', base: 82, visitor: 0.42, digital: 0.18, event: 0.82, skill: '活动策划能力' },
+    { name: '数字营销', base: 76, visitor: 0.35, digital: 0.78, event: 0.45, skill: '内容传播/新媒体能力' },
+    { name: '数据分析', base: 54, visitor: 0.18, digital: 0.86, event: 0.25, skill: '数据分析能力' },
+    { name: '研学导师', base: 68, visitor: 0.58, digital: 0.16, event: 0.22, skill: '文旅知识/地方文化理解' },
+    { name: '智慧景区运营', base: 62, visitor: 0.26, digital: 0.9, event: 0.18, skill: '学生数字技能水平' },
+  ]
+
+  const sectorTilt = {
+    景区运营: { 服务运营: 1.2, 智慧景区运营: 1.12 },
+    会展节庆: { 活动策划: 1.25, 数字营销: 1.12 },
+    研学旅行: { 研学导师: 1.3, 服务运营: 1.08 },
+    夜间文旅: { 服务运营: 1.12, 数字营销: 1.18, 活动策划: 1.12 },
+    数字文博: { 数据分析: 1.18, 数字营销: 1.15, 智慧景区运营: 1.12 },
+    智慧景区: { 智慧景区运营: 1.28, 数据分析: 1.16 },
+  }[sector] || {}
+
+  const jobs = jobBase.map(job => {
+    const baseline = Math.round(job.base * cityBase * sectorBase * (sectorTilt[job.name] || 1))
+    const scenario = baseline
+      * (1 + touristGrowth * job.visitor / 100)
+      * (1 + digitalFactor * job.digital * 0.55)
+      * (1 + eventFactor * job.event * 0.42)
+      * seasonMult
+    const forecast = Math.round(scenario)
+    return {
+      name: job.name,
+      baseline,
+      forecast,
+      growth_pct: round(((forecast - baseline) / Math.max(baseline, 1)) * 100, 1),
+      share_pct: 0,
+      skill: job.skill,
+    }
+  })
+  const total = jobs.reduce((sum, job) => sum + job.forecast, 0)
+  jobs.forEach(job => {
+    job.share_pct = round((job.forecast / Math.max(total, 1)) * 100, 1)
+  })
+  const fastest = [...jobs].sort((a, b) => b.growth_pct - a.growth_pct)[0]
+
+  const supply = {
+    学生数字技能水平: Number(p.digital_skill ?? 58),
+    数据分析能力: Number(p.data_skill ?? 50),
+    服务运营能力: Number(p.service_skill ?? 65),
+    活动策划能力: Number(p.planning_skill ?? 55),
+    '内容传播/新媒体能力': Number(p.media_skill ?? 60),
+    '文旅知识/地方文化理解': Number(p.culture_skill ?? 62),
+  }
+  const skillDemand = {
+    学生数字技能水平: round(54 + digitalLevel * 0.36 + (sector === '智慧景区' ? 10 : 0)),
+    数据分析能力: round(48 + digitalLevel * 0.42 + (sector === '数字文博' ? 8 : 0)),
+    服务运营能力: round(58 + Math.max(touristGrowth, 0) * 0.32 + eventIntensity * 0.12),
+    活动策划能力: round(50 + eventIntensity * 0.36 + (sector === '会展节庆' ? 12 : 0)),
+    '内容传播/新媒体能力': round(52 + digitalLevel * 0.26 + eventIntensity * 0.18),
+    '文旅知识/地方文化理解': round(62 + (sector === '研学旅行' ? 14 : 0) + Math.max(touristGrowth, 0) * 0.12),
+  }
+  const items = Object.keys(skillDemand).map(name => ({
+    name,
+    demand: clamp(round(skillDemand[name]), 0, 100),
+    supply: clamp(round(supply[name]), 0, 100),
+    gap: clamp(round(skillDemand[name] - supply[name]), 0, 100),
+  }))
+  const largestGaps = [...items].sort((a, b) => b.gap - a.gap).slice(0, 3)
+
+  const wageScore = clamp((salary - 3000) / 12000 * 100, 0, 100)
+  const attractionIndex = clamp(round(wageScore * 0.38 + stability * 0.22 + training * 0.2 + promotion * 0.2), 0, 100)
+  const expectedApplicants = Math.round(total * (0.38 + attractionIndex / 160))
+  const turnoverRisk = attractionIndex >= 75 ? '低' : attractionIndex >= 55 ? '中' : '高'
+
+  const avgGap = items.reduce((sum, item) => sum + item.gap, 0) / items.length
+  const baseMatching = clamp(round(100 - avgGap * 0.9 + attractionIndex * 0.12), 35, 96)
+  const scenarioDefs = [
+    { name: '基准情景', match: 0, gap: 0, attraction: 0 },
+    { name: '培训补贴', match: 7, gap: -8, attraction: 4 },
+    { name: '校企合作', match: 9, gap: -6, attraction: 3 },
+    { name: '数字化投资', match: digitalLevel > 70 ? 8 : 5, gap: -4, attraction: 5 },
+    { name: '区域人才流动便利化', match: city === '成渝双城联动' ? 8 : 6, gap: -3, attraction: 6 },
+    { name: '组合政策', match: 16, gap: -13, attraction: 10 },
+  ]
+  const policyBonus = scenarioDefs.find(item => item.name === policy) || scenarioDefs[0]
+  const scenarios = scenarioDefs.map(item => ({
+    name: item.name,
+    matching: clamp(round(baseMatching + item.match), 0, 100),
+    skill_gap: clamp(round(avgGap + item.gap), 0, 100),
+    attraction: clamp(round(attractionIndex + item.attraction), 0, 100),
+  }))
+  const recommended = [...scenarios].sort((a, b) => (b.matching + b.attraction - b.skill_gap) - (a.matching + a.attraction - a.skill_gap))[0].name
+  const policyScenario = scenarios.find(item => item.name === policy) || scenarios[0]
+
+  const recommendations = largestGaps.map(item => `优先补强${item.name}，当前缺口约 ${item.gap} 分。`)
+  const explanation = `薪酬通过补偿性工资差异影响岗位吸引力，稳定性、培训和晋升空间相当于非工资收益，会共同提高人才进入意愿。`
+  const conclusion = `${city}${sector}场景下，总岗位需求约 ${total} 人，增长最快岗位为${fastest.name}；最大技能缺口集中在${largestGaps[0]?.name || '数字技能'}，推荐采用${recommended}提升供需匹配。`
+
+  return {
+    demand: {
+      total,
+      fastest_job: fastest.name,
+      jobs,
+      interpretation: `游客增长提升基础服务需求，数字化水平提升数字营销、数据分析与智慧景区运营岗位占比。`,
+    },
+    skills: {
+      largest_gap: largestGaps[0]?.name || '',
+      items,
+      recommendations,
+    },
+    attraction: {
+      index: attractionIndex,
+      expected_applicants: expectedApplicants,
+      turnover_risk: turnoverRisk,
+      explanation,
+    },
+    policies: {
+      selected: policy,
+      selected_matching: policyScenario.matching,
+      recommended,
+      scenarios,
+      explanation: `${policy}情景下，岗位供需匹配度约为 ${policyScenario.matching}，技能缺口约为 ${policyScenario.skill_gap}。课堂讨论可比较“扩需求”和“补供给”两类政策的不同效果。`,
+    },
+    conclusion,
+  }
+}
+
 const handlers = [
   ['/api/v2/supply/decompose', supplyDecompose],
   ['/api/v2/demand/curve', demandCurve],
@@ -325,6 +479,7 @@ const handlers = [
   ['/api/v2/wage/mincer', mincer],
   ['/api/v1/individual-lab/simulate', individual],
   ['/api/v2/discrimination/decompose', discrimination],
+  ['/api/v2/tourism/chengyu/simulate', chengyuTourism],
 ]
 
 export function offlineResponse(config) {

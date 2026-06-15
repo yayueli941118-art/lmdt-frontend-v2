@@ -201,8 +201,8 @@ const SAMPLE_KEY = 'lmdtReportSamples'
 const TARGET_KEY = 'lmdtReportTarget'
 const RECORD_KEY = 'lmdtReportExperimentRecords'
 
-const industryOptions = ['信息技术', '制造业', '金融业', '教育', '医疗健康', '现代服务业', '交通运输', '批发零售']
-const regionOptions = ['全国', '成都', '重庆', '北京', '上海', '广州', '深圳', '杭州', '西安']
+const industryOptions = ['信息技术', '制造业', '金融业', '教育', '医疗健康', '现代服务业', '交通运输', '批发零售', '文旅与会展', '文化旅游']
+const regionOptions = ['全国', '成都', '重庆', '成渝双城经济圈', '北京', '上海', '广州', '深圳', '杭州', '西安']
 
 const sampleFields = [
   { key: 'position', label: '岗位名称', placeholder: '数据分析师' },
@@ -284,6 +284,7 @@ const experienceChart = computed(() => barOption(Object.keys(experienceCounts.va
 const skillChart = computed(() => barOption(topSkills.value.map((item) => item.name), topSkills.value.map((item) => item.value), '#f59e0b', true))
 
 const simulationLinks = [
+  { title: '成渝文旅产业实验室', desc: '用于文旅与会展岗位需求预测、技能缺口诊断、薪酬吸引力和政策情景比较。', to: '/lab/chengyu-tourism' },
   { title: '工资决定与收入差距', desc: '用于薪酬预测、教育回报、经验回报和收入差距分析。', to: '/lab/wage' },
   { title: '失业经济学', desc: '用于技能错配、AI冲击、岗位空缺和匹配效率分析。', to: '/lab/unemployment' },
   { title: '劳动力市场歧视', desc: '用于公平就业、招聘歧视风险和政策组合讨论。', to: '/lab/discrimination' },
@@ -469,19 +470,32 @@ function pieOption(counts) {
 }
 
 function generateReport() {
+  const isTourismReport = /文旅|旅游|会展|景区|研学|文博/.test(`${target.industry}${target.position}`)
   const areaTop = topCounts(samples.value.map((sample) => sample.region), 3).join('、') || target.region || '待补充'
   const educationTop = topCounts(samples.value.map((sample) => sample.education), 3).join('、') || '待补充'
   const experienceTop = topCounts(samples.value.map((sample) => sample.experience), 3).join('、') || '待补充'
   const skillText = topSkills.value.map((item, index) => `${index + 1}. ${item.name}（${item.value}次）`).join('\n') || '暂无技能词频，请继续补充样本。'
   const recordText = experimentRecords.value.slice(0, 5).map((record) => `- ${record.experimentName}：${record.conclusion || '待补充结论'}`).join('\n') || '- 工资模拟结果：待补充\n- 失业模拟结果：待补充\n- AI冲击模拟结果：待补充\n- 技能错配模拟结果：待补充'
   const topSkillNames = topSkills.value.slice(0, 3).map((item) => item.name).join('、') || '岗位核心技能'
+  const backgroundText = isTourismReport
+    ? `本报告选择${target.region || '成渝双城经济圈'}的${target.industry || '文旅与会展'}行业，聚焦${target.position || '文旅相关岗位'}岗位，结合招聘样本与 LMDT 成渝文旅产业实验室，重点观察游客增长、会展活动、数字文旅、研学旅行、智慧景区和区域人才流动对岗位需求的影响。`
+    : `本报告选择${target.region || '某地区'}的${target.industry || '某行业'}行业，聚焦${target.position || '某岗位'}岗位，基于招聘样本观察岗位需求、薪酬水平、学历经验要求与技能结构。`
+  const demandText = isTourismReport
+    ? `本次共采集招聘样本 ${stats.value.count} 条。主要招聘地区集中在：${areaTop}。学历要求主要包括：${educationTop}；经验要求主要包括：${experienceTop}。请结合游客增长、会展/节庆活动强度、夜间文旅消费和智慧景区建设，判断岗位需求是季节性扩张、稳定增长还是结构性升级。`
+    : `本次共采集招聘样本 ${stats.value.count} 条。主要招聘地区集中在：${areaTop}。学历要求主要包括：${educationTop}；经验要求主要包括：${experienceTop}。学生需要结合样本来源说明招聘需求是否具有区域集中、行业集中或企业类型集中的特点。`
+  const trendText = isTourismReport
+    ? '综合招聘样本和仿真分析，判断该岗位未来可能呈现扩张、稳定、收缩或结构性调整。文旅岗位需要重点说明游客增长、会展活动、数字文旅平台、研学旅行需求、智慧景区运营和成渝区域人才流动如何改变岗位数量与技能结构。'
+    : '综合招聘样本和仿真分析，初步判断该岗位未来可能呈现扩张、稳定、收缩或结构性调整。请重点说明判断依据：样本需求数量、薪资水平、技能门槛、AI替代风险、行业景气度和区域产业政策。'
+  const adviceText = isTourismReport
+    ? `建议围绕 ${topSkillNames} 等高频能力进行学习规划。文旅与会展岗位还应补强地方文化理解、活动策划、游客服务、数据分析、新媒体传播和智慧景区工具应用能力，并用课程项目、调研报告、展会服务或景区运营实习支撑就业准备。`
+    : `建议围绕 ${topSkillNames} 等高频能力进行学习规划。若岗位呈现结构性调整，应优先提升可迁移技能、数字化工具能力和行业问题分析能力，并用具体课程、证书、项目或实习计划支撑就业准备。`
   return `# ${target.industry || '某行业'}/${target.position || '某岗位'}劳动力市场预测报告
 
 ## 一、岗位与行业背景
-本报告选择${target.region || '某地区'}的${target.industry || '某行业'}行业，聚焦${target.position || '某岗位'}岗位，基于招聘样本观察岗位需求、薪酬水平、学历经验要求与技能结构。
+${backgroundText}
 
 ## 二、招聘需求分析
-本次共采集招聘样本 ${stats.value.count} 条。主要招聘地区集中在：${areaTop}。学历要求主要包括：${educationTop}；经验要求主要包括：${experienceTop}。学生需要结合样本来源说明招聘需求是否具有区域集中、行业集中或企业类型集中的特点。
+${demandText}
 
 ## 三、薪酬水平分析
 样本平均薪资为 ${salaryText(stats.value.average)}，中位薪资为 ${salaryText(stats.value.median)}，最高薪资为 ${salaryText(stats.value.max)}，最低薪资为 ${salaryText(stats.value.min)}。从薪资区间看，需要进一步判断该岗位处于入门型、成长型还是高技能溢价型岗位。
@@ -498,10 +512,10 @@ ${recordText}
 请将工资决定与收入差距、失业经济学、AI冲击或技能错配等仿真结果写入本部分，并说明仿真结果如何支持你的岗位预测判断。
 
 ## 六、未来趋势判断
-综合招聘样本和仿真分析，初步判断该岗位未来可能呈现扩张、稳定、收缩或结构性调整。请重点说明判断依据：样本需求数量、薪资水平、技能门槛、AI替代风险、行业景气度和区域产业政策。
+${trendText}
 
 ## 七、学习与就业建议
-建议围绕 ${topSkillNames} 等高频能力进行学习规划。若岗位呈现结构性调整，应优先提升可迁移技能、数字化工具能力和行业问题分析能力，并用具体课程、证书、项目或实习计划支撑就业准备。`
+${adviceText}`
 }
 
 function topCounts(values, limit) {

@@ -63,6 +63,15 @@
       <router-link to="/report/workbench" class="workbench-entry-btn">进入工作台</router-link>
     </section>
 
+    <section class="scene-entry">
+      <div class="scene-entry-copy">
+        <span>场景化实验</span>
+        <h2>成渝文旅产业实验室</h2>
+        <p>把劳动力需求预测、岗位匹配、工资决定与政策模拟嵌入成渝双城经济圈文旅与会展产业场景。</p>
+      </div>
+      <router-link to="/lab/chengyu-tourism" class="scene-entry-btn">进入成渝文旅实验室</router-link>
+    </section>
+
     <!-- ===== 三大核心实验室 ===== -->
     <section id="labs" class="section">
       <div class="section-header">
@@ -128,6 +137,11 @@
           <span class="mini-card-chapter">Ch.05</span>
           <strong>劳动力流动</strong>
           <p>迁徙决策 NPV · 户籍制度壁垒 · 三种情景对比</p>
+        </div>
+        <div class="mini-card mini-card-cyan" @click="$router.push('/lab/chengyu-tourism')">
+          <span class="mini-card-chapter">应用专题</span>
+          <strong>成渝文旅产业实验室</strong>
+          <p>劳动力需求预测 · 岗位匹配 · 工资决定 · 政策模拟</p>
         </div>
         <div class="mini-card mini-card-gold" @click="$router.push('/lab/wage')">
           <span class="mini-card-chapter">Ch.06</span>
@@ -201,6 +215,11 @@
               <td><span class="matrix-chapter">Ch.06</span></td>
               <td>工资决定与收入差距</td>
               <td class="matrix-link" @click="$router.push('/lab/wage')">💰 工资决定与收入差距</td>
+            </tr>
+            <tr>
+              <td><span class="matrix-chapter">应用</span></td>
+              <td>劳动力需求预测、岗位匹配、工资决定、政策模拟</td>
+              <td class="matrix-link" @click="$router.push('/lab/chengyu-tourism')">🎭 成渝文旅产业实验室</td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.07</span></td>
@@ -417,6 +436,51 @@ const scrollToChapters = () => {
   font-size: 14px;
   font-weight: 900;
   background: linear-gradient(135deg, #06b6d4, #2563eb);
+}
+.scene-entry {
+  max-width: 1120px;
+  margin: -48px auto 78px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+  border-radius: 16px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(6, 182, 212, 0.08));
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.22);
+}
+.scene-entry-copy span {
+  display: block;
+  margin-bottom: 6px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 900;
+}
+.scene-entry-copy h2 {
+  margin: 0 0 8px;
+  color: #f8fafc;
+  font-size: 25px;
+  font-weight: 900;
+}
+.scene-entry-copy p {
+  margin: 0;
+  max-width: 720px;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.scene-entry-btn {
+  border-radius: 10px;
+  padding: 12px 18px;
+  color: #0f172a;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #fbbf24, #22d3ee);
+  white-space: nowrap;
 }
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -717,6 +781,8 @@ const scrollToChapters = () => {
   .showcase-strip { grid-template-columns: 1fr; margin: -24px auto 40px; padding: 0 16px; }
   .workbench-entry { flex-direction: column; align-items: flex-start; margin: 0 16px 40px; }
   .workbench-entry-btn { width: 100%; text-align: center; box-sizing: border-box; }
+  .scene-entry { grid-template-columns: 1fr; margin: 0 16px 40px; }
+  .scene-entry-btn { width: 100%; text-align: center; box-sizing: border-box; white-space: normal; }
   .section { padding: 40px 16px; }
   .matrix-table { overflow-x: auto; }
   .matrix-table table { min-width: 600px; }
