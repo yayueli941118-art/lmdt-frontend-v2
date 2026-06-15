@@ -56,9 +56,9 @@
 
     <section class="workbench-entry">
       <div class="workbench-entry-copy">
-        <span>课程报告工作台</span>
+        <span>学生作业生产线</span>
         <h2>岗位劳动力市场预测报告工作台</h2>
-        <p>采集招聘样本，统计薪酬与技能需求，并结合 LMDT 仿真生成课程报告。</p>
+        <p>下载标准 CSV 模板，导入前预览校验，统计薪酬、学历、经验与技能需求，并结合 LMDT 仿真生成 Markdown 报告草稿。</p>
       </div>
       <router-link to="/report/workbench" class="workbench-entry-btn">进入工作台</router-link>
     </section>
