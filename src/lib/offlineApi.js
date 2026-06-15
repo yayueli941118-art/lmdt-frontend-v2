@@ -206,6 +206,107 @@ function factorAllocation(p) {
   return { capital, output, mpl, mpk, mrts, capital_labor_ratio: ratios, optimal_k_l: ratios[best] }
 }
 
+function demandTextbook(p) {
+  const wageInitial = Number(p.wage_initial || 55)
+  const wageNew = Number(p.wage_new || 42)
+  const productPrice = Number(p.product_price || 1)
+  const capital = Number(p.capital || 700)
+  const sigma = clamp(Number(p.sigma || 1.2), 0.3, 3)
+  const demandElasticity = clamp(Number(p.product_demand_elasticity || 0.8), 0.1, 2.5)
+  const capitalFlexibility = clamp(Number(p.capital_flexibility || 0.55), 0, 1)
+  const laborCostShare = clamp(Number(p.labor_cost_share || 0.35), 0.05, 0.9)
+  const marketFeedback = clamp(Number(p.market_feedback || 0.65), 0, 1)
+  const technologyType = String(p.tech_type || '中性技术')
+  const techFactor = technologyType.includes('替代') ? 0.88 : technologyType.includes('互补') ? 1.16 : 1
+  const scale = productPrice * techFactor * (capital / 700) ** 0.26
+  const curvature = 0.72 + sigma * 0.18
+  const laborGrid = range(20, 640, 96).map(v => round(v))
+  const shortVmp = laborGrid.map(L => round((scale * 190) / (1 + (L / 145) ** curvature) + 8))
+  const findLabor = (wage, curve = shortVmp) => {
+    let best = 0
+    curve.forEach((v, i) => {
+      if (Math.abs(v - wage) < Math.abs(curve[best] - wage)) best = i
+    })
+    return laborGrid[best]
+  }
+  const laborInitial = findLabor(wageInitial)
+  const laborShort = findLabor(wageNew)
+  const marketExpansion = (laborShort - laborInitial) / Math.max(laborInitial, 1)
+  const priceAfterMarket = clamp(productPrice * (1 - marketFeedback * demandElasticity * marketExpansion * 0.22), productPrice * 0.58, productPrice * 1.35)
+  const marketVmp = shortVmp.map(v => round(v * (priceAfterMarket / productPrice)))
+  const laborMarket = findLabor(wageNew, marketVmp)
+  const wageChangePct = (wageNew - wageInitial) / Math.max(wageInitial, 1)
+  const substitutionEffect = -wageChangePct * sigma * capitalFlexibility * laborInitial * 0.48
+  const scaleEffect = -wageChangePct * demandElasticity * laborCostShare * laborInitial * 0.72
+  const laborLong = clamp(round(laborInitial + substitutionEffect + scaleEffect), 20, 640)
+  const capitalInitial = capital
+  const capitalAfterSubstitution = round(capitalInitial - substitutionEffect * 2.4)
+  const capitalLong = round(capitalAfterSubstitution + Math.sign(scaleEffect) * Math.abs(scaleEffect) * 0.9)
+  const shortElasticity = round(0.18 + sigma * 0.16 + laborCostShare * 0.12, 2)
+  const longElasticity = round(shortElasticity + demandElasticity * 0.28 + capitalFlexibility * 0.34 + laborCostShare * 0.18, 2)
+  const wages = range(20, 150, 90).map(v => round(v))
+  const shortCurve = wages.map(w => round(laborInitial * (w / wageInitial) ** (-shortElasticity)))
+  const longCurve = wages.map(w => round(laborInitial * (w / wageInitial) ** (-longElasticity)))
+  const elasticityFactors = [
+    { name: '要素替代性', value: round(sigma / 3 * 100), desc: sigma > 1.5 ? '劳动与资本较易替代' : '劳动与资本替代空间有限' },
+    { name: '产品需求弹性', value: round(demandElasticity / 2.5 * 100), desc: demandElasticity > 1 ? '产品需求较敏感' : '产品需求较稳定' },
+    { name: '资本调整弹性', value: round(capitalFlexibility * 100), desc: capitalFlexibility > 0.6 ? '企业较容易调整资本' : '资本短期调整受限' },
+    { name: '劳动成本占比', value: round(laborCostShare / 0.9 * 100), desc: laborCostShare > 0.45 ? '人工成本占比较高' : '人工成本占比不高' },
+  ]
+  const elasticityLabel = longElasticity >= 1 ? '弹性较大' : longElasticity >= 0.55 ? '中等弹性' : '弹性较小'
+  return {
+    short_run: {
+      labor_grid: laborGrid,
+      vmp: shortVmp,
+      wage_initial: wageInitial,
+      wage_new: wageNew,
+      point_a: { label: 'A', wage: round(wageInitial), labor: round(laborInitial), vmp: round(wageInitial) },
+      point_b: { label: 'B', wage: round(wageNew), labor: round(laborShort), vmp: round(wageNew) },
+      rule: '完全竞争企业按 VMP = W 决定劳动需求。',
+    },
+    market: {
+      price_initial: round(productPrice, 2),
+      price_after: round(priceAfterMarket, 2),
+      vmp_initial: shortVmp,
+      vmp_adjusted: marketVmp,
+      point_b: { label: 'B', wage: round(wageNew), labor: round(laborShort) },
+      point_i: { label: 'I', wage: round(wageNew), labor: round(laborMarket) },
+      explanation: marketExpansion > 0
+        ? '工资下降使企业扩大用工；若所有企业同时扩产，产品价格回落，VMP 曲线向下移动，最终用工低于单个企业静态判断。'
+        : '工资上升使企业收缩用工；若所有企业同时减产，产品价格可能回升，VMP 曲线部分上移，最终收缩幅度低于静态判断。',
+    },
+    long_run: {
+      point_a: { label: 'A', wage: round(wageInitial), labor: round(laborInitial), capital: round(capitalInitial) },
+      point_b: { label: 'B', wage: round(wageNew), labor: round(laborInitial + substitutionEffect), capital: capitalAfterSubstitution },
+      point_c: { label: 'C', wage: round(wageNew), labor: round(laborLong), capital: capitalLong },
+      substitution_effect: round(substitutionEffect),
+      scale_effect: round(scaleEffect),
+      total_effect: round(laborLong - laborInitial),
+      short_curve: { wages, labor: shortCurve },
+      long_curve: { wages, labor: longCurve },
+      explanation: '长期中资本和产量都可调整，工资变化同时产生替代效应和规模效应，因此长期需求曲线通常比短期更平缓。',
+    },
+    elasticity: {
+      short: shortElasticity,
+      long: longElasticity,
+      label: elasticityLabel,
+      factors: elasticityFactors,
+      wage_10pct_effect: round(-longElasticity * 10),
+      diagnosis: `当前劳动需求为${elasticityLabel}：工资上升 10% 时，长期劳动需求约变化 ${round(-longElasticity * 10)}%。`,
+    },
+    parameters: {
+      product_price: round(productPrice, 2),
+      capital: round(capital),
+      sigma: round(sigma, 2),
+      technology_type: technologyType,
+      product_demand_elasticity: round(demandElasticity, 2),
+      capital_flexibility: round(capitalFlexibility, 2),
+      labor_cost_share: round(laborCostShare, 2),
+      market_feedback: round(marketFeedback, 2),
+    },
+  }
+}
+
 function beveridge(p) {
   let penaltyU = 0
   let penaltyV = 0
@@ -549,6 +650,7 @@ function chengyuTourism(p) {
 
 const handlers = [
   ['/api/v2/supply/decompose', supplyTextbookDecompose],
+  ['/api/v2/demand/textbook', demandTextbook],
   ['/api/v2/demand/curve', demandCurve],
   ['/api/v2/demand/factor-allocation', factorAllocation],
   ['/api/v2/macro/beveridge', beveridge],
