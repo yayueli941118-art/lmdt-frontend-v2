@@ -23,14 +23,16 @@ function pathOf(config) {
   }
 }
 
-function cdLaborSupply(wage, beta, T = 24) {
-  const labor = T * (1 - beta)
-  const consumption = wage * labor
+function cdLaborSupply(wage, beta, T = 24, nonLaborIncome = 0) {
+  const fullIncome = nonLaborIncome + wage * T
+  const leisure = clamp((beta * fullIncome) / wage, 0.25, T - 0.25)
+  const labor = T - leisure
+  const consumption = Math.max(nonLaborIncome + wage * labor, 1)
   return {
     labor_hours: round(labor),
     consumption: round(consumption),
-    leisure_hours: round(T - labor),
-    utility: round((labor ** beta) * (consumption ** (1 - beta)), 4),
+    leisure_hours: round(leisure),
+    utility: round((leisure ** beta) * (consumption ** (1 - beta)), 4),
   }
 }
 
@@ -67,6 +69,85 @@ function supplyDecompose(p) {
       backward_bending: sub > 0 && inc < 0 && Math.abs(inc) > Math.abs(sub),
     },
     supply_curve: { wages, labor_hours: laborHours, backward_bending_point: null },
+  }
+}
+
+function supplyTextbookDecompose(p) {
+  const wageInitial = Number(p.wage_initial || 32)
+  const wageNew = Number(p.wage_new || 54)
+  const beta = clamp(Number(p.beta || 0.4), 0.05, 0.95)
+  const nonLaborIncome = Number(p.non_labor_income || 80)
+  const nonLaborShock = Number(p.non_labor_shock || 120)
+  const incomeEffectStrength = clamp(Number(p.income_effect_strength ?? 0.45), 0, 1)
+  const T = Number(p.T || 24)
+  const effectiveBeta = wage =>
+    clamp(beta + incomeEffectStrength * 0.22 * Math.log(Math.max(wage, 1) / Math.max(wageInitial, 1)), 0.08, 0.92)
+  const A = cdLaborSupply(wageInitial, beta, T, nonLaborIncome)
+  const C = cdLaborSupply(wageNew, effectiveBeta(wageNew), T, nonLaborIncome)
+  const Z = cdLaborSupply(wageInitial, beta, T, nonLaborIncome + nonLaborShock)
+  const compensatedLeisure = clamp(A.leisure_hours * (wageInitial / wageNew) ** (1 - beta), 0.25, T - 0.25)
+  const laborB = T - compensatedLeisure
+  const compensatedIncome = wageNew * laborB + nonLaborIncome
+  const wages = range(Math.max(5, wageInitial * 0.45), Math.max(wageNew * 1.6, wageInitial * 1.8), 120).map(v => round(v))
+  const laborHours = wages.map(w => cdLaborSupply(w, effectiveBeta(w), T, nonLaborIncome).labor_hours)
+  const turningIndex = laborHours.findIndex((v, i) => i > 0 && v < laborHours[i - 1])
+  const sub = laborB - A.labor_hours
+  const inc = C.labor_hours - laborB
+  const total = C.labor_hours - A.labor_hours
+  const budgetLine = (wage, income = nonLaborIncome) => [
+    [0, round(income + wage * T)],
+    [T, round(income)],
+  ]
+  const point = (label, wage, base) => ({
+    label,
+    wage: round(wage),
+    labor_hours: round(base.labor_hours),
+    consumption: round(base.consumption),
+    leisure_hours: round(base.leisure_hours),
+    utility: round(base.utility, 3),
+  })
+  return {
+    time_endowment: T,
+    non_labor_income: round(nonLaborIncome),
+    non_labor_shock: round(nonLaborShock),
+    point_A: point('A', wageInitial, A),
+    point_B: {
+      label: 'B',
+      wage: wageNew,
+      labor_hours: round(laborB),
+      consumption: round(compensatedIncome),
+      leisure_hours: round(compensatedLeisure),
+      type: 'compensated',
+    },
+    point_C: point('C', wageNew, C),
+    point_Z: point('Z', wageInitial, Z),
+    budget_lines: {
+      initial: budgetLine(wageInitial),
+      new_wage: budgetLine(wageNew),
+      non_labor: budgetLine(wageInitial, nonLaborIncome + nonLaborShock),
+      compensated: budgetLine(wageNew, compensatedIncome - wageNew * T),
+    },
+    effects: {
+      substitution_effect_hours: round(sub),
+      income_effect_hours: round(inc),
+      total_effect_hours: round(total),
+      non_labor_income_effect_hours: round(Z.labor_hours - A.labor_hours),
+      substitution_pct: round((sub / A.labor_hours) * 100),
+      income_pct: round((inc / Math.max(laborB, 0.1)) * 100),
+      total_pct: round((total / Math.max(A.labor_hours, 0.1)) * 100),
+      dominant_effect: Math.abs(sub) > Math.abs(inc) ? '替代效应主导' : '收入效应主导',
+      backward_bending: sub > 0 && inc < 0 && Math.abs(inc) > Math.abs(sub),
+    },
+    supply_curve: {
+      wages,
+      labor_hours: laborHours,
+      backward_bending_point: turningIndex > -1 ? { wage: wages[turningIndex], labor_hours: laborHours[turningIndex] } : null,
+    },
+    textbook: {
+      income_shift: '图2-9：非劳动收入增加时，预算线平行上移；如果闲暇是正常品，劳动时间减少。',
+      wage_increase_more_work: '图2-10：工资率上升时，替代效应强于收入效应，工作时数增加。',
+      wage_increase_less_work: '图2-11：工资率上升时，收入效应强于替代效应，工作时数减少。',
+    },
   }
 }
 
@@ -467,7 +548,7 @@ function chengyuTourism(p) {
 }
 
 const handlers = [
-  ['/api/v2/supply/decompose', supplyDecompose],
+  ['/api/v2/supply/decompose', supplyTextbookDecompose],
   ['/api/v2/demand/curve', demandCurve],
   ['/api/v2/demand/factor-allocation', factorAllocation],
   ['/api/v2/macro/beveridge', beveridge],
