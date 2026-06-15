@@ -40,8 +40,8 @@
           </div>
           <div class="hero-stat-divider"></div>
           <div class="hero-stat">
-            <span class="hero-stat-num">HRM</span>
-            <span class="hero-stat-label">专业定制</span>
+            <span class="hero-stat-num">报告</span>
+            <span class="hero-stat-label">作业联动</span>
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@
 
     <section class="workbench-entry">
       <div class="workbench-entry-copy">
-        <span>学生作业生产线</span>
+        <span>课程报告工作台</span>
         <h2>岗位劳动力市场预测报告工作台</h2>
         <p>下载标准 CSV 模板，导入前预览校验，统计薪酬、学历、经验与技能需求，并结合 LMDT 仿真生成 Markdown 报告草稿。</p>
       </div>

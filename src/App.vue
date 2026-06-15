@@ -5,7 +5,7 @@
       <router-link to="/" class="nav-brand">{{ appProfile.brandShort }}</router-link>
       <span v-if="modeLabel" class="mode-badge">{{ modeLabel }}</span>
       <router-link to="/lab/individual">个体实验室</router-link>
-      <router-link to="/lab/enterprise">企业市场</router-link>
+      <router-link to="/lab/enterprise">劳动需求</router-link>
       <router-link to="/lab/macro">宏观政策</router-link>
       <router-link to="/lab/supply">劳动供给</router-link>
       <router-link to="/lab/wage">工资收入</router-link>

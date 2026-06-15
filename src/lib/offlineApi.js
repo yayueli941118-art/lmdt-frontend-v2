@@ -642,7 +642,7 @@ function chengyuTourism(p) {
       selected_matching: policyScenario.matching,
       recommended,
       scenarios,
-      explanation: `${policy}情景下，岗位供需匹配度约为 ${policyScenario.matching}，技能缺口约为 ${policyScenario.skill_gap}。课堂讨论可比较“扩需求”和“补供给”两类政策的不同效果。`,
+      explanation: `${policy}情景下，岗位供需匹配度约为 ${policyScenario.matching}，技能缺口约为 ${policyScenario.skill_gap}。思考讨论可比较“扩需求”和“补供给”两类政策的不同效果。`,
     },
     conclusion,
   }

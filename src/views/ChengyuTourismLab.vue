@@ -117,7 +117,7 @@
         <span>B</span>
         <div>
           <h2>技能缺口诊断</h2>
-          <p>比较岗位需求能力与学生当前能力，识别课程作业中最需要解释的技能短板。</p>
+          <p>比较岗位需求能力与当前能力，识别报告中最需要解释的技能短板。</p>
         </div>
       </div>
       <div class="skill-controls">
@@ -205,7 +205,7 @@
         <v-chart :option="policyChart" autoresize style="height:340px" />
       </div>
       <p class="policy-note">
-        课堂讨论：培训补贴更偏向补齐学生和劳动者能力，数字化投资会推高数字岗位需求，区域人才流动便利化则有助于缓解成都与重庆之间的人才错配。组合政策通常更适合“需求扩张 + 技能升级”同时发生的文旅场景。
+        思考讨论：培训补贴更偏向补齐学习者和劳动者能力，数字化投资会推高数字岗位需求，区域人才流动便利化则有助于缓解成都与重庆之间的人才错配。组合政策通常更适合“需求扩张 + 技能升级”同时发生的文旅场景。
       </p>
     </section>
       </template>
@@ -256,7 +256,7 @@ const result = ref(null)
 let timer = null
 
 const skillControls = [
-  { key: 'digital_skill', label: '学生数字技能水平', model: digitalSkill },
+  { key: 'digital_skill', label: '数字技能水平', model: digitalSkill },
   { key: 'data_skill', label: '数据分析能力', model: dataSkill },
   { key: 'service_skill', label: '服务运营能力', model: serviceSkill },
   { key: 'planning_skill', label: '活动策划能力', model: planningSkill },

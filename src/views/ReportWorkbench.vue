@@ -2,9 +2,9 @@
   <div class="workbench">
     <header class="workbench-header">
       <router-link to="/" class="back-link">← 返回首页</router-link>
-      <span class="page-kicker">学生作业生产线</span>
+      <span class="page-kicker">课程报告工作台</span>
       <h1>岗位劳动力市场预测报告工作台</h1>
-      <p>不抓取招聘平台数据。系统提供标准 CSV 模板、导入校验、基础统计、LMDT 仿真引导和 Markdown 报告草稿，帮助学生把课程作业做成“有样本、有统计、有模型、有证据”的规范报告。</p>
+      <p>请先下载标准 CSV 模板采集招聘样本，再导入预览、完成统计分析、进入 LMDT 做仿真实验，最后生成 Markdown 报告草稿。</p>
       <div class="flow-strip">
         <span v-for="step in workflowSteps" :key="step">{{ step }}</span>
       </div>
@@ -59,7 +59,7 @@
           <span v-for="field in csvHeaders" :key="field">{{ field }}</span>
         </div>
       </div>
-      <p class="hint">建议使用 UTF-8 CSV。系统只做学生采集数据的标准化校验，不做招聘平台爬虫。</p>
+      <p class="hint">建议使用 UTF-8 CSV。本页用于整理你们采集到的样本数据，不会自动抓取招聘平台信息。</p>
     </section>
 
     <section v-if="csvPreview" class="panel preview-panel">
@@ -275,7 +275,7 @@
         <button class="ghost-btn" type="button" @click="downloadHtml">下载 .html</button>
         <button class="ghost-btn" type="button" @click="printPage">打印页面</button>
       </div>
-      <p class="hint">第一版以 Markdown 作业为主，学生可继续补充解释、截图编号和仿真实验结论。</p>
+      <p class="hint">建议先用 Markdown 草稿完成报告主体，再补充解释、截图编号和仿真实验结论。</p>
       <p v-if="message" class="message">{{ message }}</p>
     </section>
   </div>
@@ -758,7 +758,7 @@ function generateReport() {
   return `# ${titleIndustry}/${titlePosition}劳动力市场预测报告
 
 ## 一、岗位与行业背景
-本报告选择${titleRegion}的${titleIndustry}行业，聚焦${titlePosition}岗位。数据由学生按照统一 CSV 模板手工采集，不直接抓取招聘平台数据。样本字段包括招聘平台、采集日期、企业、岗位、城市、薪资、学历、经验、技能关键词和证据链接或截图编号。${tourismSentence}
+本报告选择${titleRegion}的${titleIndustry}行业，聚焦${titlePosition}岗位。数据由学生按照统一 CSV 模板手工采集，样本字段包括招聘平台、采集日期、企业、岗位、城市、薪资、学历、经验、技能关键词和证据链接或截图编号。${tourismSentence}
 
 ## 二、招聘需求分析
 本次共采集招聘样本 ${stats.value.count} 条，其中有效薪资样本 ${stats.value.salaryCount} 条，缺失薪资样本 ${stats.value.missingSalary} 条。主要招聘城市集中在：${areaTop}。学历要求主要包括：${educationTop}；经验要求主要包括：${experienceTop}。
