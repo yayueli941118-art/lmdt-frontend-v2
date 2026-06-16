@@ -26,7 +26,7 @@ defineProps({
 <style scoped>
 .learning-card {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.35fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 12px;
   margin: 0 0 24px;
 }
@@ -52,8 +52,10 @@ defineProps({
   display: block;
   color: #dbeafe;
   font-size: 14px;
-  line-height: 1.65;
+  line-height: 1.75;
   font-weight: 700;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 .learning-block.conclusion strong {
   color: #e0f2fe;

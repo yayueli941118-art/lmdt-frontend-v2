@@ -176,7 +176,7 @@ function setMessage(text) {
 }
 .record-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.2fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 12px;
 }
 .record-block {
@@ -195,16 +195,19 @@ function setMessage(text) {
 }
 .record-block dl {
   margin: 0;
+  display: grid;
+  grid-template-columns: minmax(72px, 0.8fr) minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 4px;
 }
 .record-block dt {
-  float: left;
-  clear: left;
   color: #64748b;
   font-size: 12px;
   line-height: 1.8;
 }
 .record-block dd {
-  margin: 0 0 0 84px;
+  min-width: 0;
+  margin: 0;
   color: #e2e8f0;
   font-size: 12px;
   line-height: 1.8;
@@ -231,6 +234,14 @@ function setMessage(text) {
   }
   .record-grid {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 460px) {
+  .record-block dl {
+    grid-template-columns: 1fr;
+  }
+  .record-block dt {
+    margin-top: 4px;
   }
 }
 </style>

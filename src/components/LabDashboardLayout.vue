@@ -18,8 +18,8 @@
 <style scoped>
 .lab-dashboard {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+  gap: 22px;
   align-items: start;
   margin-bottom: 24px;
 }
