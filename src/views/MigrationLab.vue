@@ -295,14 +295,15 @@ onMounted(run)
 .back-link { color: #94a3b8; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 34px; font-weight: 900; margin: 12px 0 8px; letter-spacing: 0; }
 .lab-header p { color: #94a3b8; font-size: 15px; margin: 0; }
-.control-band { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 16px; align-items: end; padding: 18px; background: rgba(30,41,59,.62); border: 1px solid rgba(148,163,184,.12); border-radius: 14px; margin-bottom: 20px; }
-.control-group label { display: flex; justify-content: space-between; gap: 12px; color: #cbd5e1; font-size: 13px; margin-bottom: 7px; }
+.control-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 14px; align-items: end; width: 100%; box-sizing: border-box; padding: 18px; background: rgba(30,41,59,.62); border: 1px solid rgba(148,163,184,.12); border-radius: 14px; margin-bottom: 20px; overflow: hidden; }
+.control-group { min-width: 0; }
+.control-group label { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px 12px; color: #cbd5e1; font-size: 13px; line-height: 1.45; margin-bottom: 7px; }
 .control-group label span { color: #a78bfa; font-weight: 800; }
 .control-group input[type="range"] { width: 100%; accent-color: #8b5cf6; }
 .control-group.compact { display: flex; align-items: center; min-height: 54px; }
 .checkbox-label { justify-content: flex-start !important; align-items: center; color: #e2e8f0 !important; margin: 0 !important; }
 .checkbox-label input { accent-color: #8b5cf6; }
-.btn-run { height: 42px; border: none; border-radius: 10px; padding: 0 24px; color: #fff; background: linear-gradient(135deg, #8b5cf6, #2563eb); font-weight: 800; cursor: pointer; }
+.btn-run { width: 100%; min-width: 0; height: 42px; border: none; border-radius: 10px; padding: 0 18px; color: #fff; background: linear-gradient(135deg, #8b5cf6, #2563eb); font-weight: 800; cursor: pointer; }
 .btn-run:disabled { opacity: .55; cursor: not-allowed; }
 .decision-panel { display: flex; justify-content: space-between; gap: 20px; align-items: center; border-radius: 14px; padding: 22px 24px; margin-bottom: 16px; border: 1px solid; }
 .decision-strong { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.32); }
