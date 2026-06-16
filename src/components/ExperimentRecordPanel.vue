@@ -10,6 +10,7 @@
         <button type="button" class="primary" @click="saveToWorkbench">保存到报告工作台</button>
       </div>
     </div>
+    <p class="record-hint">保存后只写入当前浏览器，不会同步到其他同学或小组设备。</p>
 
     <div class="record-grid">
       <div class="record-block">
@@ -99,7 +100,7 @@ function saveToWorkbench() {
     createdAt: new Date().toISOString(),
   })
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 30)))
-  setMessage('已保存到报告工作台。')
+  setMessage('已保存到当前浏览器的报告工作台。')
 }
 
 function readRecords() {
@@ -166,6 +167,12 @@ function setMessage(text) {
   color: #fff;
   background: linear-gradient(135deg, #06b6d4, #2563eb);
   border-color: transparent;
+}
+.record-hint {
+  margin: -4px 0 14px;
+  color: #93c5fd;
+  font-size: 12px;
+  line-height: 1.6;
 }
 .record-grid {
   display: grid;

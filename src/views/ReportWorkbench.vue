@@ -250,6 +250,7 @@
         <span>08</span>
         <h2>已保存的 LMDT 实验记录</h2>
       </div>
+      <p class="local-note">这些记录只保存在当前浏览器。不同同学、不同设备、不同浏览器之间不会自动同步。</p>
       <div v-if="experimentRecords.length === 0" class="empty-block">工资、失业、成渝文旅等实验室保存的实验记录会出现在这里，用于报告第五部分。</div>
       <div v-else class="record-list">
         <article v-for="record in experimentRecords" :key="record.id">
@@ -262,9 +263,36 @@
       </div>
     </section>
 
-    <section class="panel report-panel">
+    <section class="panel data-panel">
       <div class="panel-title">
         <span>09</span>
+        <h2>本机数据管理</h2>
+      </div>
+      <div class="data-layout">
+        <div>
+          <strong>当前浏览器数据</strong>
+          <p>本页数据使用浏览器本地存储。适合 30 人同时上课时各自完成作业，不会把不同学生或小组的数据混在一起。</p>
+          <div class="data-summary">
+            <span>样本 {{ samples.length }} 条</span>
+            <span>实验记录 {{ experimentRecords.length }} 条</span>
+            <span>{{ reportText ? '已有报告草稿' : '暂无报告草稿' }}</span>
+          </div>
+        </div>
+        <div class="data-actions">
+          <button class="primary-btn" type="button" @click="exportAssignmentPackage">导出作业数据包</button>
+          <label class="file-btn">
+            导入作业数据包
+            <input type="file" accept=".json,application/json" @change="importAssignmentPackage">
+          </label>
+          <button class="danger-btn" type="button" @click="clearLocalWorkbenchData">清空本机数据</button>
+        </div>
+      </div>
+      <p class="hint">数据包会包含研究对象、招聘样本、LMDT 实验记录和当前报告草稿，方便换电脑继续做或提交给老师留档。</p>
+    </section>
+
+    <section class="panel report-panel">
+      <div class="panel-title">
+        <span>10</span>
         <h2>Markdown 报告草稿</h2>
       </div>
       <textarea v-model="reportText" class="report-textarea" @input="reportEdited = true"></textarea>
@@ -295,6 +323,7 @@ const SAMPLE_KEY = 'lmdtReportSamples'
 const TARGET_KEY = 'lmdtReportTarget'
 const RECORD_KEY = 'lmdtReportExperimentRecords'
 const REPORT_KEY = 'lmdtReportDraft'
+const PACKAGE_SCHEMA = 'lmdt-report-workbench-package-v1'
 
 const workflowSteps = ['采集招聘数据', '按模板导入', '预览与校验', '自动统计', 'LMDT 仿真', '生成报告草稿', '导出作业']
 const csvHeaders = ['样本编号', '招聘平台', '采集日期', '企业名称', '岗位名称', '行业', '城市', '薪资下限', '薪资上限', '学历要求', '经验要求', '技能关键词', '用工形式', '岗位链接', '截图编号', '备注']
@@ -812,6 +841,62 @@ function printPage() {
   window.print()
 }
 
+function exportAssignmentPackage() {
+  const payload = {
+    schema: PACKAGE_SCHEMA,
+    exportedAt: new Date().toISOString(),
+    app: 'LMDT 2.0',
+    target: { ...target },
+    samples: samples.value,
+    experimentRecords: experimentRecords.value,
+    reportText: reportText.value,
+  }
+  downloadFile(JSON.stringify(payload, null, 2), assignmentPackageFileName(), 'application/json;charset=utf-8')
+  setMessage('作业数据包已导出。')
+}
+
+async function importAssignmentPackage(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  try {
+    const payload = JSON.parse(await file.text())
+    if (!payload || payload.schema !== PACKAGE_SCHEMA) {
+      throw new Error('schema mismatch')
+    }
+    Object.assign(target, payload.target || { industry: '', position: '', region: '' })
+    samples.value = Array.isArray(payload.samples) ? payload.samples.map((sample) => normalizeSample(sample)) : []
+    experimentRecords.value = Array.isArray(payload.experimentRecords) ? payload.experimentRecords : []
+    reportText.value = String(payload.reportText || '')
+    reportEdited.value = Boolean(reportText.value)
+    csvPreview.value = null
+    resetDraft()
+    localStorage.setItem(RECORD_KEY, JSON.stringify(experimentRecords.value))
+    localStorage.setItem(REPORT_KEY, reportText.value)
+    setMessage(`已导入作业数据包：${samples.value.length} 条样本，${experimentRecords.value.length} 条实验记录。`)
+  } catch {
+    setMessage('导入失败。请选择从本工作台导出的 JSON 作业数据包。')
+  } finally {
+    event.target.value = ''
+  }
+}
+
+function clearLocalWorkbenchData() {
+  const ok = window.confirm('确定清空当前浏览器里的研究对象、招聘样本、实验记录和报告草稿吗？此操作不会影响其他同学的数据。')
+  if (!ok) return
+  reportEdited.value = true
+  localStorage.removeItem(SAMPLE_KEY)
+  localStorage.removeItem(TARGET_KEY)
+  localStorage.removeItem(RECORD_KEY)
+  localStorage.removeItem(REPORT_KEY)
+  Object.assign(target, { industry: '', position: '', region: '' })
+  samples.value = []
+  experimentRecords.value = []
+  reportText.value = ''
+  csvPreview.value = null
+  resetDraft()
+  setMessage('当前浏览器的工作台数据已清空。')
+}
+
 function downloadFile(content, filename, type) {
   const blob = new Blob([`\uFEFF${content}`], { type })
   const url = URL.createObjectURL(blob)
@@ -831,6 +916,12 @@ function toCsv(rows) {
 
 function reportFileName(ext) {
   return `${target.industry || '行业'}-${target.position || '岗位'}-劳动力市场预测报告.${ext}`
+}
+
+function assignmentPackageFileName() {
+  const position = target.position || '岗位'
+  const stamp = new Date().toISOString().slice(0, 10)
+  return `${position}-LMDT作业数据包-${stamp}.json`
 }
 
 function today() {
@@ -1047,6 +1138,12 @@ button,
 .message {
   color: #67e8f9;
 }
+.local-note {
+  margin: -4px 0 14px;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.7;
+}
 .preview-cards,
 .stats-grid {
   display: grid;
@@ -1242,6 +1339,50 @@ th {
   font-size: 13px;
   line-height: 1.6;
 }
+.data-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+.data-layout strong {
+  display: block;
+  color: #f8fafc;
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.data-layout p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.data-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.data-summary span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #dbeafe;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.16);
+  font-size: 12px;
+  font-weight: 800;
+}
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.danger-btn {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(127, 29, 29, 0.3);
+}
 .report-textarea {
   min-height: 540px;
   font-family: Consolas, "Microsoft YaHei", monospace;
@@ -1258,6 +1399,7 @@ th {
   .skill-panel,
   .sim-panel,
   .records-panel,
+  .data-panel,
   .form-actions,
   .hint {
     display: none !important;
@@ -1300,6 +1442,12 @@ th {
   .sim-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .data-layout {
+    grid-template-columns: 1fr;
+  }
+  .data-actions {
+    justify-content: flex-start;
+  }
 }
 @media (max-width: 640px) {
   .workbench {
@@ -1310,6 +1458,7 @@ th {
   }
   .sample-form,
   .sim-grid,
+  .data-layout,
   .preview-cards,
   .stats-grid {
     grid-template-columns: 1fr;
