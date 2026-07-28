@@ -1,27 +1,25 @@
 <template>
-  <div class="lab">
-    <div class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <h1>企业劳动需求实验室</h1>
-      <p>把教材第三章的 VMP = W、市场调整、长期替代效应与规模效应、需求弹性诊断做成可操作的劳动需求推导工具。</p>
-    </div>
-
-    <LabDashboardLayout>
+  <ExperimentWorkspace
+      class="lab"
+      :title="pageTitle"
+      :subtitle="pageSubtitle"
+      kicker="CH.03 · 劳动力需求"
+      :chart-tabs="demandChartTabs"
+      v-model:active-chart="activeTab"
+      :change-key="[wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType]"
+      @reset="resetDemand"
+      formula="Q=A[αK^ρ+(1-α)L^ρ]^(1/ρ)，VMP=P×MPL，完全竞争下 VMP=W"
+      assumptions="产品与要素市场完全竞争；短期资本固定，长期资本可调；生产函数规模报酬不变。"
+      source="教材第三章图3-1至图3-7、图3-11。"
+      scope="解释单个企业、市场反馈和长期要素调整下的派生劳动需求。"
+      limitation="具体企业的真实招聘人数或行业预测。"
+    >
       <template #controls>
         <div class="lab-controls">
-          <div class="control-group wide">
-            <label>教材图模式</label>
-            <div class="tab-buttons">
-              <button type="button" :class="{ active: activeTab === 'short' }" @click="activeTab = 'short'">短期 VMP</button>
-              <button type="button" :class="{ active: activeTab === 'market' }" @click="activeTab = 'market'">市场调整</button>
-              <button type="button" :class="{ active: activeTab === 'long' }" @click="activeTab = 'long'">长期需求</button>
-              <button type="button" :class="{ active: activeTab === 'elasticity' }" @click="activeTab = 'elasticity'">弹性诊断</button>
-            </div>
-          </div>
-
+          <p class="control-context">{{ activeControlHint }}</p>
           <div class="control-group">
             <label>初始工资 W0 <span class="val">{{ wageInitial }} 元/h</span></label>
-            <input type="range" v-model.number="wageInitial" min="20" max="140" step="2">
+            <input type="range" v-model.number="wageInitial" :min="demandWageRange.min" :max="demandWageRange.max" :step="demandWageRange.step">
           </div>
           <div class="control-group">
             <label>新工资 W1 <span class="val">{{ wageNew }} 元/h</span></label>
@@ -40,19 +38,19 @@
             <input type="range" v-model.number="sigma" min="0.3" max="3" step="0.05">
             <div class="hint">σ 越高，长期调整时资本替代劳动越容易。</div>
           </div>
-          <div class="control-group">
+          <div v-if="activeTab !== 'short'" class="control-group">
             <label>产品需求弹性 <span class="val">{{ productDemandElasticity.toFixed(2) }}</span></label>
             <input type="range" v-model.number="productDemandElasticity" min="0.1" max="2.5" step="0.05">
           </div>
-          <div class="control-group">
+          <div v-if="activeTab === 'long' || activeTab === 'elasticity'" class="control-group">
             <label>资本调整能力 <span class="val">{{ capitalFlexibility.toFixed(2) }}</span></label>
             <input type="range" v-model.number="capitalFlexibility" min="0" max="1" step="0.05">
           </div>
-          <div class="control-group">
+          <div v-if="activeTab === 'long' || activeTab === 'elasticity'" class="control-group">
             <label>劳动成本占比 <span class="val">{{ laborCostShare.toFixed(2) }}</span></label>
             <input type="range" v-model.number="laborCostShare" min="0.05" max="0.9" step="0.05">
           </div>
-          <div class="control-group">
+          <div v-if="activeTab === 'market'" class="control-group">
             <label>市场反馈强度 <span class="val">{{ marketFeedback.toFixed(2) }}</span></label>
             <input type="range" v-model.number="marketFeedback" min="0" max="1" step="0.05">
           </div>
@@ -67,7 +65,19 @@
           <button class="btn-run" type="button" @click="runDemand" :disabled="loading">
             {{ loading ? '实时更新中...' : '刷新劳动需求' }}
           </button>
+          <button class="btn-reset" type="button" @click="resetDemand">恢复默认参数</button>
         </div>
+      </template>
+
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="企业劳动需求"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="demandConclusion"
+          model-version="demand-ces-2.1"
+          source-type="教材公式与教学情景参数"
+        />
       </template>
 
       <template #task>
@@ -112,15 +122,19 @@
             </div>
             <span>{{ activeFigure }}</span>
           </div>
-          <v-chart :option="activeChartOption" autoresize style="height:430px" />
+          <v-chart class="workspace-chart-canvas" :option="activeChartOption" autoresize />
         </div>
       </template>
 
-      <template #secondary>
+      <template #change>
+        {{ activeChangeSummary }}
+      </template>
+
+      <template #analysis>
         <div v-if="result" class="lab-results">
           <section class="section-grid">
             <div class="explain-card">
-              <h3>读图顺序：学生先看什么</h3>
+              <h3>读图顺序</h3>
               <div class="read-row">
                 <strong>1</strong>
                 <span>先问“企业为什么招这个人数”：看 VMP 曲线和工资线交点。</span>
@@ -167,16 +181,19 @@
           </p>
         </div>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import { sliderRanges } from '../config/sliderRanges'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
@@ -185,8 +202,21 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const activeTab = ref('short')
-const wageInitial = ref(55)
+const route = useRoute()
+const isFactorAllocation = computed(() => route.path === '/lab/factor-allocation')
+const pageTitle = computed(() => isFactorAllocation.value ? '要素配置沙盘' : '企业劳动需求实验室')
+const pageSubtitle = computed(() => isFactorAllocation.value
+  ? '用等产量曲线、等成本线和 A→B→C 路径观察长期要素替代与规模效应。'
+  : '把教材第三章的 VMP=W、市场调整、长期替代与规模效应、需求弹性做成可操作推导工具。')
+const activeTab = ref(isFactorAllocation.value ? 'long' : 'short')
+const demandChartTabs = [
+  { key: 'short', label: '短期 VMP' },
+  { key: 'market', label: '市场调整' },
+  { key: 'long', label: '长期需求' },
+  { key: 'elasticity', label: '弹性诊断' },
+]
+const demandWageRange = sliderRanges.demandInitialWage
+const wageInitial = ref(demandWageRange.default)
 const wageNew = ref(42)
 const productPrice = ref(1)
 const capital = ref(700)
@@ -198,7 +228,6 @@ const marketFeedback = ref(0.65)
 const techType = ref('中性技术')
 const loading = ref(false)
 const result = ref(null)
-let demandTimer = null
 
 const activeFigure = computed(() => ({
   short: '图3-1 / 图3-2',
@@ -222,6 +251,27 @@ const activeExplanation = computed(() => {
   return result.value.elasticity.diagnosis
 })
 
+const activeControlHint = computed(() => ({
+  short: '当前参数直接驱动短期 VMP 曲线、工资线与 A/B 均衡点。',
+  market: '当前参数直接驱动产品价格反馈、VMP 位移与 B/I 均衡点。',
+  long: '当前参数直接驱动要素替代、规模效应与 A→B→C 调整路径。',
+  elasticity: '当前参数直接驱动短期和长期需求弹性差异。',
+}[activeTab.value]))
+
+const activeChangeSummary = computed(() => {
+  if (!result.value) return '等待当前情景计算。'
+  if (activeTab.value === 'market') {
+    return `产品价格 ${result.value.market.price_initial} → ${result.value.market.price_after}；雇佣量 B点 ${result.value.market.point_b.labor} → I点 ${result.value.market.point_i.labor}。`
+  }
+  if (activeTab.value === 'long') {
+    return `长期调整 A点 ${result.value.long_run.point_a.labor} → B点 ${result.value.long_run.point_b.labor} → C点 ${result.value.long_run.point_c.labor}。`
+  }
+  if (activeTab.value === 'elasticity') {
+    return `短期弹性 ${result.value.elasticity.short} → 长期弹性 ${result.value.elasticity.long}，${result.value.elasticity.label}。`
+  }
+  return `短期工资变化后，雇佣量 A点 ${result.value.short_run.point_a.labor} → B点 ${result.value.short_run.point_b.labor}。`
+})
+
 const demandConclusion = computed(() => {
   if (!result.value) return ''
   const a = result.value.short_run.point_a
@@ -229,6 +279,22 @@ const demandConclusion = computed(() => {
   const c = result.value.long_run.point_c
   return `工资从 ${a.wage} 元/h 变为 ${b.wage} 元/h，短期雇佣量从 ${a.labor} 变为 ${b.labor}，长期调整后为 ${c.labor}。`
 })
+
+const recordParameters = computed(() => ({
+  '教材图模式': activeFigure.value,
+  '初始工资W0': `${wageInitial.value} 元/小时`,
+  '新工资W1': `${wageNew.value} 元/小时`,
+  '资本存量K': capital.value,
+  '替代弹性σ': sigma.value.toFixed(2),
+  '技术类型': techType.value,
+}))
+
+const recordMetrics = computed(() => result.value ? ({
+  '初始雇佣量': result.value.short_run.point_a.labor,
+  '短期雇佣量': result.value.short_run.point_b.labor,
+  '长期雇佣量': result.value.long_run.point_c.labor,
+  '长期需求弹性': result.value.elasticity.long,
+}) : ({}))
 
 const activeChartOption = computed(() => {
   if (!result.value) return {}
@@ -267,6 +333,8 @@ function pointSeries(point, color) {
 function baseDemandAxes(series) {
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     color: ['#38bdf8', '#22c55e', '#f59e0b'],
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
@@ -319,16 +387,13 @@ const marketChartOption = computed(() => {
 const longPathChartOption = computed(() => {
   if (!result.value) return {}
   const d = result.value.long_run
-  const iso1 = Array.from({ length: 52 }, (_, i) => {
-    const L = 45 + i * 8
-    return [L, Math.max(80, 28000 / (L + 20) + 140)]
-  })
-  const iso2 = Array.from({ length: 52 }, (_, i) => {
-    const L = 45 + i * 8
-    return [L, Math.max(90, 36000 / (L + 20) + 180)]
-  })
+  const iso1 = d.isoquants.initial.labor.map((L, i) => [L, d.isoquants.initial.capital[i]])
+  const iso2 = d.isoquants.new.labor.map((L, i) => [L, d.isoquants.new.capital[i]])
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
+    color: ['#38bdf8', '#22c55e', '#f59e0b'],
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
     grid: { top: 46, right: 24, bottom: 42, left: 58 },
@@ -366,6 +431,8 @@ const elasticityChartOption = computed(() => {
   const items = result.value.elasticity.factors
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     grid: { top: 22, right: 20, bottom: 36, left: 92 },
     tooltip: { trigger: 'axis' },
     xAxis: { max: 100, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,.1)' } } },
@@ -402,10 +469,22 @@ async function runDemand() {
   }
 }
 
-function scheduleDemand() {
-  clearTimeout(demandTimer)
-  demandTimer = setTimeout(runDemand, 220)
+function resetDemand() {
+  activeTab.value = isFactorAllocation.value ? 'long' : 'short'
+  wageInitial.value = demandWageRange.default
+  wageNew.value = 42
+  productPrice.value = 1
+  capital.value = 700
+  sigma.value = 1.2
+  productDemandElasticity.value = 0.8
+  capitalFlexibility.value = 0.55
+  laborCostShare.value = 0.35
+  marketFeedback.value = 0.65
+  techType.value = '中性技术'
+  runDemand()
 }
+
+const scheduleDemand = createRealtimeScheduler(runDemand, 80)
 
 watch([wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType], scheduleDemand)
 onMounted(runDemand)
@@ -420,6 +499,7 @@ onMounted(runDemand)
 .lab-header p { color: #94a3b8; font-size: 15px; margin: 0; max-width: 900px; line-height: 1.7; }
 .lab-controls { display: grid; gap: 14px; padding: 18px; background: rgba(30,41,59,.5); border: 1px solid rgba(148,163,184,.1); border-radius: 16px; }
 .control-group { min-width: 0; }
+.control-context { margin: 0; color: #cbd5e1; font-size: 12px; line-height: 1.55; }
 .control-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
 .control-group label .val { color: #06b6d4; font-weight: 800; }
 .control-group input[type="range"], .control-group select { width: 100%; }
@@ -430,6 +510,7 @@ onMounted(runDemand)
 .tab-buttons button.active { border-color: rgba(6,182,212,.45); color: #e0f2fe; background: rgba(6,182,212,.14); }
 .btn-run { padding: 12px 18px; border: none; border-radius: 10px; background: linear-gradient(135deg,#06b6d4,#2563eb); color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; }
 .btn-run:disabled { opacity: .55; cursor: not-allowed; }
+.btn-reset { padding: 11px 14px; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; color: #cbd5e1; background: #111b2e; cursor: pointer; }
 .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat-card, .chart-card, .explain-card, .point-card { background: rgba(30,41,59,.5); border: 1px solid rgba(148,163,184,.1); border-radius: 14px; }
 .stat-card { padding: 15px; text-align: center; }

@@ -1,0 +1,928 @@
+[
+  {
+    "phase": "before",
+    "route": "/lab/supply",
+    "slug": "supply",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 2985,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 1965,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1718
+    },
+    "mainChart": {
+      "top": 343,
+      "bottom": 867,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 524
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 327,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 80
+    },
+    "visibleSliderCount": 7,
+    "slidersInViewport": 6,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/enterprise",
+    "slug": "enterprise",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 3150,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 2177,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1931
+    },
+    "mainChart": {
+      "top": 364,
+      "bottom": 888,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 524
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 348,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 101
+    },
+    "visibleSliderCount": 9,
+    "slidersInViewport": 5,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/factor-allocation",
+    "slug": "factor-allocation",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 3150,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 2177,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1931
+    },
+    "mainChart": {
+      "top": 364,
+      "bottom": 888,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 524
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 348,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 101
+    },
+    "visibleSliderCount": 9,
+    "slidersInViewport": 5,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/individual",
+    "slug": "individual",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 768,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": null,
+    "mainChart": null,
+    "metrics": null,
+    "visibleSliderCount": 0,
+    "slidersInViewport": 0,
+    "controlsInViewport": null,
+    "chartInViewport": null,
+    "metricsInViewport": null
+  },
+  {
+    "phase": "before",
+    "route": "/lab/migration",
+    "slug": "migration",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 2040,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 240,
+      "bottom": 1899,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1659
+    },
+    "mainChart": {
+      "top": 694,
+      "bottom": 1102,
+      "left": 466,
+      "right": 930,
+      "width": 464,
+      "height": 408
+    },
+    "metrics": {
+      "top": 417,
+      "bottom": 505,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 88
+    },
+    "visibleSliderCount": 7,
+    "slidersInViewport": 7,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/wage",
+    "slug": "wage",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 1830,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 271,
+      "bottom": 1596,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1325
+    },
+    "mainChart": {
+      "top": 400,
+      "bottom": 915,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 515
+    },
+    "metrics": {
+      "top": 271,
+      "bottom": 362,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 91
+    },
+    "visibleSliderCount": 3,
+    "slidersInViewport": 3,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/discrimination",
+    "slug": "discrimination",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 1771,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 271,
+      "bottom": 1537,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1266
+    },
+    "mainChart": {
+      "top": 398,
+      "bottom": 915,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 517
+    },
+    "metrics": {
+      "top": 271,
+      "bottom": 360,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 89
+    },
+    "visibleSliderCount": 3,
+    "slidersInViewport": 3,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/income-distribution",
+    "slug": "income-distribution",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 2002,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 394,
+      "bottom": 1720,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1325
+    },
+    "mainChart": {
+      "top": 521,
+      "bottom": 930,
+      "left": 466,
+      "right": 891,
+      "width": 425,
+      "height": 409
+    },
+    "metrics": {
+      "top": 394,
+      "bottom": 487,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 93
+    },
+    "visibleSliderCount": 4,
+    "slidersInViewport": 4,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/unemployment",
+    "slug": "unemployment",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 2091,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 271,
+      "bottom": 1629,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1357
+    },
+    "mainChart": {
+      "top": 405,
+      "bottom": 916,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 511
+    },
+    "metrics": {
+      "top": 271,
+      "bottom": 367,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 96
+    },
+    "visibleSliderCount": 4,
+    "slidersInViewport": 4,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/macro",
+    "slug": "macro",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 1720,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 242,
+      "bottom": 1595,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1353
+    },
+    "mainChart": {
+      "top": 429,
+      "bottom": 842,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 413
+    },
+    "metrics": {
+      "top": 320,
+      "bottom": 405,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 85
+    },
+    "visibleSliderCount": 2,
+    "slidersInViewport": 2,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/chengyu-tourism",
+    "slug": "chengyu-tourism",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "document": {
+      "scrollHeight": 4442,
+      "clientHeight": 720,
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 1960,
+      "left": 24,
+      "right": 444,
+      "width": 420,
+      "height": 1713
+    },
+    "mainChart": {
+      "top": 467,
+      "bottom": 856,
+      "left": 487,
+      "right": 853,
+      "width": 366,
+      "height": 389
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 335,
+      "left": 466,
+      "right": 1256,
+      "width": 790,
+      "height": 88
+    },
+    "visibleSliderCount": 13,
+    "slidersInViewport": 3,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/supply",
+    "slug": "supply",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 2985,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 1965,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1718
+    },
+    "mainChart": {
+      "top": 343,
+      "bottom": 867,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 524
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 327,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 80
+    },
+    "visibleSliderCount": 7,
+    "slidersInViewport": 6,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/enterprise",
+    "slug": "enterprise",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 3150,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 2177,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1931
+    },
+    "mainChart": {
+      "top": 364,
+      "bottom": 888,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 524
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 348,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 101
+    },
+    "visibleSliderCount": 9,
+    "slidersInViewport": 6,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/factor-allocation",
+    "slug": "factor-allocation",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 3150,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 2177,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1931
+    },
+    "mainChart": {
+      "top": 364,
+      "bottom": 888,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 524
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 348,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 101
+    },
+    "visibleSliderCount": 9,
+    "slidersInViewport": 6,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/individual",
+    "slug": "individual",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 816,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": null,
+    "mainChart": null,
+    "metrics": null,
+    "visibleSliderCount": 0,
+    "slidersInViewport": 0,
+    "controlsInViewport": null,
+    "chartInViewport": null,
+    "metricsInViewport": null
+  },
+  {
+    "phase": "before",
+    "route": "/lab/migration",
+    "slug": "migration",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 2040,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 240,
+      "bottom": 1899,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1659
+    },
+    "mainChart": {
+      "top": 694,
+      "bottom": 1102,
+      "left": 509,
+      "right": 973,
+      "width": 464,
+      "height": 408
+    },
+    "metrics": {
+      "top": 417,
+      "bottom": 505,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 88
+    },
+    "visibleSliderCount": 7,
+    "slidersInViewport": 7,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/wage",
+    "slug": "wage",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 1830,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 271,
+      "bottom": 1596,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1325
+    },
+    "mainChart": {
+      "top": 400,
+      "bottom": 915,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 515
+    },
+    "metrics": {
+      "top": 271,
+      "bottom": 362,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 91
+    },
+    "visibleSliderCount": 3,
+    "slidersInViewport": 3,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/discrimination",
+    "slug": "discrimination",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 1771,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 271,
+      "bottom": 1537,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1266
+    },
+    "mainChart": {
+      "top": 398,
+      "bottom": 915,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 517
+    },
+    "metrics": {
+      "top": 271,
+      "bottom": 360,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 89
+    },
+    "visibleSliderCount": 3,
+    "slidersInViewport": 3,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/income-distribution",
+    "slug": "income-distribution",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 2002,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 394,
+      "bottom": 1720,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1325
+    },
+    "mainChart": {
+      "top": 521,
+      "bottom": 930,
+      "left": 509,
+      "right": 934,
+      "width": 425,
+      "height": 409
+    },
+    "metrics": {
+      "top": 394,
+      "bottom": 487,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 93
+    },
+    "visibleSliderCount": 4,
+    "slidersInViewport": 4,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/unemployment",
+    "slug": "unemployment",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 2091,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 271,
+      "bottom": 1629,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1357
+    },
+    "mainChart": {
+      "top": 405,
+      "bottom": 916,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 511
+    },
+    "metrics": {
+      "top": 271,
+      "bottom": 367,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 96
+    },
+    "visibleSliderCount": 4,
+    "slidersInViewport": 4,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/macro",
+    "slug": "macro",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 1720,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 242,
+      "bottom": 1595,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1353
+    },
+    "mainChart": {
+      "top": 429,
+      "bottom": 842,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 413
+    },
+    "metrics": {
+      "top": 320,
+      "bottom": 405,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 85
+    },
+    "visibleSliderCount": 2,
+    "slidersInViewport": 2,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  },
+  {
+    "phase": "before",
+    "route": "/lab/chengyu-tourism",
+    "slug": "chengyu-tourism",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "document": {
+      "scrollHeight": 4442,
+      "clientHeight": 768,
+      "scrollWidth": 1366,
+      "clientWidth": 1366
+    },
+    "controls": {
+      "top": 247,
+      "bottom": 1960,
+      "left": 67,
+      "right": 487,
+      "width": 420,
+      "height": 1713
+    },
+    "mainChart": {
+      "top": 467,
+      "bottom": 856,
+      "left": 530,
+      "right": 896,
+      "width": 366,
+      "height": 389
+    },
+    "metrics": {
+      "top": 247,
+      "bottom": 335,
+      "left": 509,
+      "right": 1299,
+      "width": 790,
+      "height": 88
+    },
+    "visibleSliderCount": 13,
+    "slidersInViewport": 3,
+    "controlsInViewport": false,
+    "chartInViewport": false,
+    "metricsInViewport": true
+  }
+]

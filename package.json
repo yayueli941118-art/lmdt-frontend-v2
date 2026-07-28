@@ -1,11 +1,17 @@
 {
   "name": "lmdt-frontend-v2",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:anonymous": "vite build --mode anonymous && node scripts/scan-anonymous.mjs",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "capture:screenshots": "node scripts/capture-mode-screenshots.mjs",
+    "test:watch": "vitest",
+    "check": "npm run test && npm run build && npm run build:anonymous",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -16,7 +22,9 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@vitejs/plugin-vue": "^6.0.6",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^3.2.4"
   }
 }

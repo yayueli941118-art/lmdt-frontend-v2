@@ -1,5 +1,8 @@
 <template>
   <section class="learning-card">
+    <div class="learning-flow" aria-label="学习流程">
+      <span>先预测</span><i>→</i><span>写理由</span><i>→</i><span>调参数</span><i>→</i><span>看证据</span><i>→</i><span>做反事实</span><i>→</i><span>做解释</span><i>→</i><span>规则反馈</span><i>→</i><span>再修改并保存</span>
+    </div>
     <div class="learning-block">
       <span class="learning-label">学习任务</span>
       <strong>{{ task }}</strong>
@@ -30,9 +33,21 @@ defineProps({
   gap: 12px;
   margin: 0 0 24px;
 }
+.learning-flow {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+.learning-flow span { color: #93c5fd; }
+.learning-flow i { font-style: normal; color: #475569; }
 .learning-block {
   min-width: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 14px 16px;
   background: rgba(15, 23, 42, 0.58);
   border: 1px solid rgba(148, 163, 184, 0.12);
