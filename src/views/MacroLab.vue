@@ -6,7 +6,13 @@
       <p>贝弗里奇曲线 · 结构性失业诊断 · AI 冲击 · 政策组合实验</p>
     </div>
 
-    <LabDashboardLayout>
+    <LabDashboardLayout
+      formula="v=a+k/u；错配冲击使 UV 曲线外移，匹配效率改善使其向原点移动。"
+      assumptions="失业率和岗位空缺率采用相同比率口径；图示范围限定为课堂可读区间。"
+      source="教材第九章贝弗里奇曲线与结构性失业。"
+      scope="比较需求冲击、技能错配与培训政策的方向性影响。"
+      limitation="现实宏观失业率或岗位空缺率预测。"
+    >
       <template #controls>
     <div class="lab-controls">
       <div class="control-group">
@@ -28,7 +34,19 @@
       <button class="btn-run" @click="run" :disabled="loading">
         {{ loading ? '实时更新中…' : '刷新贝弗里奇模拟' }}
       </button>
+      <button class="btn-reset" type="button" @click="resetMacro">恢复默认参数</button>
     </div>
+      </template>
+
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="贝弗里奇曲线与结构性失业"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="macroConclusion"
+          model-version="beveridge-2.1"
+          source-type="教材公式与教学情景参数"
+        />
       </template>
 
       <template #task>
@@ -86,12 +104,13 @@ import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent } from 'echarts/components'
+import { GridComponent, LegendComponent, MarkPointComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
+use([LineChart, GridComponent, LegendComponent, MarkPointComponent, TooltipComponent, CanvasRenderer])
 
 
 const aiRisk = ref(30); const mismatchIndex = ref(0.5); const loading = ref(false); const result = ref(null)
@@ -109,24 +128,50 @@ const macroConclusion = computed(() => {
   return `当前失业率为 ${result.value.u_current}%，比自然失业率高 ${gap} 个百分点，诊断结果为：${result.value.diagnosis_text}`
 })
 
+const recordParameters = computed(() => ({
+  'AI冲击': `${aiRisk.value}%`,
+  '技能错配指数': mismatchIndex.value,
+  '激活政策': activePolicies.value.length ? activePolicies.value.join('、') : '无',
+}))
+
+const recordMetrics = computed(() => result.value ? ({
+  '当前失业率': `${result.value.u_current}%`,
+  '当前空缺率': `${result.value.v_current}%`,
+  '自然失业率': `${result.value.u_natural}%`,
+  '诊断': result.value.diagnosis_text,
+}) : ({}))
+
 const beveridgeChart = computed(() => {
   if (!result.value) return {}
   const pts = result.value.curve_points
+  const baseline = result.value.baseline_curve_points || pts
   return {
     backgroundColor: 'transparent',
-    grid: { top: 30, right: 20, bottom: 30, left: 55 },
-    xAxis: { name: '失业率 u (%)', nameTextStyle: { color: '#888' }, axisLabel: { color: '#666' } },
-    yAxis: { name: '空缺率 v (%)', nameTextStyle: { color: '#888' }, axisLabel: { color: '#666' } },
+    grid: { top: 48, right: 20, bottom: 36, left: 55 },
+    legend: { top: 0, textStyle: { color: '#94a3b8' } },
+    xAxis: { name: '失业率 u (%)', min: result.value.chart_domain?.u_min ?? 0, max: result.value.chart_domain?.u_max ?? 15, nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' } },
+    yAxis: { name: '空缺率 v (%)', min: result.value.chart_domain?.v_min ?? 0, max: result.value.chart_domain?.v_max ?? 15, nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
-    series: [{
-      type: 'line', data: pts.map(p => [p.u, p.v]),
-      smooth: true, lineStyle: { color: '#8b5cf6', width: 2 },
-      areaStyle: { color: 'rgba(139,92,246,0.06)' }, symbol: 'none',
-      markPoint: {
-        data: [{ coord: [result.value.u_current, result.value.v_current], name: '当前', symbol: 'pin', symbolSize: 30, itemStyle: { color: '#ef4444' } }],
-        label: { fontSize: 11 }
-      }
-    }]
+    series: [
+      {
+        name: '基准曲线',
+        type: 'line',
+        data: baseline.map(point => [point.u, point.v]),
+        smooth: false,
+        lineStyle: { color: '#64748b', width: 2, type: 'dashed' },
+        symbol: 'none',
+      },
+      {
+        name: '当前曲线',
+        type: 'line', data: pts.map(point => [point.u, point.v]),
+        smooth: false, lineStyle: { color: '#8b5cf6', width: 3 },
+        areaStyle: { color: 'rgba(139,92,246,0.06)' }, symbol: 'none',
+        markPoint: {
+          data: [{ coord: [result.value.u_current, result.value.v_current], name: '当前运行点', symbol: 'pin', symbolSize: 34, itemStyle: { color: '#ef4444' } }],
+          label: { fontSize: 11 },
+        },
+      },
+    ],
   }
 })
 
@@ -139,6 +184,13 @@ async function run() {
     result.value = data
   } catch(e) { console.error(e) }
   finally { loading.value = false }
+}
+
+function resetMacro() {
+  aiRisk.value = 30
+  mismatchIndex.value = 0.5
+  activePolicies.value = []
+  run()
 }
 
 function scheduleRun() {
@@ -167,6 +219,7 @@ onMounted(run)
 .btn-run { padding: 12px 28px; border: none; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: all .3s; white-space: nowrap; }
 .btn-run:hover { box-shadow: 0 8px 24px rgba(139,92,246,.35); transform: translateY(-1px); }
 .btn-run:disabled { opacity: .5; cursor: not-allowed; }
+.btn-reset { padding: 11px 14px; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; color: #cbd5e1; background: #111b2e; cursor: pointer; white-space: nowrap; }
 .diagnosis-card { padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
 .diag-safe { background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2); }
 .diag-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }

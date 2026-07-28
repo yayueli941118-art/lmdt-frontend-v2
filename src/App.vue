@@ -1,28 +1,43 @@
 <template>
   <div class="app-shell">
+    <a class="skip-link" href="#main-content">跳过导航，进入主要内容</a>
     <!-- 桌面端顶部导航 -->
-    <nav class="desktop-nav">
+    <nav class="desktop-nav" aria-label="主要导航">
       <router-link to="/" class="nav-brand">{{ appProfile.brandShort }}</router-link>
       <span v-if="modeLabel" class="mode-badge">{{ modeLabel }}</span>
       <router-link to="/lab/individual">个体实验室</router-link>
       <router-link to="/lab/enterprise">劳动需求</router-link>
-      <router-link to="/lab/macro">宏观政策</router-link>
       <router-link to="/lab/supply">劳动供给</router-link>
       <router-link to="/lab/wage">工资收入</router-link>
-      <router-link to="/lab/discrimination">歧视经济</router-link>
-      <router-link to="/lab/income-distribution">收入分配</router-link>
       <router-link to="/lab/unemployment">失业</router-link>
-      <router-link to="/lab/migration">迁移</router-link>
       <router-link to="/lab/chengyu-tourism">成渝文旅</router-link>
       <router-link to="/report/workbench">报告工作台</router-link>
+      <button
+        v-if="appMode === 'teaching'"
+        class="projection-toggle"
+        type="button"
+        :aria-pressed="projectionMode"
+        @click="toggleProjection"
+      >
+        {{ projectionMode ? '退出投影' : '投影显示' }}
+      </button>
+      <details class="nav-more">
+        <summary>更多实验</summary>
+        <div class="nav-more-menu">
+          <router-link to="/lab/macro">宏观政策</router-link>
+          <router-link to="/lab/migration">迁移决策</router-link>
+          <router-link to="/lab/discrimination">歧视经济</router-link>
+          <router-link to="/lab/income-distribution">收入分配</router-link>
+        </div>
+      </details>
     </nav>
 
-    <main class="main-content">
+    <main id="main-content" class="main-content" tabindex="-1">
       <router-view />
     </main>
 
     <!-- 移动端底部导航 -->
-    <nav class="mobile-nav">
+    <nav class="mobile-nav" aria-label="移动端主要导航">
       <router-link to="/" class="mobile-nav-item">
         <span class="mobile-nav-icon">🏠</span>
         <span>首页</span>
@@ -39,10 +54,6 @@
         <span class="mobile-nav-icon">🌍</span>
         <span>宏观</span>
       </router-link>
-      <router-link to="/lab/chengyu-tourism" class="mobile-nav-item">
-        <span class="mobile-nav-icon">🎭</span>
-        <span>文旅</span>
-      </router-link>
       <router-link to="/report/workbench" class="mobile-nav-item">
         <span class="mobile-nav-icon">📝</span>
         <span>报告</span>
@@ -52,9 +63,45 @@
 </template>
 
 <script setup>
-import { appProfile, modeLabel } from './config/appMode'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { appMode, appProfile, modeLabel } from './config/appMode'
 
 document.title = `${appProfile.brandShort} · ${appProfile.brandFull}`
+
+const projectionMode = ref(false)
+let accessibilityObserver = null
+let controlIndex = 0
+
+onMounted(() => {
+  projectionMode.value = localStorage.getItem('lmdtProjectionMode') === 'true'
+  document.documentElement.classList.toggle('projection-mode', projectionMode.value)
+  applyAccessibilityLinks()
+  accessibilityObserver = new MutationObserver(applyAccessibilityLinks)
+  accessibilityObserver.observe(document.getElementById('main-content'), { childList: true, subtree: true })
+})
+
+onUnmounted(() => accessibilityObserver?.disconnect())
+
+function toggleProjection() {
+  projectionMode.value = !projectionMode.value
+  localStorage.setItem('lmdtProjectionMode', String(projectionMode.value))
+  document.documentElement.classList.toggle('projection-mode', projectionMode.value)
+}
+
+function applyAccessibilityLinks() {
+  document.querySelectorAll('.control-group').forEach(group => {
+    const label = group.querySelector('label')
+    const control = group.querySelector('input, select, textarea')
+    if (!label || !control || label.contains(control)) return
+    if (!control.id) control.id = `lmdt-control-${controlIndex += 1}`
+    if (!label.htmlFor) label.htmlFor = control.id
+  })
+  document.querySelectorAll('.chart-card canvas').forEach(canvas => {
+    const heading = canvas.closest('.chart-card')?.querySelector('h2, h3')?.textContent?.trim()
+    canvas.setAttribute('role', 'img')
+    canvas.setAttribute('aria-label', heading ? `${heading}图表` : '劳动经济学仿真图表')
+  })
+}
 </script>
 
 <style>
@@ -72,6 +119,18 @@ body {
 .app-shell {
   min-height: 100vh; min-height: 100dvh;
   display: flex; flex-direction: column;
+}
+.skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 2000;
+  padding: 10px 14px; border-radius: 6px;
+  color: #07111f; background: #f8fafc; font-weight: 800;
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: translateY(0); }
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 3px solid #fbbf24;
+  outline-offset: 3px;
 }
 
 /* ── 桌面导航 ─────────────────────────── */
@@ -97,6 +156,12 @@ body {
   margin-right: 12px; letter-spacing: -0.5px;
 }
 .desktop-nav .nav-brand:hover { background: transparent; color: #60a5fa; }
+.projection-toggle {
+  min-height: 34px; margin-left: auto; padding: 6px 10px;
+  border: 1px solid rgba(34,211,238,.35); border-radius: 6px;
+  color: #cffafe; background: rgba(8,145,178,.14);
+  cursor: pointer; white-space: nowrap;
+}
 .mode-badge {
   margin-right: 10px;
   padding: 3px 8px;
@@ -108,8 +173,51 @@ body {
   border: 1px solid rgba(6, 182, 212, 0.22);
   white-space: nowrap;
 }
+.nav-more {
+  position: relative;
+  margin-left: 2px;
+}
+.nav-more summary {
+  list-style: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nav-more summary::-webkit-details-marker { display: none; }
+.nav-more[open] summary,
+.nav-more summary:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.12); }
+.nav-more-menu {
+  position: fixed;
+  top: 46px;
+  right: 18px;
+  z-index: 70;
+  display: grid;
+  min-width: 150px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  background: #172033;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+}
+.nav-more-menu a { padding: 9px 10px; }
 
 .main-content { flex: 1; }
+.projection-mode .main-content { font-size: 112%; }
+.projection-mode .main-content p,
+.projection-mode .main-content label,
+.projection-mode .main-content small { color: #e2e8f0 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 
 /* ── 移动端底部导航 ──────────────────── */
 .mobile-nav {

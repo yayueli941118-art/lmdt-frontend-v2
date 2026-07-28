@@ -6,7 +6,13 @@
       <p>把“要不要去大城市”拆成工资溢价、一次性成本、心理成本、家庭联动和回本窗口。</p>
     </div>
 
-    <LabDashboardLayout>
+    <LabDashboardLayout
+      formula="NPV=-C0+Σ[p×ΔW_t-C_t]/(1+r)^t"
+      assumptions="目标地就业概率、工资增长率和成本路径由当前情景给定；60岁为默认观察终点。"
+      source="教材第五章劳动力流动的人力资本投资决策框架。"
+      scope="比较工资溢价、迁移成本、就业概率和贴现率对迁移选择的影响。"
+      limitation="个体真实迁移选择、城市生活质量或未来工资的精确预测。"
+    >
       <template #controls>
     <section class="control-band">
       <div class="control-group">
@@ -25,6 +31,18 @@
         <label>心理/适应成本 <span>{{ formatCurrency(cPsych) }}/年</span></label>
         <input type="range" v-model.number="cPsych" min="0" max="50000" step="1000">
       </div>
+      <div class="control-group">
+        <label>贴现率 <span>{{ (discountRate * 100).toFixed(1) }}%</span></label>
+        <input type="range" v-model.number="discountRate" min="0" max="0.15" step="0.005">
+      </div>
+      <div class="control-group">
+        <label>目标地就业概率 <span>{{ Math.round(employmentProbability * 100) }}%</span></label>
+        <input type="range" v-model.number="employmentProbability" min="0.4" max="1" step="0.05">
+      </div>
+      <div class="control-group">
+        <label>工资溢价年增长 <span>{{ (wageGrowth * 100).toFixed(1) }}%</span></label>
+        <input type="range" v-model.number="wageGrowth" min="-0.05" max="0.08" step="0.005">
+      </div>
       <div class="control-group compact">
         <label class="checkbox-label">
           <input type="checkbox" v-model="familyMigrate">
@@ -38,6 +56,7 @@
       <button class="btn-run" @click="run" :disabled="loading">
         {{ loading ? '实时更新中...' : '刷新模拟' }}
       </button>
+      <button class="btn-reset" type="button" @click="resetMigration">恢复默认参数</button>
     </section>
       </template>
 
@@ -47,6 +66,17 @@
       observe="重点看累计 NPV 是否穿过 0 线，以及回本时间是否足够早。"
       :conclusion="migrationConclusion"
     />
+      </template>
+
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="城市迁移决策"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="migrationConclusion"
+          model-version="migration-npv-2.1"
+          source-type="教材公式与教学情景参数"
+        />
       </template>
 
       <template #primary>
@@ -83,7 +113,7 @@
 
     <section v-if="decision" class="threshold-card">
       <div class="threshold-copy">
-        <h3>为什么现在更容易判断？</h3>
+        <h3>迁移门槛比较</h3>
         <p>
           当前月工资溢价是 <strong>{{ formatCurrency(wageGap) }}</strong>，
           至少需要 <strong>{{ formatCurrency(requiredMonthlyPremium) }}</strong> 才能在 60 岁前覆盖成本。
@@ -115,6 +145,10 @@
         <v-chart :option="waterfallChart" autoresize style="height:340px" />
       </div>
     </div>
+    <div v-if="result" class="chart-card sensitivity-card">
+      <h3>贴现率敏感性：未来收益折现后还剩多少</h3>
+      <v-chart :option="sensitivityChart" autoresize style="height:280px" />
+    </div>
 
     <section v-if="decision" class="teaching-note">
       <strong>思考：</strong>
@@ -131,6 +165,7 @@ import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -143,13 +178,16 @@ const migrateAge = ref(25)
 const wDiff = ref(3000)
 const cMove = ref(20000)
 const cPsych = ref(3000)
+const discountRate = ref(0.04)
+const employmentProbability = ref(0.9)
+const wageGrowth = ref(0.02)
 const familyMigrate = ref(false)
 const spouseLoss = ref(36000)
 const loading = ref(false)
 const result = ref(null)
 
 let debounceTimer = null
-watch([migrateAge, wDiff, cMove, cPsych, familyMigrate, spouseLoss], () => {
+watch([migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability, wageGrowth, familyMigrate, spouseLoss], () => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(run, 250)
 })
@@ -157,17 +195,16 @@ watch([migrateAge, wDiff, cMove, cPsych, familyMigrate, spouseLoss], () => {
 const migration = computed(() => result.value?.migration || null)
 const years = computed(() => migration.value?.years || [])
 const npvSeries = computed(() => migration.value?.cumulative_npv || [])
-const finalNpv = computed(() => npvSeries.value.at(-1) || 0)
+const finalNpv = computed(() => migration.value?.final_npv ?? npvSeries.value.at(-1) ?? 0)
 const remainingYears = computed(() => Math.max(60 - migrateAge.value, 1))
-const annualGross = computed(() => wDiff.value * 12)
+const annualGross = computed(() => wDiff.value * 12 * employmentProbability.value)
 const annualFamilyCost = computed(() => familyMigrate.value ? spouseLoss.value : 0)
 const annualNet = computed(() => annualGross.value - cPsych.value - annualFamilyCost.value)
 const totalAnnualCost = computed(() => cPsych.value + annualFamilyCost.value)
-const requiredMonthlyPremium = computed(() => Math.ceil(((cMove.value / remainingYears.value) + totalAnnualCost.value) / 12 / 100) * 100)
+const requiredMonthlyPremium = computed(() => migration.value?.required_monthly_premium ?? 0)
 const wageGap = computed(() => wDiff.value)
 const premiumGap = computed(() => wageGap.value - requiredMonthlyPremium.value)
-const paybackIndex = computed(() => npvSeries.value.findIndex(v => v >= 0))
-const paybackYear = computed(() => paybackIndex.value >= 0 ? years.value[paybackIndex.value] : null)
+const paybackYear = computed(() => migration.value?.payback_age ?? null)
 const paybackLabel = computed(() => paybackYear.value ? `${paybackYear.value} 岁` : '60岁前未回本')
 
 const decision = computed(() => {
@@ -197,6 +234,22 @@ const migrationConclusion = computed(() => {
   if (!decision.value) return ''
   return `${decision.value.title}：${decision.value.reason}`
 })
+
+const recordParameters = computed(() => ({
+  '迁移年龄': `${migrateAge.value} 岁`,
+  '月工资溢价': formatCurrency(wDiff.value),
+  '搬迁成本': formatCurrency(cMove.value),
+  '贴现率': `${(discountRate.value * 100).toFixed(1)}%`,
+  '目标地就业概率': `${Math.round(employmentProbability.value * 100)}%`,
+  '家庭联合迁移': familyMigrate.value ? '是' : '否',
+}))
+
+const recordMetrics = computed(() => result.value ? ({
+  '最终NPV': formatCurrency(finalNpv.value),
+  '回本年龄': paybackLabel.value,
+  '最低月溢价': formatCurrency(requiredMonthlyPremium.value),
+  '内部收益率': migration.value?.irr_pct === null ? '观察期内无有效IRR' : `${migration.value?.irr_pct}%`,
+}) : ({}))
 
 const decisionClass = computed(() => `decision-${decision.value?.level || 'watch'}`)
 const gaugeWidth = computed(() => Math.min(100, Math.max(6, (wageGap.value / Math.max(requiredMonthlyPremium.value * 1.4, 1)) * 100)))
@@ -247,9 +300,9 @@ const waterfallChart = computed(() => ({
   series: [{
     type: 'bar',
     data: [
-      { value: annualGross.value * remainingYears.value, itemStyle: { color: '#10b981' } },
-      { value: -cPsych.value * remainingYears.value, itemStyle: { color: '#f59e0b' } },
-      { value: -annualFamilyCost.value * remainingYears.value, itemStyle: { color: '#f97316' } },
+      { value: expectedWagePv.value, itemStyle: { color: '#10b981' } },
+      { value: -psychCostPv.value, itemStyle: { color: '#f59e0b' } },
+      { value: -familyCostPv.value, itemStyle: { color: '#f97316' } },
       { value: -cMove.value, itemStyle: { color: '#ef4444' } },
       { value: finalNpv.value, itemStyle: { color: finalNpv.value >= 0 ? '#06b6d4' : '#ef4444' } },
     ],
@@ -257,26 +310,70 @@ const waterfallChart = computed(() => ({
   }],
 }))
 
+const expectedWagePv = computed(() => years.value.reduce((sum, _, index) =>
+  sum + (wDiff.value * 12 * employmentProbability.value * ((1 + wageGrowth.value) ** index))
+  / ((1 + discountRate.value) ** (index + 1)), 0))
+const psychCostPv = computed(() => years.value.reduce((sum, _, index) =>
+  sum + cPsych.value / ((1 + discountRate.value) ** (index + 1)), 0))
+const familyCostPv = computed(() => years.value.reduce((sum, _, index) =>
+  sum + annualFamilyCost.value / ((1 + discountRate.value) ** (index + 1)), 0))
+
+const sensitivityChart = computed(() => ({
+  backgroundColor: 'transparent',
+  grid: { top: 30, right: 24, bottom: 42, left: 70 },
+  tooltip: { trigger: 'axis' },
+  xAxis: {
+    type: 'category',
+    name: '贴现率',
+    data: (migration.value?.sensitivity || []).map(item => `${Math.round(item.discount_rate * 100)}%`),
+    axisLabel: { color: '#94a3b8' },
+  },
+  yAxis: {
+    type: 'value',
+    name: '最终NPV',
+    axisLabel: { color: '#94a3b8', formatter: value => `${Math.round(value / 10000)}万` },
+    splitLine: { lineStyle: { color: 'rgba(148,163,184,.08)' } },
+  },
+  series: [{
+    type: 'line',
+    data: (migration.value?.sensitivity || []).map(item => item.npv),
+    symbolSize: 8,
+    lineStyle: { color: '#a78bfa', width: 3 },
+    itemStyle: { color: '#a78bfa' },
+  }],
+}))
+
 async function run() {
   loading.value = true
   try {
-    const { data } = await axios.post(apiUrl('/api/v1/individual-lab/simulate'), {
-      edu: 16,
-      exp_peak: 30,
-      train_type: '一般培训',
-      disc: 10,
-      migrate: true,
+    const { data } = await axios.post(apiUrl('/api/v2/migration/npv'), {
       migrate_age: migrateAge.value,
       w_diff: wDiff.value,
       c_move: cMove.value,
       c_psych: cPsych.value,
       family_migrate: familyMigrate.value,
-      spouse_loss: spouseLoss.value / 12,
+      spouse_loss: spouseLoss.value,
+      discount_rate: discountRate.value,
+      employment_probability: employmentProbability.value,
+      wage_growth: wageGrowth.value,
     })
     result.value = data
   } finally {
     loading.value = false
   }
+}
+
+function resetMigration() {
+  migrateAge.value = 25
+  wDiff.value = 3000
+  cMove.value = 20000
+  cPsych.value = 3000
+  discountRate.value = 0.04
+  employmentProbability.value = 0.9
+  wageGrowth.value = 0.02
+  familyMigrate.value = false
+  spouseLoss.value = 36000
+  run()
 }
 
 function formatCurrency(value) {
@@ -295,7 +392,7 @@ onMounted(run)
 .back-link { color: #94a3b8; text-decoration: none; font-size: 13px; }
 .lab-header h1 { font-size: 34px; font-weight: 900; margin: 12px 0 8px; letter-spacing: 0; }
 .lab-header p { color: #94a3b8; font-size: 15px; margin: 0; }
-.control-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 14px; align-items: end; width: 100%; box-sizing: border-box; padding: 18px; background: rgba(30,41,59,.62); border: 1px solid rgba(148,163,184,.12); border-radius: 14px; margin-bottom: 20px; overflow: hidden; }
+.control-band { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: end; width: 100%; min-width: 0; box-sizing: border-box; padding: 18px; background: rgba(30,41,59,.62); border: 1px solid rgba(148,163,184,.12); border-radius: 14px; margin-bottom: 20px; overflow: hidden; }
 .control-group { min-width: 0; }
 .control-group label { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px 12px; color: #cbd5e1; font-size: 13px; line-height: 1.45; margin-bottom: 7px; }
 .control-group label span { color: #a78bfa; font-weight: 800; }
@@ -305,6 +402,7 @@ onMounted(run)
 .checkbox-label input { accent-color: #8b5cf6; }
 .btn-run { width: 100%; min-width: 0; height: 42px; border: none; border-radius: 10px; padding: 0 18px; color: #fff; background: linear-gradient(135deg, #8b5cf6, #2563eb); font-weight: 800; cursor: pointer; }
 .btn-run:disabled { opacity: .55; cursor: not-allowed; }
+.btn-reset { width: 100%; min-height: 42px; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; color: #cbd5e1; background: #111b2e; cursor: pointer; }
 .decision-panel { display: flex; justify-content: space-between; gap: 20px; align-items: center; border-radius: 14px; padding: 22px 24px; margin-bottom: 16px; border: 1px solid; }
 .decision-strong { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.32); }
 .decision-watch { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.32); }
@@ -334,6 +432,7 @@ onMounted(run)
 .gauge-labels { display: flex; justify-content: space-between; color: #94a3b8; font-size: 12px; margin-top: 8px; }
 .chart-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; margin-bottom: 16px; }
 .chart-card { background: rgba(30,41,59,.58); border: 1px solid rgba(148,163,184,.12); border-radius: 14px; padding: 18px; min-width: 0; }
+.sensitivity-card { margin-bottom: 16px; }
 .chart-card h3 { margin: 0 0 10px; color: #cbd5e1; font-size: 15px; }
 .teaching-note { padding: 16px 18px; border-radius: 12px; color: #cbd5e1; line-height: 1.8; background: rgba(6,182,212,.08); border: 1px solid rgba(6,182,212,.18); }
 .teaching-note strong { color: #f8fafc; }

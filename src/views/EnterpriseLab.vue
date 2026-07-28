@@ -2,11 +2,17 @@
   <div class="lab">
     <div class="lab-header">
       <router-link to="/" class="back-link">← 返回首页</router-link>
-      <h1>企业劳动需求实验室</h1>
-      <p>把教材第三章的 VMP = W、市场调整、长期替代效应与规模效应、需求弹性诊断做成可操作的劳动需求推导工具。</p>
+      <h1>{{ pageTitle }}</h1>
+      <p>{{ pageSubtitle }}</p>
     </div>
 
-    <LabDashboardLayout>
+    <LabDashboardLayout
+      formula="Q=A[αK^ρ+(1-α)L^ρ]^(1/ρ)，VMP=P×MPL，完全竞争下 VMP=W"
+      assumptions="产品与要素市场完全竞争；短期资本固定，长期资本可调；生产函数规模报酬不变。"
+      source="教材第三章图3-1至图3-7、图3-11。"
+      scope="解释单个企业、市场反馈和长期要素调整下的派生劳动需求。"
+      limitation="具体企业的真实招聘人数或行业预测。"
+    >
       <template #controls>
         <div class="lab-controls">
           <div class="control-group wide">
@@ -21,7 +27,7 @@
 
           <div class="control-group">
             <label>初始工资 W0 <span class="val">{{ wageInitial }} 元/h</span></label>
-            <input type="range" v-model.number="wageInitial" min="20" max="140" step="2">
+            <input type="range" v-model.number="wageInitial" :min="demandWageRange.min" :max="demandWageRange.max" :step="demandWageRange.step">
           </div>
           <div class="control-group">
             <label>新工资 W1 <span class="val">{{ wageNew }} 元/h</span></label>
@@ -67,7 +73,19 @@
           <button class="btn-run" type="button" @click="runDemand" :disabled="loading">
             {{ loading ? '实时更新中...' : '刷新劳动需求' }}
           </button>
+          <button class="btn-reset" type="button" @click="resetDemand">恢复默认参数</button>
         </div>
+      </template>
+
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="企业劳动需求"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="demandConclusion"
+          model-version="demand-ces-2.1"
+          source-type="教材公式与教学情景参数"
+        />
       </template>
 
       <template #task>
@@ -120,7 +138,7 @@
         <div v-if="result" class="lab-results">
           <section class="section-grid">
             <div class="explain-card">
-              <h3>读图顺序：学生先看什么</h3>
+              <h3>读图顺序</h3>
               <div class="read-row">
                 <strong>1</strong>
                 <span>先问“企业为什么招这个人数”：看 VMP 曲线和工资线交点。</span>
@@ -173,10 +191,13 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import { sliderRanges } from '../config/sliderRanges'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
@@ -185,8 +206,15 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
-const activeTab = ref('short')
-const wageInitial = ref(55)
+const route = useRoute()
+const isFactorAllocation = computed(() => route.path === '/lab/factor-allocation')
+const pageTitle = computed(() => isFactorAllocation.value ? '要素配置沙盘' : '企业劳动需求实验室')
+const pageSubtitle = computed(() => isFactorAllocation.value
+  ? '用等产量曲线、等成本线和 A→B→C 路径观察长期要素替代与规模效应。'
+  : '把教材第三章的 VMP=W、市场调整、长期替代与规模效应、需求弹性做成可操作推导工具。')
+const activeTab = ref(isFactorAllocation.value ? 'long' : 'short')
+const demandWageRange = sliderRanges.demandInitialWage
+const wageInitial = ref(demandWageRange.default)
 const wageNew = ref(42)
 const productPrice = ref(1)
 const capital = ref(700)
@@ -229,6 +257,22 @@ const demandConclusion = computed(() => {
   const c = result.value.long_run.point_c
   return `工资从 ${a.wage} 元/h 变为 ${b.wage} 元/h，短期雇佣量从 ${a.labor} 变为 ${b.labor}，长期调整后为 ${c.labor}。`
 })
+
+const recordParameters = computed(() => ({
+  '教材图模式': activeFigure.value,
+  '初始工资W0': `${wageInitial.value} 元/小时`,
+  '新工资W1': `${wageNew.value} 元/小时`,
+  '资本存量K': capital.value,
+  '替代弹性σ': sigma.value.toFixed(2),
+  '技术类型': techType.value,
+}))
+
+const recordMetrics = computed(() => result.value ? ({
+  '初始雇佣量': result.value.short_run.point_a.labor,
+  '短期雇佣量': result.value.short_run.point_b.labor,
+  '长期雇佣量': result.value.long_run.point_c.labor,
+  '长期需求弹性': result.value.elasticity.long,
+}) : ({}))
 
 const activeChartOption = computed(() => {
   if (!result.value) return {}
@@ -319,14 +363,8 @@ const marketChartOption = computed(() => {
 const longPathChartOption = computed(() => {
   if (!result.value) return {}
   const d = result.value.long_run
-  const iso1 = Array.from({ length: 52 }, (_, i) => {
-    const L = 45 + i * 8
-    return [L, Math.max(80, 28000 / (L + 20) + 140)]
-  })
-  const iso2 = Array.from({ length: 52 }, (_, i) => {
-    const L = 45 + i * 8
-    return [L, Math.max(90, 36000 / (L + 20) + 180)]
-  })
+  const iso1 = d.isoquants.initial.labor.map((L, i) => [L, d.isoquants.initial.capital[i]])
+  const iso2 = d.isoquants.new.labor.map((L, i) => [L, d.isoquants.new.capital[i]])
   return {
     backgroundColor: 'transparent',
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
@@ -402,6 +440,21 @@ async function runDemand() {
   }
 }
 
+function resetDemand() {
+  activeTab.value = isFactorAllocation.value ? 'long' : 'short'
+  wageInitial.value = demandWageRange.default
+  wageNew.value = 42
+  productPrice.value = 1
+  capital.value = 700
+  sigma.value = 1.2
+  productDemandElasticity.value = 0.8
+  capitalFlexibility.value = 0.55
+  laborCostShare.value = 0.35
+  marketFeedback.value = 0.65
+  techType.value = '中性技术'
+  runDemand()
+}
+
 function scheduleDemand() {
   clearTimeout(demandTimer)
   demandTimer = setTimeout(runDemand, 220)
@@ -430,6 +483,7 @@ onMounted(runDemand)
 .tab-buttons button.active { border-color: rgba(6,182,212,.45); color: #e0f2fe; background: rgba(6,182,212,.14); }
 .btn-run { padding: 12px 18px; border: none; border-radius: 10px; background: linear-gradient(135deg,#06b6d4,#2563eb); color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; }
 .btn-run:disabled { opacity: .55; cursor: not-allowed; }
+.btn-reset { padding: 11px 14px; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; color: #cbd5e1; background: #111b2e; cursor: pointer; }
 .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat-card, .chart-card, .explain-card, .point-card { background: rgba(30,41,59,.5); border: 1px solid rgba(148,163,184,.1); border-radius: 14px; }
 .stat-card { padding: 15px; text-align: center; }

@@ -2,8 +2,6 @@
   <div class="home">
     <!-- ===== 动态网格背景 ===== -->
     <div class="bg-grid"></div>
-    <div class="bg-glow bg-glow-1"></div>
-    <div class="bg-glow bg-glow-2"></div>
 
     <!-- ===== Hero 首屏 ===== -->
     <section class="hero">
@@ -54,11 +52,35 @@
       </div>
     </section>
 
+    <section v-if="isCompetition" class="competition-guide" aria-labelledby="competition-guide-title">
+      <div class="guide-head">
+        <div>
+          <span>5 分钟评委导览</span>
+          <h2 id="competition-guide-title">从教学难点到学习证据</h2>
+        </div>
+        <p>按顺序打开四个环节，每个环节都可直接操作并形成报告记录。</p>
+      </div>
+      <ol class="guide-route">
+        <li v-for="item in competitionRoute" :key="item.title">
+          <router-link :to="item.to">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.desc }}</span>
+          </router-link>
+        </li>
+      </ol>
+      <div class="preset-row" aria-label="推荐预设情景">
+        <router-link v-for="item in competitionPresets" :key="item.title" :to="item.to">
+          <strong>{{ item.title }}</strong>
+          <span>{{ item.desc }}</span>
+        </router-link>
+      </div>
+    </section>
+
     <section class="workbench-entry">
       <div class="workbench-entry-copy">
         <span>课程报告工作台</span>
         <h2>岗位劳动力市场预测报告工作台</h2>
-        <p>下载标准 CSV 模板，导入前预览校验，统计薪酬、学历、经验与技能需求，并结合 LMDT 仿真生成 Markdown 报告草稿。</p>
+        <p>下载标准 CSV 模板，导入前预览校验，统计薪酬、学历、经验与技能需求，并结合 {{ appProfile.brandShort }} 仿真生成 Markdown 报告草稿。</p>
       </div>
       <router-link to="/report/workbench" class="workbench-entry-btn">进入工作台</router-link>
     </section>
@@ -76,22 +98,22 @@
     <section id="labs" class="section">
       <div class="section-header">
         <span class="section-tag">核心模块</span>
-        <h2 class="section-title">三大数字孪生实验室</h2>
+        <h2 class="section-title">三大机制仿真实验室</h2>
         <p class="section-subtitle">从个体到宏观，覆盖劳动经济学全维度</p>
       </div>
       <div class="core-cards">
         <!-- 个体 -->
-        <div class="glass-card glass-card-blue" @click="$router.push('/lab/individual')">
+        <router-link class="glass-card glass-card-blue" to="/lab/individual">
           <div class="glass-card-icon">
             <svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="7" fill="currentColor" opacity="0.85"/><path d="M8 40c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="currentColor" opacity="0.85"/></svg>
           </div>
           <h3 class="glass-card-title">个体职业实验室</h3>
-          <p class="glass-card-desc">明瑟收入方程 · 教育投资回报<br />盈亏平衡分析 · 中国工资基准对标</p>
+          <p class="glass-card-desc">明瑟收入方程 · 教育投资回报<br />直接与机会成本 · NPV 与 IRR</p>
           <div class="glass-card-chip">第四章 人力资本</div>
           <span class="glass-card-link">进入实验室 →</span>
-        </div>
+        </router-link>
         <!-- 企业 -->
-        <div class="glass-card glass-card-cyan" @click="$router.push('/lab/enterprise')">
+        <router-link class="glass-card glass-card-cyan" to="/lab/enterprise">
           <div class="glass-card-icon">
             <svg viewBox="0 0 48 48"><rect x="6" y="10" width="10" height="10" rx="1.5" fill="currentColor" opacity="0.85"/><rect x="19" y="10" width="10" height="10" rx="1.5" fill="currentColor" opacity="0.85"/><rect x="32" y="10" width="10" height="10" rx="1.5" fill="currentColor" opacity="0.85"/><rect x="6" y="24" width="10" height="14" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="19" y="24" width="10" height="14" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="32" y="24" width="10" height="14" rx="1.5" fill="currentColor" opacity="0.6"/></svg>
           </div>
@@ -99,20 +121,20 @@
           <p class="glass-card-desc">CES 生产函数 · 边际生产力<br />条件要素需求 · 要素替代弹性</p>
           <div class="glass-card-chip">第三章 劳动力需求</div>
           <span class="glass-card-link">进入实验室 →</span>
-        </div>
+        </router-link>
         <!-- 宏观 -->
-        <div class="glass-card glass-card-purple" @click="$router.push('/lab/macro')">
+        <router-link class="glass-card glass-card-purple" to="/lab/macro">
           <div class="glass-card-icon">
             <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.5"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.7"/><circle cx="24" cy="24" r="5" fill="currentColor" opacity="0.85"/></svg>
           </div>
           <h3 class="glass-card-title">宏观政策实验室</h3>
-          <p class="glass-card-desc">贝弗里奇曲线 · 结构性失业<br />新质生产力 · 乡村振兴沙盘</p>
+          <p class="glass-card-desc">贝弗里奇曲线 · 结构性失业<br />AI 冲击 · 技能重塑政策</p>
           <div class="glass-card-chips">
-            <div class="glass-card-chip">第八章 失业</div>
+            <div class="glass-card-chip">第九章 失业</div>
             <div class="glass-card-chip">宏观政策</div>
           </div>
           <span class="glass-card-link">进入实验室 →</span>
-        </div>
+        </router-link>
       </div>
     </section>
 
@@ -123,46 +145,46 @@
         <h2 class="section-title">九章全覆盖 · 按教材章节索引</h2>
       </div>
       <div class="mini-grid">
-        <div class="mini-card mini-card-cyan" @click="$router.push('/lab/supply')">
+        <router-link class="mini-card mini-card-cyan" to="/lab/supply">
           <span class="mini-card-chapter">Ch.02</span>
           <strong>劳动供给决策</strong>
-          <p>收入效应 vs 替代效应 · Cobb-Douglas · 希克斯补偿</p>
-        </div>
-        <div class="mini-card mini-card-cyan" @click="$router.push('/lab/factor-allocation')">
+          <p>收入效应 vs 替代效应 · 固定偏好 · 希克斯补偿</p>
+        </router-link>
+        <router-link class="mini-card mini-card-cyan" to="/lab/factor-allocation">
           <span class="mini-card-chapter">Ch.03</span>
           <strong>要素配置沙盘</strong>
-          <p>替代 vs 规模效应 · 等成本线旋转 · 稳岗补贴模拟</p>
-        </div>
-        <div class="mini-card mini-card-purple" @click="$router.push('/lab/migration')">
+          <p>替代 vs 规模效应 · 等产量曲线 · 等成本线旋转</p>
+        </router-link>
+        <router-link class="mini-card mini-card-purple" to="/lab/migration">
           <span class="mini-card-chapter">Ch.05</span>
           <strong>劳动力流动</strong>
-          <p>迁徙决策 NPV · 户籍制度壁垒 · 三种情景对比</p>
-        </div>
-        <div class="mini-card mini-card-cyan" @click="$router.push('/lab/chengyu-tourism')">
+          <p>迁移决策 NPV · 就业概率 · 家庭成本 · 贴现率</p>
+        </router-link>
+        <router-link class="mini-card mini-card-cyan" to="/lab/chengyu-tourism">
           <span class="mini-card-chapter">应用专题</span>
           <strong>成渝文旅产业实验室</strong>
           <p>劳动力需求预测 · 岗位匹配 · 工资决定 · 政策模拟</p>
-        </div>
-        <div class="mini-card mini-card-gold" @click="$router.push('/lab/wage')">
+        </router-link>
+        <router-link class="mini-card mini-card-gold" to="/lab/wage">
           <span class="mini-card-chapter">Ch.06</span>
-          <strong>工资决定与收入差距</strong>
-          <p>效率工资 · 最低工资权衡 · 洛伦兹曲线 · 技能溢价</p>
-        </div>
-        <div class="mini-card mini-card-red" @click="$router.push('/lab/discrimination')">
+          <strong>工资决定与工资形式</strong>
+          <p>效率工资 · 补偿性差异 · 激励工资 · 工资经验方程</p>
+        </router-link>
+        <router-link class="mini-card mini-card-red" to="/lab/discrimination">
           <span class="mini-card-chapter">Ch.07</span>
           <strong>劳动力市场歧视</strong>
-          <p>贝克尔偏见模型 · 统计性歧视 · 政策组合实验</p>
-        </div>
-        <div class="mini-card mini-card-green" @click="$router.push('/lab/income-distribution')">
+          <p>贝克尔偏见模型 · 统计性歧视 · Oaxaca-Blinder 分解</p>
+        </router-link>
+        <router-link class="mini-card mini-card-green" to="/lab/income-distribution">
           <span class="mini-card-chapter">Ch.08</span>
           <strong>收入分配实验室</strong>
           <p>洛伦兹曲线 · 基尼系数 · 技能溢价 · 共同富裕政策调节</p>
-        </div>
-        <div class="mini-card mini-card-indigo" @click="$router.push('/lab/unemployment')">
+        </router-link>
+        <router-link class="mini-card mini-card-indigo" to="/lab/unemployment">
           <span class="mini-card-chapter">Ch.09</span>
           <strong>失业经济学</strong>
           <p>失业类型诊断 · 保留工资 · 贝弗里奇曲线</p>
-        </div>
+        </router-link>
       </div>
     </section>
 
@@ -190,54 +212,54 @@
             <tr>
               <td><span class="matrix-chapter">Ch.02</span></td>
               <td>劳动力供给分析</td>
-              <td class="matrix-link" @click="$router.push('/lab/supply')">⚖️ 劳动供给决策</td>
+              <td><router-link class="matrix-link" to="/lab/supply">⚖️ 劳动供给决策</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.03</span></td>
               <td>劳动力需求分析</td>
               <td>
-                <span class="matrix-link" @click="$router.push('/lab/enterprise')">🏭 企业实验室</span>
+                <router-link class="matrix-link" to="/lab/enterprise">🏭 企业实验室</router-link>
                 <span class="matrix-sep">+</span>
-                <span class="matrix-link" @click="$router.push('/lab/factor-allocation')">🏗️ 要素配置沙盘</span>
+                <router-link class="matrix-link" to="/lab/factor-allocation">🏗️ 要素配置沙盘</router-link>
               </td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.04</span></td>
               <td>人力资本投资</td>
-              <td class="matrix-link" @click="$router.push('/lab/individual')">👤 个体职业实验室</td>
+              <td><router-link class="matrix-link" to="/lab/individual">👤 个体职业实验室</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.05</span></td>
               <td>劳动力流动</td>
-              <td class="matrix-link" @click="$router.push('/lab/migration')">✈️ 迁移决策仿真</td>
+              <td><router-link class="matrix-link" to="/lab/migration">✈️ 迁移决策仿真</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.06</span></td>
-              <td>工资决定与收入差距</td>
-              <td class="matrix-link" @click="$router.push('/lab/wage')">💰 工资决定与收入差距</td>
+              <td>工资决定与工资形式</td>
+              <td><router-link class="matrix-link" to="/lab/wage">💰 工资决定与工资形式</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">应用</span></td>
               <td>劳动力需求预测、岗位匹配、工资决定、政策模拟</td>
-              <td class="matrix-link" @click="$router.push('/lab/chengyu-tourism')">🎭 成渝文旅产业实验室</td>
+              <td><router-link class="matrix-link" to="/lab/chengyu-tourism">🎭 成渝文旅产业实验室</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.07</span></td>
               <td>劳动力市场歧视</td>
-              <td class="matrix-link" @click="$router.push('/lab/discrimination')">🚫 歧视经济学实验</td>
+              <td><router-link class="matrix-link" to="/lab/discrimination">🚫 歧视经济学实验</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.08</span></td>
               <td>收入分配</td>
-              <td class="matrix-link" @click="$router.push('/lab/income-distribution')">📊 收入分配实验室</td>
+              <td><router-link class="matrix-link" to="/lab/income-distribution">📊 收入分配实验室</router-link></td>
             </tr>
             <tr>
               <td><span class="matrix-chapter">Ch.09</span></td>
               <td>失业</td>
               <td>
-                <span class="matrix-link" @click="$router.push('/lab/unemployment')">📉 失业经济学</span>
+                <router-link class="matrix-link" to="/lab/unemployment">📉 失业经济学</router-link>
                 <span class="matrix-sep">+</span>
-                <span class="matrix-link" @click="$router.push('/lab/macro')">🌍 宏观政策沙盘</span>
+                <router-link class="matrix-link" to="/lab/macro">🌍 宏观政策沙盘</router-link>
               </td>
             </tr>
           </tbody>
@@ -275,6 +297,19 @@
 
 <script setup>
 import { appProfile, isAnonymous, isCompetition, showcaseSteps } from '../config/appMode'
+
+const competitionRoute = [
+  { title: '1 教学痛点', desc: '首页查看抽象曲线如何转化为可操作任务', to: { path: '/', hash: '#labs' } },
+  { title: '2 理论转译', desc: '劳动供给对应教材图2-9至图2-11', to: { path: '/lab/supply', query: { preset: 'moreWork' } } },
+  { title: '3 数据应用', desc: '用成渝文旅情景连接样本与模型', to: { path: '/lab/chengyu-tourism', query: { preset: 'digital' } } },
+  { title: '4 报告成果', desc: '查看学生作业生产线与教师汇总', to: '/report/workbench' },
+]
+
+const competitionPresets = [
+  { title: '替代效应主导', desc: '工资提高后劳动供给增加', to: { path: '/lab/supply', query: { preset: 'moreWork' } } },
+  { title: '结构性失业冲击', desc: '观察贝弗里奇曲线整体外移', to: { path: '/lab/unemployment', query: { preset: 'structural' } } },
+  { title: '数字文旅升级', desc: '比较数字岗位热度与技能缺口', to: { path: '/lab/chengyu-tourism', query: { preset: 'digital' } } },
+]
 
 const scrollToLabs = () => {
   document.getElementById('labs')?.scrollIntoView({ behavior: 'smooth' })
@@ -358,7 +393,7 @@ const scrollToChapters = () => {
 /* ── Hero 首屏 ───────────────────────────── */
 .hero {
   position: relative; z-index: 1;
-  min-height: 100vh;
+  min-height: calc(100vh - 96px);
   display: flex; align-items: center; justify-content: center;
   padding: 80px 24px;
 }
@@ -393,6 +428,42 @@ const scrollToChapters = () => {
   font-size: 13px;
   line-height: 1.65;
 }
+.competition-guide {
+  max-width: 1120px;
+  margin: -52px auto 72px;
+  padding: 22px 24px;
+  position: relative;
+  z-index: 2;
+  border: 1px solid rgba(245,158,11,.28);
+  border-radius: 8px;
+  background: #172033;
+}
+.guide-head { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
+.guide-head > div > span { color: #fbbf24; font-size: 12px; font-weight: 900; }
+.guide-head h2 { margin: 5px 0 0; color: #f8fafc; font-size: 23px; }
+.guide-head p { max-width: 430px; color: #cbd5e1; font-size: 14px; line-height: 1.6; }
+.guide-route {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.guide-route a, .preset-row a {
+  display: block;
+  height: 100%;
+  padding: 13px;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 7px;
+  color: #e2e8f0;
+  background: #111b2e;
+  text-decoration: none;
+}
+.guide-route strong, .preset-row strong { display: block; margin-bottom: 6px; color: #f8fafc; font-size: 14px; }
+.guide-route span, .preset-row span { color: #94a3b8; font-size: 12px; line-height: 1.55; }
+.preset-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.preset-row a { border-color: rgba(34,211,238,.2); }
 .workbench-entry {
   max-width: 1120px;
   margin: -44px auto 72px;
@@ -595,7 +666,7 @@ const scrollToChapters = () => {
   gap: 24px;
 }
 .glass-card {
-  position: relative; border-radius: 20px;
+  position: relative; border-radius: 8px;
   padding: 36px 28px;
   background: var(--bg-card);
   backdrop-filter: blur(16px);
@@ -604,9 +675,10 @@ const scrollToChapters = () => {
   cursor: pointer;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  text-decoration: none;
 }
 .glass-card::before {
-  content: ''; position: absolute; inset: 0; border-radius: 20px;
+  content: ''; position: absolute; inset: 0; border-radius: 8px;
   opacity: 0; transition: opacity 0.35s ease;
 }
 .glass-card-blue::before {
@@ -663,9 +735,10 @@ const scrollToChapters = () => {
 .mini-card {
   background: rgba(30, 41, 59, 0.5);
   border: 1px solid var(--border-subtle);
-  border-radius: 12px; padding: 20px;
+  border-radius: 8px; padding: 20px;
   cursor: pointer;
   transition: all 0.25s ease;
+  text-decoration: none;
 }
 .mini-card:hover {
   background: rgba(30, 41, 59, 0.8);
@@ -721,7 +794,7 @@ const scrollToChapters = () => {
   letter-spacing: 1px;
 }
 .matrix-link {
-  color: var(--accent-blue); cursor: pointer; font-weight: 600;
+  color: var(--accent-blue); font-weight: 600; text-decoration: none;
   transition: color 0.2s;
 }
 .matrix-link:hover { color: #60a5fa; }
@@ -779,6 +852,10 @@ const scrollToChapters = () => {
   .footer-meta { text-align: left; }
   .hero { padding: 60px 16px; min-height: auto; }
   .showcase-strip { grid-template-columns: 1fr; margin: -24px auto 40px; padding: 0 16px; }
+  .competition-guide { margin: 0 16px 40px; padding: 18px; }
+  .guide-head { display: block; }
+  .guide-head p { margin-top: 10px; }
+  .guide-route, .preset-row { grid-template-columns: 1fr; }
   .workbench-entry { flex-direction: column; align-items: flex-start; margin: 0 16px 40px; }
   .workbench-entry-btn { width: 100%; text-align: center; box-sizing: border-box; }
   .scene-entry { grid-template-columns: 1fr; margin: 0 16px 40px; }

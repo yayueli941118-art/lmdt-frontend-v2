@@ -4,12 +4,17 @@
       <router-link to="/" class="back-link">← 返回首页</router-link>
       <span class="page-kicker">课程报告工作台</span>
       <h1>岗位劳动力市场预测报告工作台</h1>
-      <p>请先下载标准 CSV 模板采集招聘样本，再导入预览、完成统计分析、进入 LMDT 做仿真实验，最后生成 Markdown 报告草稿。</p>
+      <p>请先下载标准 CSV 模板采集招聘样本，再导入预览、完成统计分析、进入 {{ simulationLabel }} 做仿真实验，最后生成 Markdown 报告草稿。</p>
       <div class="flow-strip">
         <span v-for="step in workflowSteps" :key="step">{{ step }}</span>
       </div>
+      <nav class="workbench-tabs" aria-label="工作台模式">
+        <button type="button" :class="{ active: workbenchMode === 'student' }" @click="workbenchMode = 'student'">学生作业</button>
+        <button type="button" :class="{ active: workbenchMode === 'teacher' }" @click="workbenchMode = 'teacher'">教师汇总</button>
+      </nav>
     </header>
 
+    <template v-if="workbenchMode === 'student'">
     <section class="panel target-panel">
       <div class="panel-title">
         <span>01</span>
@@ -225,10 +230,47 @@
       </div>
     </section>
 
-    <section class="panel sim-panel">
+    <section class="panel calibration-panel">
       <div class="panel-title">
         <span>07</span>
-        <h2>LMDT 仿真辅助分析</h2>
+        <h2>样本覆盖与成渝情景校准</h2>
+      </div>
+      <p class="local-note">只有文旅/会展研究对象、样本量和字段完整度达到门槛时，系统才允许把样本特征转换为成渝实验室的可解释参数。招聘广告数量不等于社会真实岗位需求。</p>
+      <div class="calibration-status" :class="tourismCalibration.status">
+        <strong>{{ tourismCalibration.status === 'ready' ? '可以校准' : '暂不校准' }}</strong>
+        <span v-if="tourismCalibration.reasons.length">{{ tourismCalibration.reasons.join('；') }}</span>
+        <span v-else>样本覆盖达到最低门槛，可将薪资中位数与数字技能词频用于情景参数。</span>
+      </div>
+      <div class="calibration-grid">
+        <div><span>样本量</span><strong>{{ tourismCalibration.sample_size }}</strong></div>
+        <div><span>采集日期</span><strong>{{ tourismCalibration.collection_start || '未填' }} 至 {{ tourismCalibration.collection_end || '未填' }}</strong></div>
+        <div><span>薪资缺失率</span><strong>{{ tourismCalibration.salary_missing_rate_pct }}%</strong></div>
+        <div><span>模型版本</span><strong>{{ tourismCalibration.model_version }}</strong></div>
+        <div><span>情景不确定性</span><strong>±{{ tourismCalibration.uncertainty_pct }}%</strong></div>
+      </div>
+      <div class="coverage-grid">
+        <div>
+          <strong>平台构成</strong>
+          <p>{{ formatComposition(tourismCalibration.platform_composition) }}</p>
+        </div>
+        <div>
+          <strong>城市构成</strong>
+          <p>{{ formatComposition(tourismCalibration.city_composition) }}</p>
+        </div>
+        <div>
+          <strong>参数校准前后</strong>
+          <p v-for="item in tourismCalibration.before_after" :key="item.name">{{ item.name }}：{{ item.before }} → {{ item.after }} {{ item.unit }}</p>
+        </div>
+      </div>
+      <button class="primary-btn" type="button" :disabled="tourismCalibration.status !== 'ready'" @click="saveTourismCalibration">
+        保存校准参数到成渝实验室
+      </button>
+    </section>
+
+    <section class="panel sim-panel">
+      <div class="panel-title">
+        <span>08</span>
+        <h2>{{ simulationLabel }}仿真辅助分析</h2>
       </div>
       <div class="recommend-box">
         <strong>建议进入：</strong>
@@ -247,8 +289,8 @@
 
     <section class="panel records-panel">
       <div class="panel-title">
-        <span>08</span>
-        <h2>已保存的 LMDT 实验记录</h2>
+        <span>09</span>
+        <h2>已保存的{{ simulationLabel }}实验记录</h2>
       </div>
       <p class="local-note">这些记录只保存在当前浏览器。不同同学、不同设备、不同浏览器之间不会自动同步。</p>
       <div v-if="experimentRecords.length === 0" class="empty-block">工资、失业、成渝文旅等实验室保存的实验记录会出现在这里，用于报告第五部分。</div>
@@ -259,13 +301,19 @@
             <span>{{ formatDate(record.createdAt) }}</span>
           </div>
           <p>{{ record.conclusion }}</p>
+          <div class="record-meta">
+            <span>规则反馈 {{ record.ruleFeedback?.score ?? 0 }}/4</span>
+            <span>{{ record.modelVersion || '旧版记录' }}</span>
+            <span>{{ record.dataSourceType || '来源未标注' }}</span>
+            <span>{{ isRecordComplete(record) ? '实验闭环已完成' : '实验闭环待补充' }}</span>
+          </div>
         </article>
       </div>
     </section>
 
     <section class="panel data-panel">
       <div class="panel-title">
-        <span>09</span>
+        <span>10</span>
         <h2>本机数据管理</h2>
       </div>
       <div class="data-layout">
@@ -287,12 +335,12 @@
           <button class="danger-btn" type="button" @click="clearLocalWorkbenchData">清空本机数据</button>
         </div>
       </div>
-      <p class="hint">数据包会包含研究对象、招聘样本、LMDT 实验记录和当前报告草稿，方便换电脑继续做或提交给老师留档。</p>
+      <p class="hint">数据包会包含研究对象、招聘样本、{{ simulationLabel }}实验记录和当前报告草稿，方便换电脑继续做或提交给老师留档。</p>
     </section>
 
     <section class="panel report-panel">
       <div class="panel-title">
-        <span>10</span>
+        <span>11</span>
         <h2>Markdown 报告草稿</h2>
       </div>
       <textarea v-model="reportText" class="report-textarea" @input="reportEdited = true"></textarea>
@@ -306,6 +354,93 @@
       <p class="hint">建议先用 Markdown 草稿完成报告主体，再补充解释、截图编号和仿真实验结论。</p>
       <p v-if="message" class="message">{{ message }}</p>
     </section>
+    </template>
+
+    <section v-else class="teacher-workbench">
+      <div class="panel teacher-intro">
+        <div class="panel-title">
+          <span>T</span>
+          <h2>匿名作业数据包汇总</h2>
+        </div>
+        <p>一次选择多个学生导出的 JSON 作业数据包。系统只在当前教师浏览器中统计完成情况和规则反馈，不上传文件，也不推断学生身份。</p>
+        <div class="form-actions">
+          <label class="file-btn">
+            导入多个匿名作业数据包
+            <input type="file" multiple accept=".json,application/json" @change="importClassPackages">
+          </label>
+          <button class="ghost-btn" type="button" :disabled="teacherPackages.length === 0" @click="exportClassSummary">导出班级汇总 CSV</button>
+          <button class="danger-btn" type="button" :disabled="teacherPackages.length === 0" @click="clearTeacherPackages">清空汇总</button>
+        </div>
+        <p v-if="teacherMessage" class="message">{{ teacherMessage }}</p>
+      </div>
+
+      <section class="stats-grid teacher-stats">
+        <div class="stat-card"><span>已验证数据包</span><strong>{{ teacherPackages.length }} 份</strong></div>
+        <div class="stat-card"><span>实验记录</span><strong>{{ teacherSummary.totalRecords }} 条</strong></div>
+        <div class="stat-card"><span>完整闭环记录</span><strong>{{ teacherSummary.completeRecords }} 条</strong></div>
+        <div class="stat-card"><span>闭环完成率</span><strong>{{ teacherSummary.completionRate }}%</strong></div>
+        <div class="stat-card"><span>平均规则得分</span><strong>{{ teacherSummary.averageRubric }}/4</strong></div>
+        <div class="stat-card"><span>含报告草稿</span><strong>{{ teacherSummary.reportCount }} 份</strong></div>
+      </section>
+
+      <section class="teacher-grid">
+        <article class="panel">
+          <h2>各步骤完成情况</h2>
+          <div class="step-bars">
+            <div v-for="item in teacherSummary.steps" :key="item.label">
+              <span>{{ item.label }}</span>
+              <div><i :style="{ width: `${item.rate}%` }"></i></div>
+              <strong>{{ item.rate }}%</strong>
+            </div>
+          </div>
+        </article>
+        <article class="panel">
+          <h2>解释质量分布</h2>
+          <div class="quality-grid">
+            <div v-for="item in teacherSummary.qualityDistribution" :key="item.score">
+              <strong>{{ item.score }}分</strong><span>{{ item.count }}条</span>
+            </div>
+          </div>
+        </article>
+        <article class="panel">
+          <h2>预测前后变化记录</h2>
+          <p>有初始预测和修改后解释：{{ teacherSummary.predictionChanges.comparable }} 条</p>
+          <p>已完成反事实比较：{{ teacherSummary.predictionChanges.counterfactual }} 条</p>
+          <p>可比较记录占比：{{ teacherSummary.predictionChanges.rate }}%</p>
+          <small>这里只统计步骤是否完成，不自动判断学生观点是否“变对”。</small>
+        </article>
+        <article class="panel">
+          <h2>常见缺失项</h2>
+          <p v-if="teacherSummary.commonErrors.length === 0" class="muted">导入数据后生成。</p>
+          <p v-for="item in teacherSummary.commonErrors" :key="item.label">{{ item.label }}：{{ item.count }} 条</p>
+        </article>
+        <article class="panel">
+          <h2>模型解释误区提示</h2>
+          <p>缺少指标证据：{{ teacherSummary.misconceptions.missingEvidence }} 条</p>
+          <p>缺少机制词：{{ teacherSummary.misconceptions.missingMechanism }} 条</p>
+          <p>未完成反事实比较：{{ teacherSummary.misconceptions.missingCounterfactual }} 条</p>
+        </article>
+      </section>
+
+      <section class="panel table-panel">
+        <h2>匿名数据包清单</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>匿名编号</th><th>研究对象</th><th>样本数</th><th>实验记录</th><th>完整闭环</th><th>报告草稿</th></tr></thead>
+            <tbody>
+              <tr v-for="item in teacherPackages" :key="item.anonymousId">
+                <td>{{ item.anonymousId }}</td>
+                <td>{{ item.payload.target?.industry || '未填' }} / {{ item.payload.target?.position || '未填' }}</td>
+                <td>{{ item.payload.samples.length }}</td>
+                <td>{{ item.payload.experimentRecords.length }}</td>
+                <td>{{ packageCompleteRecords(item.payload) }}</td>
+                <td>{{ item.payload.reportText ? '有' : '无' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
   </div>
 </template>
 
@@ -316,6 +451,8 @@ import { use } from 'echarts/core'
 import { BarChart, PieChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
+import { calibrateTourism } from '../domain/tourism/model'
+import { isAnonymous } from '../config/appMode'
 
 use([BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
@@ -323,9 +460,12 @@ const SAMPLE_KEY = 'lmdtReportSamples'
 const TARGET_KEY = 'lmdtReportTarget'
 const RECORD_KEY = 'lmdtReportExperimentRecords'
 const REPORT_KEY = 'lmdtReportDraft'
+const TOURISM_CALIBRATION_KEY = 'lmdtTourismCalibration'
 const PACKAGE_SCHEMA = 'lmdt-report-workbench-package-v1'
 
-const workflowSteps = ['采集招聘数据', '按模板导入', '预览与校验', '自动统计', 'LMDT 仿真', '生成报告草稿', '导出作业']
+const simulationLabel = __ANONYMOUS_BUILD__ || isAnonymous ? '课程' : 'LMDT '
+const packageAppName = __ANONYMOUS_BUILD__ || isAnonymous ? '课程实验平台' : 'LMDT 2.0'
+const workflowSteps = ['采集招聘数据', '按模板导入', '预览与校验', '自动统计', `${simulationLabel}仿真`, '生成报告草稿', '导出作业']
 const csvHeaders = ['样本编号', '招聘平台', '采集日期', '企业名称', '岗位名称', '行业', '城市', '薪资下限', '薪资上限', '学历要求', '经验要求', '技能关键词', '用工形式', '岗位链接', '截图编号', '备注']
 const industryOptions = ['文旅与会展', '文化旅游', '信息技术', '制造业', '金融业', '教育', '医疗健康', '现代服务业', '交通运输', '批发零售']
 const regionOptions = ['全国', '成渝双城经济圈', '成都', '重庆', '北京', '上海', '广州', '深圳', '杭州', '西安']
@@ -360,6 +500,9 @@ const csvPreview = ref(null)
 const reportText = ref('')
 const reportEdited = ref(false)
 const message = ref('')
+const workbenchMode = ref('student')
+const teacherPackages = ref([])
+const teacherMessage = ref('')
 
 const salaryValues = computed(() => samples.value
   .map((sample) => salaryMidpoint(sample))
@@ -412,6 +555,72 @@ const topSkills = computed(() => Object.entries(skillCounts.value)
   .sort((a, b) => b.value - a.value)
   .slice(0, 10))
 const totalSkillTokens = computed(() => Object.values(skillCounts.value).reduce((sum, value) => sum + value, 0))
+const tourismCalibration = computed(() => calibrateTourism(samples.value, target))
+
+const teacherSummary = computed(() => {
+  const records = teacherPackages.value.flatMap(item => item.payload.experimentRecords)
+  const totalRecords = records.length
+  const completeRecords = records.filter(isRecordComplete).length
+  const stepDefinitions = [
+    { key: 'initialPrediction', label: '初始预测' },
+    { key: 'initialReason', label: '初始理由' },
+    { key: 'baselineResult', label: '基准结果' },
+    { key: 'counterfactualResult', label: '反事实结果' },
+    { key: 'studentExplanation', label: '学生解释' },
+    { key: 'revisedExplanation', label: '修改解释' },
+  ]
+  const steps = stepDefinitions.map(item => ({
+    label: item.label,
+    rate: totalRecords
+      ? Math.round(records.filter(record => hasRecordValue(record[item.key])).length / totalRecords * 100)
+      : 0,
+  }))
+  const rubricScores = records.map(record => Number(record.ruleFeedback?.score ?? 0))
+  const qualityDistribution = Array.from({ length: 5 }, (_, score) => ({
+    score,
+    count: rubricScores.filter(value => value === score).length,
+  }))
+  const errorDefinitions = [
+    { key: 'initialPrediction', label: '缺少初始预测' },
+    { key: 'baselineResult', label: '缺少基准结果' },
+    { key: 'counterfactualResult', label: '缺少反事实结果' },
+    { key: 'studentExplanation', label: '缺少学生解释' },
+    { key: 'revisedExplanation', label: '缺少修改后解释' },
+  ]
+  const commonErrors = errorDefinitions
+    .map(item => ({
+      label: item.label,
+      count: records.filter(record => !hasRecordValue(record[item.key])).length,
+    }))
+    .filter(item => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+  return {
+    totalRecords,
+    completeRecords,
+    completionRate: totalRecords ? Math.round(completeRecords / totalRecords * 100) : 0,
+    averageRubric: rubricScores.length
+      ? (rubricScores.reduce((sum, value) => sum + value, 0) / rubricScores.length).toFixed(1)
+      : '0.0',
+    reportCount: teacherPackages.value.filter(item => item.payload.reportText).length,
+    steps,
+    qualityDistribution,
+    commonErrors,
+    predictionChanges: {
+      comparable: records.filter(record =>
+        hasRecordValue(record.initialPrediction) && hasRecordValue(record.revisedExplanation)).length,
+      counterfactual: records.filter(record => hasRecordValue(record.counterfactualResult)).length,
+      rate: totalRecords
+        ? Math.round(records.filter(record =>
+          hasRecordValue(record.initialPrediction) && hasRecordValue(record.revisedExplanation)).length / totalRecords * 100)
+        : 0,
+    },
+    misconceptions: {
+      missingEvidence: records.filter(record => !/\d|%|元|指数|率/.test(record.studentExplanation || '')).length,
+      missingMechanism: records.filter(record => !/因为|因此|导致|影响|提高|降低|替代|收入效应|匹配|成本/.test(record.studentExplanation || '')).length,
+      missingCounterfactual: records.filter(record => !record.counterfactualResult).length,
+    },
+  }
+})
 
 const salaryChart = computed(() => barOption(salaryBuckets.value.map((item) => item.name), salaryBuckets.value.map((item) => item.value), '#06b6d4'))
 const cityChart = computed(() => barOption(Object.keys(cityCounts.value), Object.values(cityCounts.value), '#22c55e'))
@@ -432,7 +641,7 @@ const previewCards = computed(() => {
 })
 
 const simulationLinks = [
-  { title: '工资决定与收入差距', desc: '模拟学历、经验和技能溢价对薪酬水平的影响。', to: '/lab/wage' },
+  { title: '工资决定与工资形式', desc: '比较效率工资、补偿性差异、激励工资和经验工资路径。', to: '/lab/wage' },
   { title: '失业经济学', desc: '分析技能错配、AI 冲击、岗位空缺和匹配效率。', to: '/lab/unemployment' },
   { title: '劳动力市场歧视', desc: '讨论招聘条件中的公平就业和歧视风险。', to: '/lab/discrimination' },
   { title: '收入分配实验室', desc: '用于收入差距、技能溢价和共同富裕讨论。', to: '/lab/income-distribution' },
@@ -442,7 +651,7 @@ const simulationLinks = [
 const recommendedLinks = computed(() => {
   const text = `${target.industry}${target.position}`
   const links = [
-    { title: '工资决定与收入差距', reason: '模拟学历和经验对薪酬的影响' },
+    { title: '工资决定与工资形式', reason: '比较工资形成机制及经验工资路径' },
     { title: '失业经济学', reason: '模拟技能错配、AI 冲击和匹配效率' },
     { title: '劳动力市场歧视', reason: '分析招聘条件是否存在歧视风险' },
   ]
@@ -459,11 +668,13 @@ onMounted(() => {
 
 watch(samples, () => {
   localStorage.setItem(SAMPLE_KEY, JSON.stringify(samples.value))
+  invalidateStaleTourismCalibration()
   refreshReportIfUntouched()
 }, { deep: true })
 
 watch(target, () => {
   localStorage.setItem(TARGET_KEY, JSON.stringify(target))
+  invalidateStaleTourismCalibration()
   refreshReportIfUntouched()
 }, { deep: true })
 
@@ -778,7 +989,12 @@ function generateReport() {
   const educationTop = topCounts(samples.value.map((sample) => sample.education), 3).join('、') || '待补充'
   const experienceTop = topCounts(samples.value.map((sample) => sample.experience), 3).join('、') || '待补充'
   const skillText = topSkills.value.map((item, index) => `${index + 1}. ${item.name}（${item.value} 次）`).join('\n') || '暂无技能词频，请继续补充样本。'
-  const recordText = experimentRecords.value.slice(0, 5).map((record) => `- ${record.experimentName}：${record.conclusion || '待补充结论'}`).join('\n') || '- 工资决定模拟结果：待补充\n- 失业或技能错配模拟结果：待补充\n- AI 冲击或岗位匹配模拟结果：待补充\n- 公平就业或收入分配讨论：待补充'
+  const recordText = experimentRecords.value.slice(0, 5).map((record) => {
+    const source = record.dataSourceType || '来源未标注'
+    const version = record.modelVersion || '版本未标注'
+    const explanation = record.revisedExplanation || record.studentExplanation || '学生解释待补充'
+    return `- ${record.experimentName}（${source}，${version}）：${record.conclusion || '待补充结论'}\n  - 学生解释：${explanation}`
+  }).join('\n') || '- 工资决定模拟结果：待补充\n- 失业或技能错配模拟结果：待补充\n- AI 冲击或岗位匹配模拟结果：待补充\n- 公平就业或收入分配讨论：待补充'
   const topSkillNames = topSkills.value.slice(0, 3).map((item) => item.name).join('、') || '岗位核心技能'
   const tourismSentence = isTourismReport
     ? '本报告还应结合游客增长、会展活动、数字文旅、研学旅行、智慧景区和区域人才流动等因素解释岗位需求变化。'
@@ -803,7 +1019,7 @@ ${skillText}
 
 请解释这些技能之间的结构关系，例如通用办公能力、专业工具能力、数据分析能力、沟通协作能力、行业知识和合规意识。技能关键词目前共识别 ${totalSkillTokens.value} 个。
 
-## 五、LMDT仿真辅助分析
+## 五、${simulationLabel}仿真辅助分析
 建议进入以下模块完成仿真实验：
 ${recommendedLinks.value.map((item, index) => `${index + 1}. ${item.title}：${item.reason}`).join('\n')}
 
@@ -813,7 +1029,7 @@ ${recordText}
 请把工资模拟、失业模拟、AI 冲击模拟、技能错配模拟或公平就业分析结果写入本部分，并说明仿真结果如何支持岗位预测判断。
 
 ## 六、未来趋势判断
-综合招聘样本、薪酬水平、技能词频和 LMDT 仿真结果，判断该岗位未来更可能是扩张、稳定、收缩，还是结构性调整。请给出至少三条证据：样本证据、统计证据和模型/仿真证据。
+综合招聘样本、薪酬水平、技能词频和${simulationLabel}仿真结果，判断该岗位未来更可能是扩张、稳定、收缩，还是结构性调整。请给出至少三条证据：样本证据、统计证据和模型/仿真证据。
 
 ## 七、学习与就业建议
 建议围绕 ${topSkillNames} 等高频能力制定学习计划。请把建议写成可执行方案，例如课程学习、证书准备、项目训练、实习实践和作品集建设，并说明这些准备如何对应招聘样本中的真实要求。`
@@ -841,11 +1057,146 @@ function printPage() {
   window.print()
 }
 
+function saveTourismCalibration() {
+  if (tourismCalibration.value.status !== 'ready') {
+    setMessage(`暂不能校准：${tourismCalibration.value.reasons.join('；')}`)
+    return
+  }
+  localStorage.setItem(TOURISM_CALIBRATION_KEY, JSON.stringify({
+    ...tourismCalibration.value,
+    input_fingerprint: tourismCalibrationFingerprint(),
+  }))
+  setMessage('校准参数已保存。进入成渝文旅实验室后会明确显示样本覆盖、参数前后值和不确定性。')
+}
+
+function tourismCalibrationFingerprint() {
+  const fields = samples.value.map(sample => [
+    sample.sampleNo,
+    sample.platform,
+    sample.collectDate,
+    sample.position,
+    sample.industry,
+    sample.city,
+    sample.salaryMin,
+    sample.salaryMax,
+    sample.skills,
+  ])
+  return JSON.stringify([{ ...target }, fields])
+}
+
+function invalidateStaleTourismCalibration() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TOURISM_CALIBRATION_KEY) || 'null')
+    if (saved && saved.input_fingerprint !== tourismCalibrationFingerprint()) {
+      localStorage.removeItem(TOURISM_CALIBRATION_KEY)
+    }
+  } catch {
+    localStorage.removeItem(TOURISM_CALIBRATION_KEY)
+  }
+}
+
+function formatComposition(source) {
+  const entries = Object.entries(source || {})
+  return entries.length
+    ? entries.map(([name, count]) => `${name}${count}条`).join('、')
+    : '暂无'
+}
+
+async function importClassPackages(event) {
+  const files = [...(event.target.files || [])]
+  if (!files.length) return
+  const accepted = []
+  let rejected = 0
+  for (const file of files) {
+    try {
+      const payload = JSON.parse(await file.text())
+      if (!isValidAssignmentPackage(payload)) throw new Error('invalid package')
+      accepted.push({
+        anonymousId: `匿名作业${String(teacherPackages.value.length + accepted.length + 1).padStart(2, '0')}`,
+        payload: {
+          ...payload,
+          samples: Array.isArray(payload.samples) ? payload.samples : [],
+          experimentRecords: Array.isArray(payload.experimentRecords) ? payload.experimentRecords : [],
+          reportText: String(payload.reportText || ''),
+        },
+      })
+    } catch {
+      rejected += 1
+    }
+  }
+  teacherPackages.value.push(...accepted)
+  teacherMessage.value = `已导入 ${accepted.length} 份有效数据包${rejected ? `，拒绝 ${rejected} 份格式不匹配文件` : ''}。`
+  event.target.value = ''
+}
+
+function isValidAssignmentPackage(payload) {
+  return payload
+    && payload.schema === PACKAGE_SCHEMA
+    && Array.isArray(payload.samples)
+    && Array.isArray(payload.experimentRecords)
+}
+
+function hasRecordValue(value) {
+  if (value === null || value === undefined || value === '') return false
+  if (Array.isArray(value)) return value.length > 0
+  if (typeof value === 'object') return Object.keys(value).length > 0
+  return true
+}
+
+function isRecordComplete(record) {
+  return [
+    'initialPrediction',
+    'initialReason',
+    'baselineResult',
+    'counterfactualResult',
+    'studentExplanation',
+    'ruleFeedback',
+    'revisedExplanation',
+    'modelVersion',
+    'dataSourceType',
+  ].every(key => hasRecordValue(record?.[key]))
+}
+
+function packageCompleteRecords(payload) {
+  return (payload.experimentRecords || []).filter(isRecordComplete).length
+}
+
+function exportClassSummary() {
+  const rows = [
+    ['匿名编号', '行业', '岗位', '样本数', '实验记录数', '完整闭环数', '报告草稿'],
+    ...teacherPackages.value.map(item => [
+      item.anonymousId,
+      item.payload.target?.industry || '',
+      item.payload.target?.position || '',
+      item.payload.samples.length,
+      item.payload.experimentRecords.length,
+      packageCompleteRecords(item.payload),
+      item.payload.reportText ? '有' : '无',
+    ]),
+    [],
+    ['汇总指标', '数值'],
+    ['数据包数量', teacherPackages.value.length],
+    ['实验记录总数', teacherSummary.value.totalRecords],
+    ['完整闭环记录', teacherSummary.value.completeRecords],
+    ['闭环完成率', `${teacherSummary.value.completionRate}%`],
+    ['平均规则得分', `${teacherSummary.value.averageRubric}/4`],
+    ['可比较预测记录', teacherSummary.value.predictionChanges.comparable],
+    ['可比较记录占比', `${teacherSummary.value.predictionChanges.rate}%`],
+  ]
+  downloadFile(toCsv(rows), `匿名班级汇总-${today()}.csv`, 'text/csv;charset=utf-8')
+  teacherMessage.value = '班级汇总 CSV 已导出。'
+}
+
+function clearTeacherPackages() {
+  teacherPackages.value = []
+  teacherMessage.value = '教师汇总已清空，不影响学生作业数据。'
+}
+
 function exportAssignmentPackage() {
   const payload = {
     schema: PACKAGE_SCHEMA,
     exportedAt: new Date().toISOString(),
-    app: 'LMDT 2.0',
+    app: packageAppName,
     target: { ...target },
     samples: samples.value,
     experimentRecords: experimentRecords.value,
@@ -888,6 +1239,7 @@ function clearLocalWorkbenchData() {
   localStorage.removeItem(TARGET_KEY)
   localStorage.removeItem(RECORD_KEY)
   localStorage.removeItem(REPORT_KEY)
+  localStorage.removeItem(TOURISM_CALIBRATION_KEY)
   Object.assign(target, { industry: '', position: '', region: '' })
   samples.value = []
   experimentRecords.value = []
@@ -921,7 +1273,7 @@ function reportFileName(ext) {
 function assignmentPackageFileName() {
   const position = target.position || '岗位'
   const stamp = new Date().toISOString().slice(0, 10)
-  return `${position}-LMDT作业数据包-${stamp}.json`
+  return `${position}-${packageAppName}-作业数据包-${stamp}.json`
 }
 
 function today() {
@@ -1002,10 +1354,23 @@ function setMessage(text) {
   font-size: 12px;
   font-weight: 800;
 }
+.workbench-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.workbench-tabs button {
+  border-radius: 6px;
+}
+.workbench-tabs button.active {
+  color: #ecfeff;
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(6, 182, 212, 0.15);
+}
 .panel {
   margin-bottom: 20px;
   padding: 20px;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   background: rgba(30, 41, 59, 0.5);
 }
@@ -1109,7 +1474,7 @@ textarea {
 button,
 .file-btn {
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 10px 14px;
   color: #dbeafe;
   background: rgba(15, 23, 42, 0.72);
@@ -1388,6 +1753,146 @@ th {
   font-family: Consolas, "Microsoft YaHei", monospace;
   line-height: 1.7;
 }
+.calibration-status {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid #f59e0b;
+  color: #cbd5e1;
+  background: rgba(245, 158, 11, 0.07);
+  line-height: 1.6;
+}
+.record-list .record-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.record-list .record-meta span {
+  padding: 4px 7px;
+  border: 1px solid rgba(148,163,184,.14);
+  border-radius: 5px;
+  color: #94a3b8;
+  background: rgba(30,41,59,.65);
+}
+.calibration-status.ready {
+  border-left-color: #22c55e;
+  background: rgba(34, 197, 94, 0.07);
+}
+.calibration-status strong { flex: 0 0 auto; color: #f8fafc; }
+.calibration-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin-bottom: 14px;
+  background: rgba(148, 163, 184, 0.12);
+}
+.calibration-grid div {
+  min-width: 0;
+  padding: 13px;
+  background: #172033;
+}
+.calibration-grid span,
+.coverage-grid span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+.calibration-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #f8fafc;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.coverage-grid strong { color: #e2e8f0; }
+.coverage-grid p {
+  margin: 7px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.65;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.teacher-intro p,
+.teacher-grid p {
+  color: #94a3b8;
+  line-height: 1.7;
+}
+.teacher-stats {
+  margin-bottom: 20px;
+}
+.teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.teacher-grid h2,
+.teacher-workbench > .panel h2 {
+  margin: 0 0 14px;
+  color: #e2e8f0;
+  font-size: 17px;
+}
+.step-bars {
+  display: grid;
+  gap: 12px;
+}
+.step-bars > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 44px;
+  gap: 10px;
+  align-items: center;
+}
+.step-bars span,
+.step-bars strong {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+.step-bars > div > div {
+  height: 9px;
+  background: rgba(148, 163, 184, 0.14);
+}
+.step-bars i {
+  display: block;
+  height: 100%;
+  background: #06b6d4;
+}
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.quality-grid div {
+  padding: 12px 8px;
+  text-align: center;
+  border-left: 2px solid #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+}
+.quality-grid strong,
+.quality-grid span {
+  display: block;
+  color: #e2e8f0;
+}
+.quality-grid span {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #67e8f9;
+  outline-offset: 2px;
+}
 @media print {
   .back-link,
   .target-panel,
@@ -1400,6 +1905,9 @@ th {
   .sim-panel,
   .records-panel,
   .data-panel,
+  .calibration-panel,
+  .workbench-tabs,
+  .teacher-workbench,
   .form-actions,
   .hint {
     display: none !important;
@@ -1424,7 +1932,8 @@ th {
     grid-template-columns: repeat(3, 1fr);
   }
   .preview-cards,
-  .stats-grid {
+  .stats-grid,
+  .calibration-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -1445,6 +1954,10 @@ th {
   .data-layout {
     grid-template-columns: 1fr;
   }
+  .coverage-grid,
+  .teacher-grid {
+    grid-template-columns: 1fr;
+  }
   .data-actions {
     justify-content: flex-start;
   }
@@ -1460,7 +1973,9 @@ th {
   .sim-grid,
   .data-layout,
   .preview-cards,
-  .stats-grid {
+  .stats-grid,
+  .calibration-grid,
+  .coverage-grid {
     grid-template-columns: 1fr;
   }
   label.wide {

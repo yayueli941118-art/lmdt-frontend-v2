@@ -6,7 +6,13 @@
       <p>把教材中的预算线、无差异曲线、收入效应、替代效应和向后弯曲劳动供给曲线做成可操作动态图。</p>
     </div>
 
-    <LabDashboardLayout>
+    <LabDashboardLayout
+      formula="U=(R-R0)^β(C-C0)^(1-β)，C=V+W(T-R)"
+      assumptions="偏好参数在一次实验中固定；闲暇和消费均为正常品；不考虑税收与工时制度约束。"
+      source="教材第二章图2-9、图2-10、图2-11。"
+      scope="解释非劳动收入与工资变化的收入效应、替代效应及劳动供给方向。"
+      limitation="某位学生或某个职业在现实中的精确工时选择。"
+    >
       <template #controls>
         <div class="lab-controls">
           <div class="control-group wide">
@@ -39,14 +45,30 @@
             <div class="hint">β 越大，越重视闲暇；无差异曲线更容易向右移动。</div>
           </div>
           <div class="control-group">
-            <label>收入效应强度 <span class="val">{{ incomeEffectStrength.toFixed(2) }}</span></label>
-            <input type="range" v-model.number="incomeEffectStrength" min="0" max="1" step="0.01">
-            <div class="hint">越高越容易出现图2-11的工作时数递减。</div>
+            <label>基本消费 C0 <span class="val">{{ consumptionFloor }} 元</span></label>
+            <input type="range" v-model.number="consumptionFloor" min="0" max="600" step="10">
+            <div class="hint">固定偏好中的基本消费需要，不是人为调节“效应强度”。</div>
+          </div>
+          <div class="control-group">
+            <label>基本闲暇 R0 <span class="val">{{ leisureFloor }} 小时</span></label>
+            <input type="range" v-model.number="leisureFloor" min="0" max="8" step="0.5">
           </div>
           <button class="btn-run" type="button" @click="run" :disabled="loading">
             {{ loading ? '实时更新中...' : '刷新教材图' }}
           </button>
+          <button class="btn-reset" type="button" @click="applyScenarioPreset">恢复当前教材预设</button>
         </div>
+      </template>
+
+      <template #record>
+        <ExperimentRecordPanel
+          experiment-name="劳动供给决策"
+          :parameters="recordParameters"
+          :metrics="recordMetrics"
+          :conclusion="supplyConclusion"
+          model-version="supply-stone-geary-2.1"
+          source-type="教材公式"
+        />
       </template>
 
       <template #task>
@@ -154,10 +176,12 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
@@ -166,13 +190,15 @@ import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
+const route = useRoute()
 const scenarioMode = ref('moreWork')
 const wageInitial = ref(28)
 const wageNew = ref(64)
-const nonLaborIncome = ref(60)
+const nonLaborIncome = ref(300)
 const nonLaborShock = ref(160)
 const beta = ref(0.3)
-const incomeEffectStrength = ref(0.02)
+const consumptionFloor = ref(20)
+const leisureFloor = ref(2)
 const timeEndowment = ref(24)
 const loading = ref(false)
 const result = ref(null)
@@ -224,6 +250,22 @@ const readingNote = computed(() => {
   return `从 A 到 B 是替代效应 ${signed(result.value.effects.substitution_effect_hours)}h，从 B 到 C 是收入效应 ${signed(result.value.effects.income_effect_hours)}h，合计为 ${signed(result.value.effects.total_effect_hours)}h。`
 })
 
+const recordParameters = computed(() => ({
+  '教材情景': scenarioFigure.value,
+  '初始工资': `${wageInitial.value} 元/小时`,
+  '新工资': `${wageNew.value} 元/小时`,
+  '非劳动收入': `${nonLaborIncome.value} 元`,
+  '闲暇偏好β': beta.value.toFixed(2),
+  '基本消费C0': `${consumptionFloor.value} 元`,
+}))
+
+const recordMetrics = computed(() => result.value ? ({
+  '初始工作时数': `${result.value.point_A.labor_hours} 小时`,
+  '最终工作时数': `${activeFinalPoint.value.labor_hours} 小时`,
+  '替代效应': `${signed(result.value.effects.substitution_effect_hours)} 小时`,
+  '收入效应': `${signed(result.value.effects.income_effect_hours)} 小时`,
+}) : ({}))
+
 function signed(value) {
   const n = Number(value || 0)
   return `${n > 0 ? '+' : ''}${Number(n.toFixed(2))}`
@@ -236,21 +278,24 @@ function applyScenarioPreset() {
     nonLaborIncome.value = 80
     nonLaborShock.value = 220
     beta.value = 0.38
-    incomeEffectStrength.value = 0.25
+    consumptionFloor.value = 20
+    leisureFloor.value = 2
   } else if (scenarioMode.value === 'moreWork') {
     wageInitial.value = 28
     wageNew.value = 64
-    nonLaborIncome.value = 60
+    nonLaborIncome.value = 300
     nonLaborShock.value = 120
     beta.value = 0.3
-    incomeEffectStrength.value = 0.02
+    consumptionFloor.value = 20
+    leisureFloor.value = 2
   } else {
     wageInitial.value = 36
     wageNew.value = 116
     nonLaborIncome.value = 120
     nonLaborShock.value = 120
     beta.value = 0.42
-    incomeEffectStrength.value = 0.9
+    consumptionFloor.value = 420
+    leisureFloor.value = 2
   }
 }
 
@@ -277,10 +322,12 @@ function pointSeries(point, color) {
 
 function indifferenceCurve(point, betaValue) {
   const utility = point.utility
+  const c0 = result.value.preference.consumption_floor
+  const r0 = result.value.preference.leisure_floor
   const maxIncome = Math.max(result.value.point_A.consumption, result.value.point_C.consumption, result.value.point_Z.consumption) * 1.3
   const data = []
-  for (let x = 0.8; x <= timeEndowment.value; x += 0.35) {
-    const y = (utility / (x ** betaValue)) ** (1 / (1 - betaValue))
+  for (let x = r0 + 0.2; x <= timeEndowment.value; x += 0.35) {
+    const y = c0 + (utility / ((x - r0) ** betaValue)) ** (1 / (1 - betaValue))
     if (Number.isFinite(y) && y <= maxIncome) data.push([Number(x.toFixed(2)), Number(y.toFixed(2))])
   }
   return data
@@ -311,7 +358,7 @@ const choiceChartOption = computed(() => {
     tooltip: { trigger: 'axis' },
     grid: { top: 46, right: 24, bottom: 44, left: 62 },
     xAxis: {
-      name: '闲暇时间 L（小时，越往右工作越少）',
+      name: '闲暇 R（小时，向右）/ 工作 H（向左）',
       min: 0,
       max: timeEndowment.value,
       nameTextStyle: { color: '#94a3b8' },
@@ -392,7 +439,8 @@ async function run() {
       beta: beta.value,
       non_labor_income: nonLaborIncome.value,
       non_labor_shock: nonLaborShock.value,
-      income_effect_strength: incomeEffectStrength.value,
+      consumption_floor: consumptionFloor.value,
+      leisure_floor: leisureFloor.value,
       T: timeEndowment.value,
     })
     result.value = data
@@ -408,8 +456,15 @@ function scheduleRun() {
   debounceTimer = setTimeout(run, 220)
 }
 
-watch([wageInitial, wageNew, beta, nonLaborIncome, nonLaborShock, incomeEffectStrength], scheduleRun)
-onMounted(run)
+watch([wageInitial, wageNew, beta, nonLaborIncome, nonLaborShock, consumptionFloor, leisureFloor], scheduleRun)
+onMounted(() => {
+  const preset = String(route.query.preset || '')
+  if (['income', 'moreWork', 'lessWork'].includes(preset)) {
+    scenarioMode.value = preset
+    applyScenarioPreset()
+  }
+  run()
+})
 </script>
 
 <style scoped>
@@ -428,6 +483,7 @@ onMounted(run)
 .hint { margin-top: 4px; font-size: 11px; line-height: 1.5; color: #64748b; }
 .btn-run { padding: 12px 18px; border: none; border-radius: 10px; background: linear-gradient(135deg,#3b82f6,#2563eb); color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; }
 .btn-run:disabled { opacity: .55; cursor: not-allowed; }
+.btn-reset { padding: 11px 14px; border: 1px solid rgba(148,163,184,.22); border-radius: 7px; color: #cbd5e1; background: #111b2e; cursor: pointer; }
 .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat-card, .chart-card, .explain-card, .point-card { background: rgba(30,41,59,.5); border: 1px solid rgba(148,163,184,.1); border-radius: 14px; }
 .stat-card { padding: 15px; text-align: center; }
