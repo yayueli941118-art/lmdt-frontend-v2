@@ -1,12 +1,11 @@
 <template>
-  <div class="lab">
-    <div class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <h1>🌍 宏观政策实验室</h1>
-      <p>贝弗里奇曲线 · 结构性失业诊断 · AI 冲击 · 政策组合实验</p>
-    </div>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab"
+      title="宏观政策实验室"
+      subtitle="贝弗里奇曲线 · 结构性失业诊断 · AI冲击 · 政策组合"
+      kicker="CH.09 · 宏观失业"
+      :change-key="[aiRisk, mismatchIndex, activePolicies]"
+      @reset="resetMacro"
       formula="v=a+k/u；错配冲击使 UV 曲线外移，匹配效率改善使其向原点移动。"
       assumptions="失业率和岗位空缺率采用相同比率口径；图示范围限定为课堂可读区间。"
       source="教材第九章贝弗里奇曲线与结构性失业。"
@@ -57,15 +56,8 @@
     />
       </template>
 
-      <template #primary>
-    <div v-if="result" class="lab-results">
-      <!-- 诊断卡 -->
-      <div class="diagnosis-card" :class="'diag-' + result.diagnosis_level.toLowerCase()">
-        <span class="diag-level">{{ result.diagnosis_level }}</span>
-        <span class="diag-text">{{ result.diagnosis_text }}</span>
-      </div>
-
-      <div class="cards-row">
+      <template #metrics>
+      <div v-if="result" class="cards-row">
         <div class="stat-card">
           <span class="stat-label">当前失业率</span>
           <span class="stat-val">{{ result.u_current }}%</span>
@@ -83,27 +75,39 @@
           <span class="stat-val">{{ (result.u_current - result.u_natural).toFixed(1) }}%</span>
         </div>
       </div>
+      </template>
 
+      <template #primary>
       <div class="chart-card">
         <h3>贝弗里奇曲线 (UV图)</h3>
-        <v-chart :option="beveridgeChart" autoresize style="height:340px" />
+        <v-chart class="workspace-chart-canvas" :option="beveridgeChart" autoresize />
       </div>
+      </template>
 
+      <template #change>
+        基准自然失业率 {{ result?.u_natural || 0 }}% → 当前失业率 {{ result?.u_current || 0 }}%；
+        {{ result?.diagnosis_level || '等待诊断' }}。
+      </template>
+
+      <template #analysis>
+      <div v-if="result" class="diagnosis-card" :class="'diag-' + result.diagnosis_level.toLowerCase()">
+        <span class="diag-level">{{ result.diagnosis_level }}</span>
+        <span class="diag-text">{{ result.diagnosis_text }}</span>
+      </div>
       <p class="policy-note">
         思考：贝弗里奇曲线外移时，问题往往不只是“岗位少”，还包括技能、地区和信息错配。就业优先政策的落点，可以具体化为培训补贴、公共就业服务和岗位信息平台。
       </p>
-    </div>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -120,7 +124,6 @@ const policies = [
   { value: '技能重塑补贴', label: '技能重塑补贴' },
 ]
 const activePolicies = ref([])
-let debounceTimer = null
 
 const macroConclusion = computed(() => {
   if (!result.value) return ''
@@ -147,6 +150,8 @@ const beveridgeChart = computed(() => {
   const baseline = result.value.baseline_curve_points || pts
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     grid: { top: 48, right: 20, bottom: 36, left: 55 },
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
     xAxis: { name: '失业率 u (%)', min: result.value.chart_domain?.u_min ?? 0, max: result.value.chart_domain?.u_max ?? 15, nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' } },
@@ -193,10 +198,7 @@ function resetMacro() {
   run()
 }
 
-function scheduleRun() {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(run, 220)
-}
+const scheduleRun = createRealtimeScheduler(run, 80)
 
 watch([aiRisk, mismatchIndex, activePolicies], scheduleRun, { deep: true })
 onMounted(run)

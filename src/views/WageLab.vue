@@ -1,13 +1,13 @@
 <template>
-  <div class="lab">
-    <header class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <span class="chapter-kicker">CH.06 · 工资理论</span>
-      <h1>工资决定与工资形式</h1>
-      <p>工资概念与形式 · 效率工资 · 补偿性工资差异 · 激励工资 · 工资经验方程交叉入口</p>
-    </header>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab"
+      title="工资决定与工资形式"
+      subtitle="工资概念 · 效率工资 · 补偿性差异 · 激励工资 · 工资经验方程"
+      kicker="CH.06 · 工资理论"
+      :chart-tabs="wageChartTabs"
+      v-model:active-chart="activeChart"
+      :change-key="[activeTab, referenceWage, theoryWage, effortSensitivity, risk, inconvenience, performanceShare, targetCompletion, education, experience, industry, region]"
+      @reset="resetWage"
       :result-type="resultType"
       :formula="modelFormula"
       :assumptions="modelAssumptions"
@@ -149,25 +149,29 @@
           <p>货币工资需要结合价格水平解释实际购买力；计时、计件和绩效工资是不同的支付形式；工资差异还可能来自人力资本、工作条件、制度安排与信息不完全。</p>
         </section>
 
-        <section v-else-if="activeTab === 'mincer' && distribution" class="chart-grid">
-          <article class="chart-card">
+        <section v-else-if="activeTab === 'mincer' && distribution" class="chart-card">
+          <template v-if="activeChart === 'histogram'">
             <h2>1000个合成工资样本分布</h2>
-            <v-chart :option="histogramOption" autoresize style="height:340px" aria-label="合成工资样本分布图" />
-          </article>
-          <article class="chart-card">
+            <v-chart class="workspace-chart-canvas" :option="histogramOption" autoresize aria-label="合成工资样本分布图" />
+          </template>
+          <template v-else>
             <h2>工资分位数</h2>
-            <v-chart :option="decileOption" autoresize style="height:340px" aria-label="工资分位数折线图" />
-          </article>
+            <v-chart class="workspace-chart-canvas" :option="decileOption" autoresize aria-label="工资分位数折线图" />
+          </template>
         </section>
 
         <section v-else-if="theoryResult" class="chart-card">
           <h2>{{ theoryResult.headline }}：参数变化与结果</h2>
-          <v-chart :option="theoryOption" autoresize style="height:360px" :aria-label="`${theoryResult.headline}情景曲线`" />
+          <v-chart class="workspace-chart-canvas" :option="theoryOption" autoresize :aria-label="`${theoryResult.headline}情景曲线`" />
           <p class="model-note">{{ theoryResult.explanation }}</p>
         </section>
       </template>
 
-      <template #secondary>
+      <template #change>
+        默认参数为基准 → {{ wageConclusion || '选择一个工资理论视角开始比较' }}
+      </template>
+
+      <template #analysis>
         <aside v-if="activeTab === 'mincer'" class="boundary-note">
           <strong>章节边界：</strong>
           明瑟工资经验方程用于经验分析教育与经验和工资之间的条件相关关系，主要映射第4章人力资本。行业和地区系数在本页只是教学情景参数，不能当作现实工资溢价估计。
@@ -177,8 +181,7 @@
           当前曲线表达教材机制和方向，不是企业薪酬处方。真实决策还要考虑生产技术、岗位风险、劳动合同、绩效可测量性和市场制度。
         </aside>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
@@ -190,8 +193,9 @@ import { BarChart, LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
@@ -204,6 +208,13 @@ const tabs = [
   { key: 'mincer', label: '工资经验方程' },
 ]
 const activeTab = ref('efficiency')
+const activeChart = ref('histogram')
+const wageChartTabs = computed(() => activeTab.value === 'mincer'
+  ? [
+      { key: 'histogram', label: '工资分布' },
+      { key: 'decile', label: '工资分位数' },
+    ]
+  : [])
 const referenceWage = ref(6000)
 const theoryWage = ref(7200)
 const effortSensitivity = ref(0.35)
@@ -218,7 +229,6 @@ const industry = ref('信息技术')
 const region = ref('一线城市')
 const distribution = ref(null)
 const mincer = ref(null)
-let timer = null
 
 const industries = ['信息技术', '金融业', '制造业', '建筑业', '批发零售', '住宿餐饮', '教育', '医疗', '交通运输', '农业']
 const regions = ['一线城市', '新一线城市', '二线城市', '三线及以下']
@@ -333,6 +343,7 @@ const theoryOption = computed(() => {
   }
   return {
     animationDuration: 500,
+    animationDurationUpdate: 400,
     grid: { top: 48, right: 24, bottom: 48, left: 62 },
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
@@ -346,6 +357,7 @@ const histogramOption = computed(() => {
   if (!distribution.value) return {}
   return {
     animationDuration: 500,
+    animationDurationUpdate: 400,
     grid: { top: 28, right: 20, bottom: 70, left: 58 },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: distribution.value.distribution.bins.map(value => Math.round(value).toLocaleString()), axisLabel: { color: '#94a3b8', rotate: 35, interval: 1 }, name: '月薪区间起点' },
@@ -358,6 +370,7 @@ const decileOption = computed(() => {
   if (!distribution.value) return {}
   return {
     animationDuration: 500,
+    animationDurationUpdate: 400,
     grid: { top: 28, right: 20, bottom: 44, left: 62 },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: distribution.value.deciles.map(item => `P${item.percentile}`), axisLabel: { color: '#94a3b8' } },
@@ -417,12 +430,10 @@ function resetWage() {
   runMincer()
 }
 
-function schedule() {
-  clearTimeout(timer)
-  timer = setTimeout(() => {
-    activeTab.value === 'mincer' ? runMincer() : runTheory()
-  }, 180)
-}
+const schedule = createRealtimeScheduler(
+  () => (activeTab.value === 'mincer' ? runMincer() : runTheory()),
+  80,
+)
 
 watch([
   activeTab,

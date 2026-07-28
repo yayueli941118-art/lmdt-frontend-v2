@@ -1,13 +1,13 @@
 <template>
-  <div class="lab">
-    <header class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <span class="chapter-kicker">CH.09 · 失业</span>
-      <h1>失业、工作搜寻与匹配</h1>
-      <p>存量—流量 · 保留工资 · DMP匹配 · 贝弗里奇曲线 · 最低工资情景</p>
-    </header>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab"
+      title="失业、工作搜寻与匹配"
+      subtitle="存量—流量 · 保留工资 · DMP匹配 · 贝弗里奇曲线 · 最低工资"
+      kicker="CH.09 · 失业"
+      :chart-tabs="tabs"
+      v-model:active-chart="activeTab"
+      :change-key="[activeTab, naturalRate, mismatch, aiRisk, demandShock, benefit, searchCost, expectedOffer, patience, dmpUnemployed, dmpVacancies, dmpEfficiency, dmpSeparation, skillTraining, minimumWage, averageWage, employment, demandElasticity]"
+      @reset="resetCurrent"
       :result-type="resultType"
       :formula="formula"
       :assumptions="assumptions"
@@ -16,18 +16,6 @@
       limitation="现实地区未来失业率、岗位空缺率或最低工资就业效应的精确预测。"
     >
       <template #controls>
-        <nav class="topic-tabs" aria-label="失业主题页签">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            :class="{ active: activeTab === tab.key }"
-            @click="activeTab = tab.key"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
-
         <section v-if="activeTab === 'stock'" class="lab-controls">
           <ControlRange id="natural-rate" v-model="naturalRate" label="基准自然失业率" unit="%" :min="3" :max="8" :step="0.5" />
           <ControlRange id="skill-mismatch" v-model="mismatch" label="技能错配指数" :min="0" :max="2" :step="0.1" />
@@ -99,12 +87,16 @@
       <template #primary>
         <section class="chart-card">
           <h2>{{ chartTitle }}</h2>
-          <v-chart :option="currentChart" autoresize style="height:380px" :aria-label="chartTitle" />
+          <v-chart class="workspace-chart-canvas" :option="currentChart" autoresize :aria-label="chartTitle" />
           <p class="chart-explanation">{{ chartExplanation }}</p>
         </section>
       </template>
 
-      <template #secondary>
+      <template #change>
+        当前页签基准参数 → {{ currentConclusion || '等待当前情景结果' }}
+      </template>
+
+      <template #analysis>
         <section v-if="activeTab === 'stock' && unemploymentResult" class="stock-flow-panel">
           <h2>就业 E、失业 U 与非劳动力 N 的月度流动</h2>
           <div class="flow-grid">
@@ -119,8 +111,7 @@
           <strong>解释边界：</strong>{{ boundaryCopy }}
         </aside>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
@@ -133,8 +124,9 @@ import { BarChart, LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, MarkPointComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, MarkPointComponent, TooltipComponent, CanvasRenderer])
@@ -201,7 +193,6 @@ const searchResult = ref(null)
 const dmpResult = ref(null)
 const beveridgeResult = ref(null)
 const minimumWageResult = ref(null)
-let timer = null
 
 const resultType = computed(() =>
   activeTab.value === 'minimum' ? '教学情景参数' : '教材机制模拟')
@@ -349,6 +340,7 @@ const currentChart = computed(() => {
   if (activeTab.value === 'beveridge' && beveridgeResult.value) {
     return {
       animationDuration: 500,
+      animationDurationUpdate: 400,
       grid: { top: 48, right: 24, bottom: 46, left: 62 },
       legend: { top: 0, textStyle: { color: '#94a3b8' } },
       tooltip: { trigger: 'axis' },
@@ -370,6 +362,7 @@ const currentChart = computed(() => {
   if (minimumWageResult.value) {
     return {
       animationDuration: 500,
+      animationDurationUpdate: 400,
       grid: { top: 28, right: 24, bottom: 46, left: 62 },
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: minimumWageResult.value.scenarios.map(item => item.elasticity), name: '劳动需求弹性', axisLabel: { color: '#94a3b8' } },
@@ -383,6 +376,7 @@ const currentChart = computed(() => {
 function lineOption(x, series, xName, yName) {
   return {
     animationDuration: 500,
+    animationDurationUpdate: 400,
     grid: { top: 48, right: 24, bottom: 48, left: 62 },
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
@@ -434,10 +428,7 @@ async function runAll() {
   minimumWageResult.value = minimum.data
 }
 
-function scheduleRun() {
-  clearTimeout(timer)
-  timer = setTimeout(runAll, 180)
-}
+const scheduleRun = createRealtimeScheduler(runAll, 80)
 
 function resetCurrent() {
   const resets = {

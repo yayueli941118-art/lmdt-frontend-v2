@@ -1,28 +1,13 @@
 <template>
-  <div class="lab income-lab">
-    <div class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <div class="chapter-kicker">Ch.08 · 收入分配</div>
-      <h1>收入分配实验室</h1>
-      <p>把洛伦兹曲线、基尼系数、技能溢价与再分配政策放到同一个沙盘里，让“不平等”从抽象概念变成可观察的曲线移动。</p>
-    </div>
-
-    <section class="teaching-strip">
-      <div>
-        <span>核心问题</span>
-        <strong>技术进步为什么可能扩大收入差距？</strong>
-      </div>
-      <div>
-        <span>模型抓手</span>
-        <strong>技能溢价 → 分位收入 → 洛伦兹曲线 → 基尼系数</strong>
-      </div>
-      <div>
-        <span>讨论主题</span>
-        <strong>共同富裕不是平均主义，而是机会公平与再分配协调</strong>
-      </div>
-    </section>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab income-lab"
+      title="收入分配实验室"
+      subtitle="洛伦兹曲线 · 基尼系数 · 技能溢价 · 预算平衡再分配"
+      kicker="CH.08 · 收入分配"
+      :chart-tabs="distributionChartTabs"
+      v-model:active-chart="activeChart"
+      :change-key="[skillPremium, topShareShock, transferIntensity, educationEqualizer]"
+      @reset="resetDistribution"
       formula="G=1-2∫L(p)dp；税费筹资总额=转移支付总额"
       assumptions="收入排序后按统一规则征收并向低于均值者转移；预算保持平衡。"
       source="教材第八章洛伦兹曲线、基尼系数与收入再分配。"
@@ -92,19 +77,38 @@
       </template>
 
       <template #primary>
-    <div class="lab-results two-col">
       <div class="chart-card">
+        <template v-if="activeChart === 'lorenz'">
         <h3>洛伦兹曲线：市场分配 vs 政策调节后</h3>
-        <v-chart :option="lorenzOption" autoresize style="height:340px" />
-      </div>
-      <div class="chart-card">
+        <v-chart class="workspace-chart-canvas" :option="lorenzOption" autoresize />
+        </template>
+        <template v-else>
         <h3>十分位收入结构</h3>
-        <v-chart :option="decileOption" autoresize style="height:340px" />
+        <v-chart class="workspace-chart-canvas" :option="decileOption" autoresize />
+        </template>
       </div>
-    </div>
       </template>
 
-      <template #secondary>
+      <template #change>
+        市场 Gini {{ metrics.marketGini }} → 政策后 {{ metrics.policyGini }}；
+        低收入组变化 +{{ metrics.bottomGain }}%。
+      </template>
+
+      <template #analysis>
+    <section class="teaching-strip">
+      <div>
+        <span>核心问题</span>
+        <strong>技术进步为什么可能扩大收入差距？</strong>
+      </div>
+      <div>
+        <span>模型抓手</span>
+        <strong>技能溢价 → 分位收入 → 洛伦兹曲线 → 基尼系数</strong>
+      </div>
+      <div>
+        <span>讨论主题</span>
+        <strong>共同富裕不是平均主义，而是机会公平与再分配协调</strong>
+      </div>
+    </section>
     <section class="insight-panel">
       <div>
         <span class="panel-label">观察提示</span>
@@ -116,14 +120,13 @@
       </div>
     </section>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import { simulateDistribution } from '../domain/distribution/model'
 import VChart from 'vue-echarts'
@@ -135,6 +138,11 @@ import { CanvasRenderer } from 'echarts/renderers'
 use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const skillPremium = ref(35)
+const activeChart = ref('lorenz')
+const distributionChartTabs = [
+  { key: 'lorenz', label: '洛伦兹曲线' },
+  { key: 'decile', label: '十分位结构' },
+]
 const topShareShock = ref(25)
 const transferIntensity = ref(20)
 const educationEqualizer = ref(15)
@@ -185,6 +193,8 @@ const recordMetrics = computed(() => ({
 const lorenzOption = computed(() => {
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     color: ['#16a34a', '#2563eb', '#94a3b8'],
     grid: { left: 48, right: 22, top: 36, bottom: 42 },
     tooltip: { trigger: 'axis' },
@@ -201,6 +211,8 @@ const lorenzOption = computed(() => {
 
 const decileOption = computed(() => ({
   backgroundColor: 'transparent',
+  animationDuration: 400,
+  animationDurationUpdate: 400,
   color: ['#f59e0b', '#16a34a'],
   grid: { left: 54, right: 20, top: 38, bottom: 42 },
   tooltip: { trigger: 'axis' },

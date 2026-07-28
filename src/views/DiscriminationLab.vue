@@ -1,13 +1,11 @@
 <template>
-  <div class="lab">
-    <header class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <span class="chapter-kicker">CH.07 · 劳动力市场歧视</span>
-      <h1>歧视机制与工资差距分解</h1>
-      <p>贝克尔雇主偏见 · 统计性歧视 · Oaxaca-Blinder 两重与三重分解</p>
-    </header>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab"
+      title="歧视机制与工资差距分解"
+      subtitle="贝克尔雇主偏见 · 统计性歧视 · Oaxaca-Blinder 分解"
+      kicker="CH.07 · 劳动力市场歧视"
+      :change-key="[mechanismMode, discPct, eduGap, marketWage, demandElasticity, individualSignal, groupPrior, signalReliability, decompositionMode]"
+      @reset="resetDiscrimination"
       :result-type="resultType"
       :formula="formula"
       :assumptions="assumptions"
@@ -121,15 +119,22 @@
       <template #primary>
         <section v-if="mechanismMode !== 'oaxaca'" class="chart-card">
           <h2>{{ mechanismMode === 'becker' ? '歧视系数如何改变感知工资与劳动需求' : '信号可靠度如何改变个体评价' }}</h2>
-          <v-chart :option="mechanismOption" autoresize style="height:360px" :aria-label="`${tabs.find(item => item.key === mechanismMode)?.label}机制图`" />
+          <v-chart class="workspace-chart-canvas" :option="mechanismOption" autoresize :aria-label="`${tabs.find(item => item.key === mechanismMode)?.label}机制图`" />
           <p class="model-note">{{ mechanismMode === 'becker' ? beckerResult?.explanation : statisticalResult?.explanation }}</p>
         </section>
 
-        <section v-else-if="oaxacaResult && !oaxacaResult.error" class="oaxaca-grid">
-          <article class="chart-card">
-            <h2>{{ decompositionMode === 'two' ? '教材两重分解' : '扩展三重分解' }}</h2>
-            <v-chart :option="decompositionOption" autoresize style="height:320px" aria-label="Oaxaca工资差距分解图" />
-          </article>
+        <article v-else-if="oaxacaResult && !oaxacaResult.error" class="chart-card">
+          <h2>{{ decompositionMode === 'two' ? '教材两重分解' : '扩展三重分解' }}</h2>
+          <v-chart class="workspace-chart-canvas" :option="decompositionOption" autoresize aria-label="Oaxaca工资差距分解图" />
+        </article>
+      </template>
+
+      <template #change>
+        基准无偏见/无先验依赖 → {{ discriminationConclusion || '等待当前情景结果' }}
+      </template>
+
+      <template #analysis>
+        <section v-if="mechanismMode === 'oaxaca' && oaxacaResult && !oaxacaResult.error" class="oaxaca-grid">
           <article class="chart-card">
             <h2>两组明瑟回归系数</h2>
             <div class="table-wrap">
@@ -145,9 +150,6 @@
             </div>
           </article>
         </section>
-      </template>
-
-      <template #secondary>
         <aside class="boundary-note">
           <strong>解释边界：</strong>
           <span v-if="mechanismMode === 'becker'">偏见系数是教材中的行为参数，不能直接从现实工资差距倒推出雇主主观偏见。</span>
@@ -155,8 +157,7 @@
           <span v-else>不可解释部分可能包含歧视效应，也可能受到遗漏变量、样本选择和模型设定影响，不能自动等同于歧视。</span>
         </aside>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
@@ -168,8 +169,9 @@ import { BarChart, LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
@@ -191,7 +193,6 @@ const decompositionMode = ref('two')
 const beckerResult = ref(null)
 const statisticalResult = ref(null)
 const oaxacaResult = ref(null)
-let timer = null
 
 const resultType = computed(() =>
   mechanismMode.value === 'oaxaca' ? '合成样本真实回归' : '教材机制模拟')
@@ -267,6 +268,7 @@ const mechanismOption = computed(() => {
   if (mechanismMode.value === 'becker' && beckerResult.value) {
     return {
       animationDuration: 500,
+      animationDurationUpdate: 400,
       grid: { top: 48, right: 30, bottom: 44, left: 62 },
       legend: { top: 0, textStyle: { color: '#94a3b8' } },
       tooltip: { trigger: 'axis' },
@@ -281,6 +283,7 @@ const mechanismOption = computed(() => {
   if (!statisticalResult.value) return {}
   return {
     animationDuration: 500,
+    animationDurationUpdate: 400,
     grid: { top: 34, right: 24, bottom: 44, left: 58 },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: statisticalResult.value.curve.map(item => item.reliability), name: '信号可靠度 λ', axisLabel: { color: '#94a3b8' } },
@@ -299,6 +302,7 @@ const decompositionOption = computed(() => {
     : [item.endowment, item.coefficient, item.interaction]
   return {
     animationDuration: 500,
+    animationDurationUpdate: 400,
     grid: { top: 28, right: 20, bottom: 42, left: 62 },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: labels, axisLabel: { color: '#94a3b8' } },
@@ -359,10 +363,7 @@ function resetDiscrimination() {
   run()
 }
 
-function scheduleRun() {
-  clearTimeout(timer)
-  timer = setTimeout(run, 180)
-}
+const scheduleRun = createRealtimeScheduler(run, 80)
 
 watch([
   discPct,

@@ -108,6 +108,11 @@ function applyAccessibilityLinks() {
 /* ── 全局重置 ─────────────────────────── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; overflow-x: hidden; }
+html.experiment-workspace-active,
+body.experiment-workspace-active {
+  height: 100%;
+  overflow: hidden;
+}
 body {
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   background: #0f172a;
@@ -204,7 +209,7 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
 }
 .nav-more-menu a { padding: 9px 10px; }
 
-.main-content { flex: 1; }
+.main-content { flex: 1; min-height: 0; }
 .projection-mode .main-content { font-size: 112%; }
 .projection-mode .main-content p,
 .projection-mode .main-content label,
@@ -259,11 +264,6 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
   /* 卡片网格自适应 */
   .cards-row {
     grid-template-columns: repeat(2, 1fr) !important;
-  }
-  
-  /* 图表容器高度压缩 */
-  .chart-card v-chart, .chart-card > div {
-    height: 220px !important;
   }
   
   /* 实验室标题 */

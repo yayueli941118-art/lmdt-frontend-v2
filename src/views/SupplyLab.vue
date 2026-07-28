@@ -1,12 +1,13 @@
 <template>
-  <div class="lab">
-    <div class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <h1>劳动供给决策</h1>
-      <p>把教材中的预算线、无差异曲线、收入效应、替代效应和向后弯曲劳动供给曲线做成可操作动态图。</p>
-    </div>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab"
+      title="劳动供给决策"
+      subtitle="预算线 · 无差异曲线 · 收入效应 · 替代效应 · 后弯劳动供给"
+      kicker="CH.02 · 劳动力供给"
+      :chart-tabs="chartTabs"
+      v-model:active-chart="activeChart"
+      :change-key="[scenarioMode, wageInitial, wageNew, nonLaborIncome, nonLaborShock, beta, consumptionFloor, leisureFloor]"
+      @reset="applyScenarioPreset"
       formula="U=(R-R0)^β(C-C0)^(1-β)，C=V+W(T-R)"
       assumptions="偏好参数在一次实验中固定；闲暇和消费均为正常品；不考虑税收与工时制度约束。"
       source="教材第二章图2-9、图2-10、图2-11。"
@@ -101,7 +102,7 @@
       </template>
 
       <template #primary>
-        <div v-if="result" class="chart-card main-chart">
+        <div v-if="result && activeChart === 'choice'" class="chart-card main-chart">
           <div class="chart-head">
             <div>
               <h3>教材动态图：预算线与无差异曲线</h3>
@@ -109,11 +110,24 @@
             </div>
             <span>{{ scenarioFigure }}</span>
           </div>
-          <v-chart :option="choiceChartOption" autoresize style="height:430px" />
+          <v-chart class="workspace-chart-canvas" :option="choiceChartOption" autoresize />
+        </div>
+        <div v-else-if="result && activeChart === 'effects'" class="chart-card">
+          <h3>效应分解：从教材图读出工作时数变化</h3>
+          <v-chart class="workspace-chart-canvas" :option="effectChartOption" autoresize />
+        </div>
+        <div v-else-if="result" class="chart-card">
+          <h3>劳动供给曲线：由一组教材均衡点生成</h3>
+          <v-chart class="workspace-chart-canvas" :option="supplyCurveOption" autoresize />
         </div>
       </template>
 
-      <template #secondary>
+      <template #change>
+        A点 {{ result?.point_A?.labor_hours || 0 }}h → 当前 {{ activeFinalPoint?.labor_hours || 0 }}h，
+        变化 {{ signed(netChange) }}h；{{ scenarioLabel }}。
+      </template>
+
+      <template #analysis>
         <div v-if="result" class="lab-results">
           <section class="section-grid">
             <div class="chart-card">
@@ -170,8 +184,7 @@
           </p>
         </div>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
@@ -179,8 +192,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -191,6 +205,12 @@ import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
 const route = useRoute()
+const activeChart = ref('choice')
+const chartTabs = [
+  { key: 'choice', label: '预算与均衡' },
+  { key: 'effects', label: '效应分解' },
+  { key: 'curve', label: '供给曲线' },
+]
 const scenarioMode = ref('moreWork')
 const wageInitial = ref(28)
 const wageNew = ref(64)
@@ -202,7 +222,6 @@ const leisureFloor = ref(2)
 const timeEndowment = ref(24)
 const loading = ref(false)
 const result = ref(null)
-let debounceTimer = null
 
 const scenarioFigure = computed(() => ({
   income: '对应图2-9',
@@ -353,6 +372,8 @@ const choiceChartOption = computed(() => {
   )
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     color: ['#38bdf8', '#22c55e', '#94a3b8', '#f59e0b'],
     legend: { top: 0, textStyle: { color: '#94a3b8' } },
     tooltip: { trigger: 'axis' },
@@ -388,6 +409,8 @@ const effectChartOption = computed(() => {
       ]
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     grid: { top: 24, right: 18, bottom: 36, left: 56 },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: data.map(d => d.name), axisLabel: { color: '#94a3b8' } },
@@ -413,6 +436,8 @@ const supplyCurveOption = computed(() => {
   }
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     grid: { top: 30, right: 20, bottom: 36, left: 54 },
     tooltip: { trigger: 'axis' },
     xAxis: { name: '工资率 W', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' } },
@@ -451,10 +476,7 @@ async function run() {
   }
 }
 
-function scheduleRun() {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(run, 220)
-}
+const scheduleRun = createRealtimeScheduler(run, 80)
 
 watch([wageInitial, wageNew, beta, nonLaborIncome, nonLaborShock, consumptionFloor, leisureFloor], scheduleRun)
 onMounted(() => {

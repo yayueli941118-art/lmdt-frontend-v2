@@ -1,12 +1,13 @@
 <template>
-  <div class="lab">
-    <div class="lab-header">
-      <router-link to="/" class="back-link">← 返回首页</router-link>
-      <h1>城市迁移决策模拟</h1>
-      <p>把“要不要去大城市”拆成工资溢价、一次性成本、心理成本、家庭联动和回本窗口。</p>
-    </div>
-
-    <LabDashboardLayout
+  <ExperimentWorkspace
+      class="lab"
+      title="城市迁移决策模拟"
+      subtitle="工资溢价 · 一次性成本 · 心理成本 · 家庭联动 · 回本窗口"
+      kicker="CH.05 · 劳动力流动"
+      :chart-tabs="migrationChartTabs"
+      v-model:active-chart="activeChart"
+      :change-key="[migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability, wageGrowth, familyMigrate, spouseLoss]"
+      @reset="resetMigration"
       formula="NPV=-C0+Σ[p×ΔW_t-C_t]/(1+r)^t"
       assumptions="目标地就业概率、工资增长率和成本路径由当前情景给定；60岁为默认观察终点。"
       source="教材第五章劳动力流动的人力资本投资决策框架。"
@@ -79,19 +80,7 @@
         />
       </template>
 
-      <template #primary>
-    <section v-if="decision" class="decision-panel" :class="decisionClass">
-      <div>
-        <span class="decision-eyebrow">迁移建议</span>
-        <h2>{{ decision.title }}</h2>
-        <p>{{ decision.reason }}</p>
-      </div>
-      <div class="decision-score">
-        <span>{{ formatCurrency(finalNpv) }}</span>
-        <small>60岁累计净现值</small>
-      </div>
-    </section>
-
+      <template #metrics>
     <section v-if="decision" class="metrics-grid">
       <div class="metric-card" :class="{ good: finalNpv > 0, warn: finalNpv <= 0 }">
         <span class="metric-label">最终 NPV</span>
@@ -110,7 +99,29 @@
         <strong>{{ formatCurrency(requiredMonthlyPremium) }}</strong>
       </div>
     </section>
+      </template>
 
+      <template #primary>
+        <div v-if="result && activeChart === 'npv'" class="chart-card">
+          <h3>累计 NPV：是否越过 0 线</h3>
+          <v-chart class="workspace-chart-canvas" :option="npvChart" autoresize />
+        </div>
+        <div v-else-if="result && activeChart === 'cost'" class="chart-card">
+          <h3>成本收益拆解</h3>
+          <v-chart class="workspace-chart-canvas" :option="waterfallChart" autoresize />
+        </div>
+        <div v-else-if="result" class="chart-card">
+          <h3>贴现率敏感性：未来收益折现后还剩多少</h3>
+          <v-chart class="workspace-chart-canvas" :option="sensitivityChart" autoresize />
+        </div>
+      </template>
+
+      <template #change>
+        0 元迁移门槛 → 当前 NPV {{ formatCurrency(finalNpv) }}；
+        {{ decision?.title || '等待计算' }}，{{ paybackLabel }}。
+      </template>
+
+      <template #analysis>
     <section v-if="decision" class="threshold-card">
       <div class="threshold-copy">
         <h3>迁移门槛比较</h3>
@@ -135,36 +146,21 @@
       </div>
     </section>
 
-    <div v-if="result" class="chart-grid">
-      <div class="chart-card">
-        <h3>累计 NPV：是否越过 0 线</h3>
-        <v-chart :option="npvChart" autoresize style="height:340px" />
-      </div>
-      <div class="chart-card">
-        <h3>成本收益拆解</h3>
-        <v-chart :option="waterfallChart" autoresize style="height:340px" />
-      </div>
-    </div>
-    <div v-if="result" class="chart-card sensitivity-card">
-      <h3>贴现率敏感性：未来收益折现后还剩多少</h3>
-      <v-chart :option="sensitivityChart" autoresize style="height:280px" />
-    </div>
-
     <section v-if="decision" class="teaching-note">
       <strong>思考：</strong>
       迁移不是“工资高就去”，而是空间套利的净现值问题。年轻、工资溢价高、一次性成本低、家庭联动损失小，NPV 曲线更快穿过 0 线；反之，即使工资上涨，也可能因为回收期太短或家庭成本太高而不迁移。
     </section>
       </template>
-    </LabDashboardLayout>
-  </div>
+  </ExperimentWorkspace>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
+import { createRealtimeScheduler } from '../lib/realtime'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
-import LabDashboardLayout from '../components/LabDashboardLayout.vue'
+import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -185,12 +181,15 @@ const familyMigrate = ref(false)
 const spouseLoss = ref(36000)
 const loading = ref(false)
 const result = ref(null)
+const activeChart = ref('npv')
+const migrationChartTabs = [
+  { key: 'npv', label: '累计 NPV' },
+  { key: 'cost', label: '成本收益' },
+  { key: 'sensitivity', label: '贴现率敏感性' },
+]
 
-let debounceTimer = null
-watch([migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability, wageGrowth, familyMigrate, spouseLoss], () => {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(run, 250)
-})
+const scheduleRun = createRealtimeScheduler(run, 80)
+watch([migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability, wageGrowth, familyMigrate, spouseLoss], scheduleRun)
 
 const migration = computed(() => result.value?.migration || null)
 const years = computed(() => migration.value?.years || [])
@@ -259,6 +258,8 @@ const npvChart = computed(() => {
   const data = years.value.map((year, i) => [year, npvSeries.value[i]])
   return {
     backgroundColor: 'transparent',
+    animationDuration: 400,
+    animationDurationUpdate: 400,
     grid: { top: 34, right: 28, bottom: 34, left: 70 },
     tooltip: {
       trigger: 'axis',
@@ -293,6 +294,8 @@ const npvChart = computed(() => {
 
 const waterfallChart = computed(() => ({
   backgroundColor: 'transparent',
+  animationDuration: 400,
+  animationDurationUpdate: 400,
   grid: { top: 34, right: 20, bottom: 40, left: 70 },
   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
   xAxis: { type: 'category', data: ['工资溢价', '心理成本', familyMigrate.value ? '家庭损失' : '家庭损失', '搬迁成本', '最终NPV'], axisLabel: { color: '#94a3b8' } },
@@ -320,6 +323,8 @@ const familyCostPv = computed(() => years.value.reduce((sum, _, index) =>
 
 const sensitivityChart = computed(() => ({
   backgroundColor: 'transparent',
+  animationDuration: 400,
+  animationDurationUpdate: 400,
   grid: { top: 30, right: 24, bottom: 42, left: 70 },
   tooltip: { trigger: 'axis' },
   xAxis: {

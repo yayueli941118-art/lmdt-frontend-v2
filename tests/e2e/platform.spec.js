@@ -40,9 +40,10 @@ test('旗舰实验可调参、恢复并保存到报告工作台', async ({ page 
   const wageSlider = page.locator('input[type="range"]').nth(1)
   await wageSlider.fill('80')
   await expect(wageSlider).toHaveValue('80')
-  await page.getByRole('button', { name: '恢复当前教材预设' }).click()
+  await page.getByRole('button', { name: '恢复默认', exact: true }).click()
   await expect(wageSlider).toHaveValue('64')
 
+  await page.getByRole('button', { name: '实验记录', exact: true }).click()
   await page.getByRole('button', { name: '保存到报告工作台' }).click()
   await expect(page.getByText('已保存到当前浏览器的报告工作台')).toBeVisible()
   await page.goto('/#/report/workbench')
