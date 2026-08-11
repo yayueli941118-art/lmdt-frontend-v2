@@ -1,8 +1,8 @@
-# LMDT 2.0
+# LMDT 3.0
 
-**劳动经济学机制仿真与数据实践平台**
+**AI劳动力市场分析、机制仿真与预测实验室**
 
-LMDT 2.0 使用 Vue 3、Vite、Vue Router 与 ECharts，把教材中的预算线、无差异曲线、VMP、现金流、洛伦兹曲线和贝弗里奇曲线转化为可调参、可观察、可解释、可保存的课程实验。项目支持 GitHub Pages 纯前端部署，不依赖后端，也不抓取招聘平台。
+LMDT 3.0 服务课程《劳动力市场分析与预测》，使用 Vue 3、Vite、Vue Router 与 ECharts，把“看市场—拆机制—推未来—做决策—验能力”组织为连续学习流程。项目支持 GitHub Pages 纯前端部署，不依赖后端，不抓取招聘平台，也不把规则反馈伪装成大模型评价。
 
 ## 教学问题
 
@@ -11,12 +11,16 @@ LMDT 2.0 使用 Vue 3、Vite、Vue Router 与 ECharts，把教材中的预算线
 - 课程作业常缺少规范样本、统计证据、模型证据和反事实比较。
 - 教师需要在不收集身份信息的前提下汇总实验步骤完成情况。
 
-平台采用“预测 → 理由 → 调参 → 证据 → 反事实 → 解释 → 规则反馈 → 修改 → 报告”的学习闭环。规则反馈是透明量规，不伪装成 AI 评价。
+平台采用“数据质量 → 指标计算 → 机制仿真 → 独立预测 → 回测比较 → 情景推演 → 报告证据 → 能力训练”的学习闭环。规则反馈是透明量规，不伪装成 AI 评价。
 
 ## 教材与功能
 
 | 教材主题 | 页面 | 核心实现 |
 | --- | --- | --- |
+| 市场数据 | `/analysis/market` | CSV模板、质量阻断、指标公式、来源与边界 |
+| 基础预测 | `/forecast/basic` | 朴素、移动平均、线性、CAGR、回测与情景 |
+| AI岗位任务 | `/lab/ai-occupation` | 任务拆解、暴露、替代/规模/互补/新任务效应 |
+| 独立能力训练 | `/practice/exam` | 固定种子、100分能力蓝图、提交后反馈 |
 | 第2章 劳动供给 | `/lab/supply` | 图2-9至图2-11、固定 Stone-Geary 偏好、Hicks 补偿 |
 | 第3章 劳动需求 | `/lab/enterprise` | CES、MPL、VMP、市场反馈、长期成本最小化、需求弹性 |
 | 第4章 人力资本 | `/lab/individual` | 年龄现金流、直接/机会成本、NPV、IRR、培训分担 |
@@ -25,7 +29,7 @@ LMDT 2.0 使用 Vue 3、Vite、Vue Router 与 ECharts，把教材中的预算线
 | 第7章 歧视 | `/lab/discrimination` | Becker、统计性歧视、真实 OLS 的 Oaxaca-Blinder |
 | 第8章 收入分配 | `/lab/income-distribution` | Lorenz、Gini、十分位、预算平衡再分配 |
 | 第9章 失业 | `/lab/unemployment` | 存量流量、搜寻、DMP、Beveridge、最低工资情景 |
-| 数据实践 | `/report/workbench` | CSV 校验、统计、校准、报告与匿名教师汇总 |
+| 报告决策 | `/report/workbench` | 招聘样本校验、统计、实验记录、报告与匿名汇总 |
 
 逐图审计见 [教材对齐](docs/textbook-alignment.md)，模型公式和边界见 [模型方法](docs/model-methodology.md)。
 
@@ -51,7 +55,7 @@ localStorage 实验记录/样本/报告
 - `VITE_API_MODE=online`：只访问 `VITE_API_BASE_URL`；失败时明确报错，不伪装成功。
 - `VITE_API_MODE=auto`：先访问在线接口，失败后明确降级并标注离线来源。
 
-所有结果必须属于“教材公式”“教学情景参数”“用户导入数据”或“数据校准结果”。招聘广告数量不等于社会真实岗位需求；成渝模块只输出样本岗位热度和相对变化，不宣称真实行业岗位总量。
+所有结果必须明确属于“历史观测数据”“用户导入数据”“教学示例数据”“教材机制模拟”“统计预测结果”“情景推演结果”或“规则反馈”。招聘广告数量不等于社会真实岗位需求；任务暴露不等于岗位消失概率；情景上下界不等于统计置信区间。
 
 ## 三种模式
 
@@ -82,7 +86,7 @@ npm run build
 npm run build:anonymous
 ```
 
-Vitest 验证数学恒等式、滑块刻度、组件与路由契约；Playwright 验证核心路由、参数恢复、报告记录、三种模式和五种视口。CI 执行安装、单元测试、生产构建、匿名构建和浏览器测试。
+Vitest 验证数学恒等式、数据质量、预测误差、固定题库、滑块刻度、组件与路由契约；Playwright 验证核心路由、预测门禁、报告记录、三种模式和多种视口。CI 执行安装、单元测试、生产构建、匿名构建和浏览器测试。
 
 ## 隐私与存储
 
@@ -104,3 +108,4 @@ Vitest 验证数学恒等式、滑块刻度、组件与路由契约；Playwright
 - [匿名构建](docs/anonymous-build.md)
 - [操作手册](docs/operation-manual.md)
 - [测试报告](docs/test-report.md)
+- [LMDT 3.0 方法与边界](docs/lmdt-3-methodology.md)

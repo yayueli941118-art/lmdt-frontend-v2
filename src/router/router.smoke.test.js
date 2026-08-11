@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest'
 const routerSource = readFileSync(resolve('src/router/index.js'), 'utf8')
 const requiredRoutes = [
   '/',
+  '/analysis/market',
+  '/forecast/basic',
+  '/practice/exam',
   '/lab/individual',
   '/lab/enterprise',
   '/lab/supply',
@@ -15,6 +18,7 @@ const requiredRoutes = [
   '/lab/income-distribution',
   '/lab/unemployment',
   '/lab/chengyu-tourism',
+  '/lab/ai-occupation',
   '/report/workbench',
 ]
 

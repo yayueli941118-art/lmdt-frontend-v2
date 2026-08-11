@@ -1,3 +1,5 @@
+import { analyzeOccupationTasks, occupationTemplates } from '../aiImpact/model'
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 const round = (value, digits = 2) => Number(value.toFixed(digits))
 
@@ -312,6 +314,71 @@ export function simulateDemand(input = {}) {
       capital_flexibility: capitalFlexibility,
       labor_cost_share: laborCostShare,
       market_feedback: marketFeedback,
+    },
+  }
+}
+
+export function simulateAiDemandScenario(input = {}) {
+  const baselineModel = simulateDemand({
+    wage_initial: input.wageInitial ?? 55,
+    wage_new: input.wageNew ?? input.wageInitial ?? 55,
+    capital: input.capital ?? 700,
+    sigma: input.sigma ?? 1.2,
+    product_demand_elasticity: input.productDemandElasticity ?? 0.8,
+    capital_flexibility: input.longRun === false ? 0.2 : 0.75,
+  })
+  const baselineEmployment = Number(input.baselineEmployment ?? baselineModel.short_run.point_a.labor)
+  const taskAnalysis = analyzeOccupationTasks(input.tasks || occupationTemplates['人力资源专员'], {
+    baselineEmployment,
+    taskSubstitution: input.taskSubstitution ?? 55,
+    aiProductivity: input.aiProductivity ?? 50,
+    demandExpansion: input.demandExpansion ?? 45,
+    complementarity: input.complementarity ?? 60,
+    trainingInvestment: input.trainingInvestment ?? 50,
+    aiCost: input.aiMarginalCost ?? 35,
+  })
+  const fixedCost = Math.max(0, Number(input.aiFixedCost ?? 20))
+  const fixedCostDrag = baselineEmployment * fixedCost / 100 * 0.05
+  const shortEmployment = Math.max(0, taskAnalysis.shortTermEmployment - fixedCostDrag)
+  const longEmployment = Math.max(0, taskAnalysis.longTermEmployment - fixedCostDrag * 0.35)
+  const productivity = Number(input.aiProductivity ?? 50)
+  const baselineOutput = baselineModel.long_run.output_initial
+  const outputShort = baselineOutput * (1 + productivity / 100 * 0.18) * (shortEmployment / baselineEmployment) ** 0.35
+  const outputLong = baselineOutput * (1 + productivity / 100 * 0.36) * (longEmployment / baselineEmployment) ** 0.35
+  const baseWages = baselineModel.long_run.long_curve.wages
+  const baseLaborCurve = baselineModel.long_run.long_curve.labor
+  const scenarioLaborCurve = baseLaborCurve.map(value => round(value * longEmployment / baselineEmployment))
+  const baselineUnitCost = (Number(input.wageInitial ?? 55) * baselineEmployment) / Math.max(baselineOutput, 1)
+  const scenarioUnitCost = (Number(input.wageInitial ?? 55) * longEmployment + fixedCost * baselineEmployment) / Math.max(outputLong, 1)
+  const wageChange = taskAnalysis.highSkillChange * 0.08 + taskAnalysis.lowSkillChange * 0.02
+  return {
+    model: {
+      name: 'AI任务重构下的派生劳动需求情景',
+      formula: 'ΔL=替代效应+规模效应+互补效应+新任务效应−AI成本拖累',
+      result_type: '情景推演结果',
+    },
+    baseline: { employment: round(baselineEmployment), output: round(baselineOutput), unit_cost: round(baselineUnitCost, 3) },
+    short_term: { employment: round(shortEmployment), output: round(outputShort), wage_change_pct: round(wageChange * 0.45) },
+    long_term: { employment: round(longEmployment), output: round(outputLong), wage_change_pct: round(wageChange), unit_cost: round(scenarioUnitCost, 3) },
+    effects: { ...taskAnalysis.effects, fixedCost: round(-fixedCostDrag) },
+    skill_structure: {
+      high_skill_change: taskAnalysis.highSkillChange,
+      low_skill_change: taskAnalysis.lowSkillChange,
+      diagnosis: taskAnalysis.highSkillChange > 0 && taskAnalysis.lowSkillChange < 0
+        ? '总就业变化之外，还发生低技能任务收缩与高技能任务扩张。'
+        : '技能结构变化由当前任务份额、互补度和培训投入共同决定。',
+    },
+    curve: { wages: baseWages, baseline: baseLaborCurve, scenario: scenarioLaborCurve },
+    conclusion: taskAnalysis.conclusion,
+    boundary: '以上结果由用户显式设置的AI与需求参数产生，属于教材机制支持的情景推演，不是现实企业或地区的统计预测。',
+    parameters: {
+      aiProductivity: productivity,
+      aiFixedCost: fixedCost,
+      aiMarginalCost: Number(input.aiMarginalCost ?? 35),
+      taskSubstitution: Number(input.taskSubstitution ?? 55),
+      complementarity: Number(input.complementarity ?? 60),
+      demandExpansion: Number(input.demandExpansion ?? 45),
+      trainingInvestment: Number(input.trainingInvestment ?? 50),
     },
   }
 }

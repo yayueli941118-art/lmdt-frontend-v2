@@ -30,7 +30,9 @@
       title="人力资本投资实验室"
       subtitle="教育成本 · 机会成本 · 工资路径 · 净现值 · 内部收益率"
       kicker="CH.04 · 人力资本投资"
-      :change-key="params"
+      :chart-tabs="humanCapitalTabs"
+      v-model:active-chart="activeChart"
+      :change-key="[params, capabilityRatings, capabilityInputs, activeChart]"
       result-type="教材公式与教学情景参数"
       formula="ln(W)=α+βS+γX+δX²；NPV=ΣΔCFt/(1+r)^t"
       assumptions="在校期逐年计入直接成本和放弃的对照组工资；培训成本按一般培训或特殊培训分担。"
@@ -41,7 +43,9 @@
     >
       <template #controls>
         <div class="sidebar-card">
-          <h3 class="sidebar-title">明瑟方程与现金流参数</h3>
+          <h3 class="sidebar-title">{{ activeChart === 'income' ? '明瑟方程与现金流参数' : '职业能力投资参数' }}</h3>
+
+          <div v-if="activeChart === 'income'" class="parameter-stack">
 
           <div class="param-group">
             <label class="param-label">
@@ -104,6 +108,17 @@
             <span class="callout-num">{{ response.metrics.lifetime_premium_pct >= 0 ? '+' : '' }}{{ response.metrics.lifetime_premium_pct }}%</span>
             <span class="callout-label">一生总收入溢价</span>
           </div>
+          </div>
+
+          <div v-else class="parameter-stack capability-controls">
+            <label v-for="item in CAPABILITY_DIMENSIONS" :key="item.id" class="param-group">
+              <span class="param-label">{{ item.label }}<span class="param-val">{{ capabilityRatings[item.id] }}</span></span>
+              <input v-model.number="capabilityRatings[item.id]" type="range" min="0" max="100" step="5" class="slider" />
+            </label>
+            <label class="param-group"><span class="param-label">每周投入<span class="param-val">{{ capabilityInputs.weeklyHours }}小时</span></span><input v-model.number="capabilityInputs.weeklyHours" type="range" min="1" max="20" step="1" class="slider" /></label>
+            <label class="param-group"><span class="param-label">资金成本<span class="param-val">{{ capabilityInputs.moneyCost }}元</span></span><input v-model.number="capabilityInputs.moneyCost" type="range" min="0" max="10000" step="500" class="slider" /></label>
+            <p class="capability-boundary">能力分值是教学自评情景，不是心理诊断、人格测评或真实生产率估计。</p>
+          </div>
         </div>
       </template>
 
@@ -128,7 +143,7 @@
       </template>
 
       <template #metrics>
-        <div v-if="response" class="metrics-row">
+        <div v-if="response && activeChart === 'income'" class="metrics-row">
           <div class="metric-card">
             <span class="metric-label">教育投资回本年龄</span>
             <span class="metric-value metric-green">{{ response.metrics.breakeven_age !== null ? response.metrics.breakeven_age + ' 岁' : '未回本' }}</span>
@@ -152,10 +167,16 @@
             </span>
           </div>
         </div>
+        <div v-else-if="response" class="metrics-row capability-metrics">
+          <div class="metric-card"><span class="metric-label">当前能力均值</span><span class="metric-value metric-blue">{{ capabilityPlan.averageCurrent }}</span></div>
+          <div class="metric-card"><span class="metric-label">平均缺口</span><span class="metric-value metric-red">{{ capabilityPlan.averageGap }}</span></div>
+          <div class="metric-card"><span class="metric-label">动态互补系数</span><span class="metric-value metric-green">{{ capabilityPlan.dynamicComplementarity }}</span></div>
+          <div class="metric-card"><span class="metric-label">24月情景NPV</span><span class="metric-value" :class="capabilityPlan.npv>=0?'metric-green':'metric-red'">{{ formatWan(capabilityPlan.npv) }}</span></div>
+        </div>
       </template>
 
       <template #primary>
-        <div class="chart-card">
+        <div v-if="activeChart === 'income'" class="chart-card">
           <div ref="chartDom" class="chart-container workspace-chart-canvas"></div>
           <div class="chart-legend">
             <span class="legend-item legend-base"><i></i> 高中毕业（对照组）</span>
@@ -165,14 +186,22 @@
             <span class="legend-item legend-return"><span class="legend-patch legend-patch-green"></span> 回报期（教育溢价）</span>
           </div>
         </div>
+        <div v-else class="chart-card capability-chart-card">
+          <div class="capability-chart-head"><div><span>教学自评 · 目标值默认75</span><h3>13项职业能力：当前状态与目标要求</h3></div><strong>{{ capabilityPlan.riskLevel }}</strong></div>
+          <LmdtChart class="workspace-chart-canvas" :option="capabilityChartOption" aria-label="十三项职业能力当前值与目标值雷达图" />
+        </div>
       </template>
 
       <template #change>
-        高中毕业对照组 → 当前 {{ eduLabels[params.edu] || `${params.edu}年教育` }}；
-        NPV {{ formatWan(response?.metrics?.npv || 0) }}，{{ individualConclusion || '等待计算' }}
+        <template v-if="activeChart === 'income'">高中毕业对照组 → 当前 {{ eduLabels[params.edu] || `${params.edu}年教育` }}；NPV {{ formatWan(response?.metrics?.npv || 0) }}，{{ individualConclusion || '等待计算' }}</template>
+        <template v-else>当前能力均值 {{ capabilityPlan.averageCurrent }} → 目标75；优先补强 {{ capabilityPlan.priorities.map(item=>item.label).join('、') }}。</template>
       </template>
 
       <template #analysis>
+        <section v-if="activeChart === 'capability'" class="capability-plan">
+          <h3>90天能力投资计划</h3><p>{{ capabilityPlan.boundary }}</p>
+          <div v-for="stage in capabilityPlan.stages" :key="stage.days"><strong>{{ stage.days }} · {{ stage.focus }}</strong><span>{{ stage.action }}</span><small>学习证据：{{ stage.evidence }}</small></div>
+        </section>
         <div class="insight-box">
           <p v-if="params.edu >= 16 && response?.metrics?.lifetime_premium_pct > 30">
             <strong>教育溢价的竞争性解释：</strong>当前参数下，选择组终身收入比对照组高 <strong>{{ response.metrics.lifetime_premium_pct }}%</strong>。人力资本理论强调教育提升生产率，信号理论则强调学历传递信息；仅凭本页工资曲线不能区分两种机制，需要结合生产率或招聘数据进一步检验。
@@ -230,6 +259,8 @@ import { createRealtimeScheduler } from '../lib/realtime'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
+import LmdtChart from '../components/LmdtChart.vue'
+import { CAPABILITY_DIMENSIONS, buildCapabilityInvestmentPlan } from '../domain/humanCapital/model'
 
 echarts.use([
   LineChart,
@@ -263,6 +294,18 @@ const params = reactive({
 })
 
 const response = ref(null)
+const activeChart = ref('income')
+const humanCapitalTabs = [{ key: 'income', label: '教育回报' }, { key: 'capability', label: '职业能力' }]
+const capabilityRatings = reactive(Object.fromEntries(CAPABILITY_DIMENSIONS.map((item,index) => [item.id, 45 + (index % 5) * 5])))
+const capabilityTargets = Object.fromEntries(CAPABILITY_DIMENSIONS.map(item => [item.id, 75]))
+const capabilityInputs = reactive({ weeklyHours: 6, moneyCost: 1500, opportunityCost: 2500, monthlyBenefit: 400, discountRate: 0.04 })
+const capabilityPlan = computed(() => buildCapabilityInvestmentPlan({ ratings: capabilityRatings, target: capabilityTargets, ...capabilityInputs }))
+const capabilityChartOption = computed(() => ({
+  animationDuration: 400, color: ['#38bdf8','#f59e0b'],
+  legend: { top: 2, textStyle: { color: '#cbd5e1' } },
+  radar: { center: ['50%','55%'], radius: '68%', indicator: CAPABILITY_DIMENSIONS.map(item => ({ name: item.label, max: 100 })), axisName: { color: '#94a3b8', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(148,163,184,.18)' } }, splitArea: { areaStyle: { color: ['rgba(15,23,42,.1)','rgba(30,41,59,.12)'] } } },
+  series: [{ type:'radar', data:[{ name:'当前自评', value:CAPABILITY_DIMENSIONS.map(item=>capabilityRatings[item.id]), areaStyle:{opacity:.16} },{ name:'目标要求', value:CAPABILITY_DIMENSIONS.map(()=>75), lineStyle:{type:'dashed'}, areaStyle:{opacity:.04} }] }],
+}))
 
 const individualConclusion = computed(() => {
   if (!response.value) return ''
@@ -303,6 +346,8 @@ function resetIndividual() {
     direct_cost: 12000,
     discount_rate: 0.04,
   })
+  Object.assign(capabilityRatings, Object.fromEntries(CAPABILITY_DIMENSIONS.map((item,index) => [item.id, 45 + (index % 5) * 5])))
+  Object.assign(capabilityInputs, { weeklyHours: 6, moneyCost: 1500, opportunityCost: 2500, monthlyBenefit: 400, discountRate: 0.04 })
   fetchData()
 }
 
@@ -432,6 +477,18 @@ watch(gateUnlocked, (val) => {
 </script>
 
 <style scoped>
+.parameter-stack { display: grid; gap: 16px; }
+.capability-controls { max-height: none; }
+.capability-boundary { margin: 0; padding: 9px 10px; border-left: 3px solid #fb923c; color: #fed7aa; background: rgba(251,146,60,.08); font-size: 11px; line-height: 1.45; }
+.capability-chart-card { display: grid; grid-template-rows: auto minmax(0,1fr); }
+.capability-chart-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.capability-chart-head span { color: #64748b; font-size: 11px; }
+.capability-chart-head h3 { margin: 3px 0 0; color: #f8fafc; font-size: 16px; }
+.capability-chart-head > strong { color: #fbbf24; font-size: 12px; }
+.capability-plan { display: grid; gap: 10px; margin-bottom: 14px; padding: 14px; border: 1px solid rgba(34,211,238,.22); border-radius: 8px; background: rgba(8,145,178,.07); }
+.capability-plan > p { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.55; }
+.capability-plan > div { display: grid; gap: 3px; padding: 9px; background: #0f172a; }
+.capability-plan > div strong { color: #7dd3fc; }.capability-plan > div span { color: #e2e8f0; }.capability-plan > div small { color: #94a3b8; }
 /* ========================================
    INDIVIDUAL LAB — Split Layout + Age Axis
    ======================================== */

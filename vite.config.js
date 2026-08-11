@@ -11,8 +11,8 @@ export default defineConfig(({ mode }) => ({
       transformIndexHtml(html) {
         if (mode !== 'anonymous') return html
         return html.replace(
-          '<title>LMDT 2.0 · 劳动经济学机制仿真与数据实践平台</title>',
-          '<title>劳动经济学机制仿真与数据实践平台</title>',
+          '<title>LMDT 3.0 · AI劳动力市场分析、机制仿真与预测实验室</title>',
+          '<title>Labor Market Analysis & Forecast Lab</title>',
         )
       },
     },

@@ -4,6 +4,9 @@ import IndividualLab from '../views/IndividualLab.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
+  { path: '/analysis/market', name: 'MarketAnalysis', component: () => import('../views/MarketAnalysisLab.vue'), meta: { title: '劳动力市场数据分析中心' } },
+  { path: '/forecast/basic', name: 'BasicForecast', component: () => import('../views/ForecastLab.vue'), meta: { title: '基础预测与情景推演实验室' } },
+  { path: '/practice/exam', name: 'ExamPractice', component: () => import('../views/ExamPractice.vue'), meta: { title: '独立分析能力训练' } },
   { path: '/report/workbench', name: 'ReportWorkbench', component: () => import('../views/ReportWorkbench.vue'), meta: { title: '岗位劳动力市场预测报告工作台' } },
 
   // 核心实验室
@@ -16,6 +19,7 @@ const routes = [
   { path: '/lab/factor-allocation', name: 'FactorAlloc', component: () => import('../views/EnterpriseLab.vue'), meta: { title: '🏗️ 要素配置沙盘' } },
   { path: '/lab/migration', name: 'Migration', component: () => import('../views/MigrationLab.vue'), meta: { title: '✈️ 迁移决策仿真' } },
   { path: '/lab/chengyu-tourism', name: 'ChengyuTourism', component: () => import('../views/ChengyuTourismLab.vue'), meta: { title: '成渝文旅产业实验室' } },
+  { path: '/lab/ai-occupation', name: 'AiOccupation', component: () => import('../views/AiOccupationLab.vue'), meta: { title: 'AI岗位任务重构实验室' } },
   { path: '/lab/wage', name: 'Wage', component: () => import('../views/WageLab.vue'), meta: { title: '💰 工资决定与工资形式' } },
   { path: '/lab/discrimination', name: 'Discrimination', component: () => import('../views/DiscriminationLab.vue'), meta: { title: '🚫 歧视经济学实验' } },
   { path: '/lab/income-distribution', name: 'IncomeDistribution', component: () => import('../views/IncomeDistributionLab.vue'), meta: { title: '📊 收入分配实验室' } },

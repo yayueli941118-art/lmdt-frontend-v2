@@ -464,7 +464,7 @@ const TOURISM_CALIBRATION_KEY = 'lmdtTourismCalibration'
 const PACKAGE_SCHEMA = 'lmdt-report-workbench-package-v1'
 
 const simulationLabel = __ANONYMOUS_BUILD__ || isAnonymous ? '课程' : 'LMDT '
-const packageAppName = __ANONYMOUS_BUILD__ || isAnonymous ? '课程实验平台' : 'LMDT 2.0'
+const packageAppName = __ANONYMOUS_BUILD__ || isAnonymous ? '课程实验平台' : 'LMDT 3.0'
 const workflowSteps = ['采集招聘数据', '按模板导入', '预览与校验', '自动统计', `${simulationLabel}仿真`, '生成报告草稿', '导出作业']
 const csvHeaders = ['样本编号', '招聘平台', '采集日期', '企业名称', '岗位名称', '行业', '城市', '薪资下限', '薪资上限', '学历要求', '经验要求', '技能关键词', '用工形式', '岗位链接', '截图编号', '备注']
 const industryOptions = ['文旅与会展', '文化旅游', '信息技术', '制造业', '金融业', '教育', '医疗健康', '现代服务业', '交通运输', '批发零售']
@@ -641,6 +641,9 @@ const previewCards = computed(() => {
 })
 
 const simulationLinks = [
+  { title: '劳动力市场数据分析中心', desc: '核查时间、单位、缺失值和指标口径，形成历史数据证据。', to: '/analysis/market' },
+  { title: '基础预测与情景推演', desc: '比较朴素、移动平均、线性趋势和CAGR，并用留出期回测。', to: '/forecast/basic' },
+  { title: 'AI岗位任务重构', desc: '区分任务替代、需求扩张、技能互补与新任务效应。', to: '/lab/ai-occupation' },
   { title: '工资决定与工资形式', desc: '比较效率工资、补偿性差异、激励工资和经验工资路径。', to: '/lab/wage' },
   { title: '失业经济学', desc: '分析技能错配、AI 冲击、岗位空缺和匹配效率。', to: '/lab/unemployment' },
   { title: '劳动力市场歧视', desc: '讨论招聘条件中的公平就业和歧视风险。', to: '/lab/discrimination' },
@@ -651,6 +654,9 @@ const simulationLinks = [
 const recommendedLinks = computed(() => {
   const text = `${target.industry}${target.position}`
   const links = [
+    { title: '劳动力市场数据分析中心', reason: '检查历史数据来源、口径和指标公式' },
+    { title: '基础预测与情景推演', reason: '用留出回测比较基础预测方法' },
+    { title: 'AI岗位任务重构', reason: '拆解岗位任务并比较替代、规模、互补和新任务效应' },
     { title: '工资决定与工资形式', reason: '比较工资形成机制及经验工资路径' },
     { title: '失业经济学', reason: '模拟技能错配、AI 冲击和匹配效率' },
     { title: '劳动力市场歧视', reason: '分析招聘条件是否存在歧视风险' },

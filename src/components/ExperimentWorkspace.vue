@@ -15,7 +15,7 @@
         </div>
       </div>
       <div class="workspace-source">
-        <RuntimeSourceBadge />
+        <RuntimeSourceBadge :type="resultType" />
         <span>{{ resultType }}</span>
       </div>
     </header>
@@ -94,6 +94,7 @@
             <div><strong>默认参数依据</strong><span>{{ defaultBasis }}</span></div>
             <div><strong>模型版本</strong><span>{{ modelVersion }}</span></div>
             <div><strong>结果来源类型</strong><span>{{ resultType }}</span></div>
+            <div><strong>是否属于现实预测</strong><span>{{ realityStatus }}</span></div>
             <p><strong>不能据此推出</strong><span>{{ limitation }}</span></p>
             <slot name="model"></slot>
           </div>
@@ -124,6 +125,7 @@ const props = defineProps({
   variables: { type: String, default: '变量名称、当前值与单位显示在参数控件和图表坐标轴中。' },
   defaultBasis: { type: String, default: '用于课堂演示的可解释默认情景，不代表实证估计或地区统计。' },
   modelVersion: { type: String, default: __APP_VERSION__ },
+  realityStatus: { type: String, default: '否。当前页面用于机制解释或教学情景比较。' },
 })
 
 defineEmits(['reset', 'update:activeChart'])
@@ -507,12 +509,14 @@ onUnmounted(() => {
   flex-direction: column;
 }
 .workspace-chart :deep(.workspace-chart-canvas),
-.workspace-chart :deep(.chart-container) {
+.workspace-chart :deep(.chart-container),
+.workspace-chart :deep(.lmdt-chart) {
   width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
   flex: 1 1 auto;
 }
+.workspace-chart :deep(.lmdt-chart) { min-height: 220px !important; }
 .workspace-chart :deep(.chart-head),
 .workspace-chart :deep(h2),
 .workspace-chart :deep(h3) {
@@ -605,6 +609,7 @@ onUnmounted(() => {
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     border-left: 0;
   }
+  .workspace-chart :deep(.lmdt-chart) { min-height: 150px !important; }
 }
 
 @media (max-width: 460px) {

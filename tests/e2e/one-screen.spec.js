@@ -12,6 +12,7 @@ const experimentRoutes = [
   ['失业与匹配', '/lab/unemployment'],
   ['宏观政策', '/lab/macro'],
   ['成渝文旅', '/lab/chengyu-tourism'],
+  ['AI岗位任务', '/lab/ai-occupation'],
 ]
 
 const desktopViewports = [
@@ -113,6 +114,7 @@ async function dragRangeWithChartVisible(page, slider) {
   const beforeValue = await slider.inputValue()
   const beforeFeedback = await feedbackFingerprint(page)
   let feedbackChangedDuringDrag = false
+  let changingClassSeen = false
   const range = await slider.evaluate(element => ({
     min: Number(element.min || 0),
     max: Number(element.max || 100),
@@ -138,10 +140,12 @@ async function dragRangeWithChartVisible(page, slider) {
     const liveFeedback = await feedbackFingerprint(page)
     feedbackChangedDuringDrag ||= liveFeedback.canvasHash !== beforeFeedback.canvasHash
       || liveFeedback.metrics !== beforeFeedback.metrics
+    changingClassSeen ||= await page.getByTestId('experiment-workspace').evaluate(element => element.classList.contains('is-changing'))
   }
   expect(feedbackChangedDuringDrag, '松开滑块前图表或关键指标应已更新').toBe(true)
   await page.mouse.up()
   await expect(slider).not.toHaveValue(beforeValue)
+  return changingClassSeen
 }
 
 for (const viewport of desktopViewports) {
@@ -168,8 +172,8 @@ for (const viewport of desktopViewports) {
       expect(await sliders.count(), '每个动态实验应至少有一个连续参数').toBeGreaterThan(0)
       const slider = sliders.first()
       const before = await feedbackFingerprint(page)
-      await dragRangeWithChartVisible(page, slider)
-      await expect(page.getByTestId('experiment-workspace')).toHaveClass(/is-changing/)
+      const changingClassSeen = await dragRangeWithChartVisible(page, slider)
+      expect(changingClassSeen, '参数拖动时应出现短暂变化强调').toBe(true)
       await page.waitForTimeout(700)
       const after = await feedbackFingerprint(page)
       expect(
