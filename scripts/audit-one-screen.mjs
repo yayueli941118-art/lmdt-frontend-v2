@@ -16,6 +16,7 @@ const routes = [
   ['unemployment', '/lab/unemployment'],
   ['macro', '/lab/macro'],
   ['chengyu-tourism', '/lab/chengyu-tourism'],
+  ['ai-occupation', '/lab/ai-occupation'],
 ]
 const viewports = [
   { width: 1280, height: 720 },

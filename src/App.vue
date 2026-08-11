@@ -5,13 +5,12 @@
     <nav class="desktop-nav" aria-label="主要导航">
       <router-link to="/" class="nav-brand">{{ appProfile.brandShort }}</router-link>
       <span v-if="modeLabel" class="mode-badge">{{ modeLabel }}</span>
-      <router-link to="/lab/individual">个体实验室</router-link>
-      <router-link to="/lab/enterprise">劳动需求</router-link>
-      <router-link to="/lab/supply">劳动供给</router-link>
-      <router-link to="/lab/wage">工资收入</router-link>
-      <router-link to="/lab/unemployment">失业</router-link>
-      <router-link to="/lab/chengyu-tourism">成渝文旅</router-link>
-      <router-link to="/report/workbench">报告工作台</router-link>
+      <router-link to="/analysis/market">市场数据</router-link>
+      <router-link to="/lab/enterprise">机制仿真</router-link>
+      <router-link to="/forecast/basic">基础预测</router-link>
+      <router-link to="/lab/ai-occupation">AI岗位</router-link>
+      <router-link to="/report/workbench">报告决策</router-link>
+      <router-link to="/practice/exam">能力训练</router-link>
       <button
         v-if="appMode === 'teaching'"
         class="projection-toggle"
@@ -24,6 +23,11 @@
       <details class="nav-more">
         <summary>更多实验</summary>
         <div class="nav-more-menu">
+          <router-link to="/lab/individual">人力资本</router-link>
+          <router-link to="/lab/supply">劳动供给</router-link>
+          <router-link to="/lab/wage">工资收入</router-link>
+          <router-link to="/lab/unemployment">失业与匹配</router-link>
+          <router-link to="/lab/chengyu-tourism">成渝文旅</router-link>
           <router-link to="/lab/macro">宏观政策</router-link>
           <router-link to="/lab/migration">迁移决策</router-link>
           <router-link to="/lab/discrimination">歧视经济</router-link>
@@ -39,24 +43,24 @@
     <!-- 移动端底部导航 -->
     <nav class="mobile-nav" aria-label="移动端主要导航">
       <router-link to="/" class="mobile-nav-item">
-        <span class="mobile-nav-icon">🏠</span>
+        <span class="mobile-nav-icon">⌂</span>
         <span>首页</span>
       </router-link>
-      <router-link to="/lab/individual" class="mobile-nav-item">
-        <span class="mobile-nav-icon">👤</span>
-        <span>个体</span>
+      <router-link to="/analysis/market" class="mobile-nav-item">
+        <span class="mobile-nav-icon">▥</span>
+        <span>数据</span>
       </router-link>
       <router-link to="/lab/enterprise" class="mobile-nav-item">
-        <span class="mobile-nav-icon">🏭</span>
-        <span>企业</span>
+        <span class="mobile-nav-icon">⌁</span>
+        <span>仿真</span>
       </router-link>
-      <router-link to="/lab/macro" class="mobile-nav-item">
-        <span class="mobile-nav-icon">🌍</span>
-        <span>宏观</span>
+      <router-link to="/forecast/basic" class="mobile-nav-item">
+        <span class="mobile-nav-icon">↗</span>
+        <span>预测</span>
       </router-link>
-      <router-link to="/report/workbench" class="mobile-nav-item">
-        <span class="mobile-nav-icon">📝</span>
-        <span>报告</span>
+      <router-link to="/practice/exam" class="mobile-nav-item">
+        <span class="mobile-nav-icon">✓</span>
+        <span>训练</span>
       </router-link>
     </nav>
   </div>
@@ -99,7 +103,7 @@ function applyAccessibilityLinks() {
   document.querySelectorAll('.chart-card canvas').forEach(canvas => {
     const heading = canvas.closest('.chart-card')?.querySelector('h2, h3')?.textContent?.trim()
     canvas.setAttribute('role', 'img')
-    canvas.setAttribute('aria-label', heading ? `${heading}图表` : '劳动经济学仿真图表')
+    canvas.setAttribute('aria-label', heading ? `${heading}图表` : '劳动力市场分析图表')
   })
 }
 </script>

@@ -1,0 +1,3 @@
+period,working_age_population,labor_force,employed,unemployed,vacancies,average_wage,median_wage,wage_p10,wage_p25,wage_p75,wage_p90,youth_labor_force,youth_employed,youth_unemployed,output,hours_worked,industry,region,occupation,source,source_date,note
+2024,,,,,,,,,,,,,,,,,,,,用户填写,2025-01-01,请统一人口和工资单位
+2025,,,,,,,,,,,,,,,,,,,,用户填写,2026-01-01,缺失值请留空并在备注中说明原因

@@ -6,7 +6,7 @@
       kicker="CH.03 · 劳动力需求"
       :chart-tabs="demandChartTabs"
       v-model:active-chart="activeTab"
-      :change-key="[wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType]"
+      :change-key="[activeTab, wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType, aiProductivity, taskSubstitution, complementarity, demandExpansion, trainingInvestment]"
       @reset="resetDemand"
       formula="Q=A[αK^ρ+(1-α)L^ρ]^(1/ρ)，VMP=P×MPL，完全竞争下 VMP=W"
       assumptions="产品与要素市场完全竞争；短期资本固定，长期资本可调；生产函数规模报酬不变。"
@@ -21,6 +21,14 @@
             <label>初始工资 W0 <span class="val">{{ wageInitial }} 元/h</span></label>
             <input type="range" v-model.number="wageInitial" :min="demandWageRange.min" :max="demandWageRange.max" :step="demandWageRange.step">
           </div>
+          <template v-if="activeTab === 'ai'">
+            <div class="control-group"><label>AI生产率提升 <span class="val">{{ aiProductivity }}</span></label><input v-model.number="aiProductivity" type="range" min="0" max="100" step="1"></div>
+            <div class="control-group"><label>任务替代强度 <span class="val">{{ taskSubstitution }}</span></label><input v-model.number="taskSubstitution" type="range" min="0" max="100" step="1"></div>
+            <div class="control-group"><label>产品需求扩张 <span class="val">{{ demandExpansion }}</span></label><input v-model.number="demandExpansion" type="range" min="0" max="100" step="1"></div>
+            <div class="control-group"><label>人机技能互补 <span class="val">{{ complementarity }}</span></label><input v-model.number="complementarity" type="range" min="0" max="100" step="1"></div>
+            <div class="control-group"><label>再培训投入 <span class="val">{{ trainingInvestment }}</span></label><input v-model.number="trainingInvestment" type="range" min="0" max="100" step="1"></div>
+            <p class="ai-boundary">本页是机制情景，不是现实企业招聘预测；AI暴露也不等于岗位消失概率。</p>
+          </template>
           <div class="control-group">
             <label>新工资 W1 <span class="val">{{ wageNew }} 元/h</span></label>
             <input type="range" v-model.number="wageNew" min="20" max="160" step="2">
@@ -89,7 +97,7 @@
       </template>
 
       <template #metrics>
-        <div v-if="result" class="cards-row">
+        <div v-if="result && activeTab !== 'ai'" class="cards-row">
           <div class="stat-card">
             <span class="stat-label">初始雇佣量</span>
             <span class="stat-val">{{ result.short_run.point_a.labor }}</span>
@@ -110,6 +118,12 @@
             <span class="stat-val">{{ result.elasticity.long }}</span>
             <span class="stat-sub">{{ result.elasticity.label }}</span>
           </div>
+        </div>
+        <div v-else-if="result" class="cards-row">
+          <div class="stat-card"><span class="stat-label">基准就业</span><span class="stat-val">{{ aiScenario.baseline.employment }}</span><span class="stat-sub">指数</span></div>
+          <div class="stat-card"><span class="stat-label">短期就业</span><span class="stat-val">{{ aiScenario.short_term.employment }}</span><span class="stat-sub">先发生替代</span></div>
+          <div class="stat-card"><span class="stat-label">长期就业</span><span class="stat-val">{{ aiScenario.long_term.employment }}</span><span class="stat-sub">含规模与互补</span></div>
+          <div class="stat-card"><span class="stat-label">长期单位成本</span><span class="stat-val">{{ aiScenario.long_term.unit_cost }}</span><span class="stat-sub">教学指数</span></div>
         </div>
       </template>
 
@@ -194,6 +208,7 @@ import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import { sliderRanges } from '../config/sliderRanges'
+import { simulateAiDemandScenario } from '../domain/demand/model'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
@@ -214,6 +229,7 @@ const demandChartTabs = [
   { key: 'market', label: '市场调整' },
   { key: 'long', label: '长期需求' },
   { key: 'elasticity', label: '弹性诊断' },
+  { key: 'ai', label: 'AI情景' },
 ]
 const demandWageRange = sliderRanges.demandInitialWage
 const wageInitial = ref(demandWageRange.default)
@@ -226,6 +242,11 @@ const capitalFlexibility = ref(0.55)
 const laborCostShare = ref(0.35)
 const marketFeedback = ref(0.65)
 const techType = ref('中性技术')
+const aiProductivity = ref(50)
+const taskSubstitution = ref(55)
+const demandExpansion = ref(45)
+const complementarity = ref(60)
+const trainingInvestment = ref(50)
 const loading = ref(false)
 const result = ref(null)
 
@@ -234,6 +255,7 @@ const activeFigure = computed(() => ({
   market: '图3-3',
   long: '图3-6 / 图3-7',
   elasticity: '图3-11',
+  ai: 'AI任务机制',
 }[activeTab.value]))
 
 const activeChartTitle = computed(() => ({
@@ -241,6 +263,7 @@ const activeChartTitle = computed(() => ({
   market: '市场调整：产品价格反馈使 VMP 曲线移动',
   long: '长期劳动需求：替代效应与规模效应',
   elasticity: '需求弹性：为什么有些岗位更敏感',
+  ai: 'AI影响：替代、规模、互补与新任务效应',
 }[activeTab.value]))
 
 const activeExplanation = computed(() => {
@@ -248,6 +271,7 @@ const activeExplanation = computed(() => {
   if (activeTab.value === 'short') return result.value.short_run.rule
   if (activeTab.value === 'market') return result.value.market.explanation
   if (activeTab.value === 'long') return result.value.long_run.explanation
+  if (activeTab.value === 'ai') return aiScenario.value.boundary
   return result.value.elasticity.diagnosis
 })
 
@@ -256,6 +280,7 @@ const activeControlHint = computed(() => ({
   market: '当前参数直接驱动产品价格反馈、VMP 位移与 B/I 均衡点。',
   long: '当前参数直接驱动要素替代、规模效应与 A→B→C 调整路径。',
   elasticity: '当前参数直接驱动短期和长期需求弹性差异。',
+  ai: '当前参数比较短期任务替代与长期需求扩张、互补和新任务效应。',
 }[activeTab.value]))
 
 const activeChangeSummary = computed(() => {
@@ -269,6 +294,7 @@ const activeChangeSummary = computed(() => {
   if (activeTab.value === 'elasticity') {
     return `短期弹性 ${result.value.elasticity.short} → 长期弹性 ${result.value.elasticity.long}，${result.value.elasticity.label}。`
   }
+  if (activeTab.value === 'ai') return `${aiScenario.value.baseline.employment} → 短期 ${aiScenario.value.short_term.employment} → 长期 ${aiScenario.value.long_term.employment}；${aiScenario.value.skill_structure.diagnosis}`
   return `短期工资变化后，雇佣量 A点 ${result.value.short_run.point_a.labor} → B点 ${result.value.short_run.point_b.labor}。`
 })
 
@@ -301,8 +327,28 @@ const activeChartOption = computed(() => {
   if (activeTab.value === 'market') return marketChartOption.value
   if (activeTab.value === 'long') return longPathChartOption.value
   if (activeTab.value === 'elasticity') return elasticityTypeChartOption.value
+  if (activeTab.value === 'ai') return aiDemandChartOption.value
   return shortRunChartOption.value
 })
+
+const aiScenario = computed(() => simulateAiDemandScenario({
+  wageInitial: wageInitial.value, wageNew: wageNew.value, capital: capital.value, sigma: sigma.value,
+  productDemandElasticity: productDemandElasticity.value, aiProductivity: aiProductivity.value,
+  taskSubstitution: taskSubstitution.value, demandExpansion: demandExpansion.value,
+  complementarity: complementarity.value, trainingInvestment: trainingInvestment.value,
+}))
+
+const aiDemandChartOption = computed(() => ({
+  backgroundColor: 'transparent', animationDuration: 400,
+  color: ['#64748b', '#22d3ee'], legend: { top: 0, textStyle: { color: '#94a3b8' } }, tooltip: { trigger: 'axis' },
+  grid: { top: 46, right: 24, bottom: 42, left: 58 },
+  xAxis: { type: 'category', name: '工资率', data: aiScenario.value.curve.wages, axisLabel: { color: '#94a3b8' }, splitLine: { show: false } },
+  yAxis: { type: 'value', name: '劳动需求', axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,.1)' } } },
+  series: [
+    { name: '基准需求', type: 'line', data: aiScenario.value.curve.baseline, symbol: 'none', lineStyle: { type: 'dashed', width: 2 } },
+    { name: 'AI情景需求', type: 'line', data: aiScenario.value.curve.scenario, symbol: 'none', lineStyle: { width: 3 } },
+  ],
+}))
 
 function signed(value) {
   const n = Number(value || 0)
@@ -481,6 +527,11 @@ function resetDemand() {
   laborCostShare.value = 0.35
   marketFeedback.value = 0.65
   techType.value = '中性技术'
+  aiProductivity.value = 50
+  taskSubstitution.value = 55
+  demandExpansion.value = 45
+  complementarity.value = 60
+  trainingInvestment.value = 50
   runDemand()
 }
 
@@ -505,6 +556,7 @@ onMounted(runDemand)
 .control-group input[type="range"], .control-group select { width: 100%; }
 .control-group select { padding: 9px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,.2); background: #1e293b; color: #e2e8f0; }
 .hint { margin-top: 4px; color: #64748b; font-size: 11px; line-height: 1.5; }
+.ai-boundary { margin: 0; padding: 9px 10px; border-left: 3px solid #fb923c; color: #fed7aa; background: rgba(251,146,60,.08); font-size: 11px; line-height: 1.45; }
 .tab-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tab-buttons button { min-height: 36px; border: 1px solid rgba(148,163,184,.16); border-radius: 9px; background: rgba(15,23,42,.72); color: #94a3b8; font-weight: 800; cursor: pointer; }
 .tab-buttons button.active { border-color: rgba(6,182,212,.45); color: #e0f2fe; background: rgba(6,182,212,.14); }

@@ -1,868 +1,104 @@
 <template>
-  <div class="home">
-    <!-- ===== 动态网格背景 ===== -->
-    <div class="bg-grid"></div>
-
-    <!-- ===== Hero 首屏 ===== -->
-    <section class="hero">
-      <div class="hero-content">
-        <div class="hero-badge">
-          <span class="hero-badge-dot"></span>
-          {{ appProfile.heroBadge }}
-        </div>
-        <h1 class="hero-title">
-          <span class="hero-title-line">{{ appProfile.titleLines[0] }}</span>
-          <span class="hero-title-line hero-title-accent">{{ appProfile.titleLines[1] }}</span>
-        </h1>
-        <p class="hero-desc">
-          {{ appProfile.heroDesc }}
-        </p>
-        <div class="hero-actions">
-          <button class="hero-btn hero-btn-primary" @click="scrollToLabs">
-            <span>启动沙盘</span>
-            <svg class="hero-btn-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-          </button>
-          <button class="hero-btn hero-btn-secondary" @click="scrollToChapters">
-            浏览全部模块
-          </button>
-        </div>
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hero-stat-num">9</span>
-            <span class="hero-stat-label">教材章节</span>
-          </div>
-          <div class="hero-stat-divider"></div>
-          <div class="hero-stat">
-            <span class="hero-stat-num">12</span>
-            <span class="hero-stat-label">交互实验</span>
-          </div>
-          <div class="hero-stat-divider"></div>
-          <div class="hero-stat">
-            <span class="hero-stat-num">报告</span>
-            <span class="hero-stat-label">作业联动</span>
-          </div>
-        </div>
+  <div class="home-console">
+    <header class="course-header">
+      <div class="course-identity">
+        <span>{{ appProfile.heroBadge }}</span>
+        <h1>{{ appProfile.brandFull }}</h1>
+        <p>{{ appProfile.heroDesc }}</p>
       </div>
-    </section>
-
-    <section v-if="isCompetition || isAnonymous" class="showcase-strip">
-      <div class="showcase-item" v-for="step in showcaseSteps" :key="step.title">
-        <strong>{{ step.title }}</strong>
-        <span>{{ step.desc }}</span>
+      <div class="course-status">
+        <span>当前模式</span><strong>{{ modeName }}</strong>
+        <small>{{ appProfile.footerVersion }} · 纯前端本地数据</small>
       </div>
-    </section>
+    </header>
 
-    <section v-if="isCompetition" class="competition-guide" aria-labelledby="competition-guide-title">
-      <div class="guide-head">
-        <div>
-          <span>5 分钟评委导览</span>
-          <h2 id="competition-guide-title">从教学难点到学习证据</h2>
-        </div>
-        <p>按顺序打开四个环节，每个环节都可直接操作并形成报告记录。</p>
-      </div>
-      <ol class="guide-route">
-        <li v-for="item in competitionRoute" :key="item.title">
-          <router-link :to="item.to">
-            <strong>{{ item.title }}</strong>
-            <span>{{ item.desc }}</span>
+    <main>
+      <section class="learning-spaces" aria-labelledby="spaces-title">
+        <div class="section-head"><div><span>课程主线</span><h2 id="spaces-title">五个连续学习空间</h2></div><p>先建立证据，再解释机制；先独立判断，再查看模型结果。</p></div>
+        <div class="space-grid">
+          <router-link v-for="(space,index) in learningSpaces" :key="space.to" :to="space.to" class="space-item">
+            <span class="space-index">0{{ index+1 }}</span>
+            <div><strong>{{ space.title }}</strong><p>{{ space.desc }}</p></div>
+            <span class="space-action">进入</span>
           </router-link>
-        </li>
-      </ol>
-      <div class="preset-row" aria-label="推荐预设情景">
-        <router-link v-for="item in competitionPresets" :key="item.title" :to="item.to">
-          <strong>{{ item.title }}</strong>
-          <span>{{ item.desc }}</span>
-        </router-link>
-      </div>
-    </section>
-
-    <section class="workbench-entry">
-      <div class="workbench-entry-copy">
-        <span>课程报告工作台</span>
-        <h2>岗位劳动力市场预测报告工作台</h2>
-        <p>下载标准 CSV 模板，导入前预览校验，统计薪酬、学历、经验与技能需求，并结合 {{ appProfile.brandShort }} 仿真生成 Markdown 报告草稿。</p>
-      </div>
-      <router-link to="/report/workbench" class="workbench-entry-btn">进入工作台</router-link>
-    </section>
-
-    <section class="scene-entry">
-      <div class="scene-entry-copy">
-        <span>场景化实验</span>
-        <h2>成渝文旅产业实验室</h2>
-        <p>把劳动力需求预测、岗位匹配、工资决定与政策模拟嵌入成渝双城经济圈文旅与会展产业场景。</p>
-      </div>
-      <router-link to="/lab/chengyu-tourism" class="scene-entry-btn">进入成渝文旅实验室</router-link>
-    </section>
-
-    <!-- ===== 三大核心实验室 ===== -->
-    <section id="labs" class="section">
-      <div class="section-header">
-        <span class="section-tag">核心模块</span>
-        <h2 class="section-title">三大机制仿真实验室</h2>
-        <p class="section-subtitle">从个体到宏观，覆盖劳动经济学全维度</p>
-      </div>
-      <div class="core-cards">
-        <!-- 个体 -->
-        <router-link class="glass-card glass-card-blue" to="/lab/individual">
-          <div class="glass-card-icon">
-            <svg viewBox="0 0 48 48"><circle cx="24" cy="16" r="7" fill="currentColor" opacity="0.85"/><path d="M8 40c0-8.8 7.2-16 16-16s16 7.2 16 16" fill="currentColor" opacity="0.85"/></svg>
-          </div>
-          <h3 class="glass-card-title">个体职业实验室</h3>
-          <p class="glass-card-desc">明瑟收入方程 · 教育投资回报<br />直接与机会成本 · NPV 与 IRR</p>
-          <div class="glass-card-chip">第四章 人力资本</div>
-          <span class="glass-card-link">进入实验室 →</span>
-        </router-link>
-        <!-- 企业 -->
-        <router-link class="glass-card glass-card-cyan" to="/lab/enterprise">
-          <div class="glass-card-icon">
-            <svg viewBox="0 0 48 48"><rect x="6" y="10" width="10" height="10" rx="1.5" fill="currentColor" opacity="0.85"/><rect x="19" y="10" width="10" height="10" rx="1.5" fill="currentColor" opacity="0.85"/><rect x="32" y="10" width="10" height="10" rx="1.5" fill="currentColor" opacity="0.85"/><rect x="6" y="24" width="10" height="14" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="19" y="24" width="10" height="14" rx="1.5" fill="currentColor" opacity="0.6"/><rect x="32" y="24" width="10" height="14" rx="1.5" fill="currentColor" opacity="0.6"/></svg>
-          </div>
-          <h3 class="glass-card-title">企业市场实验室</h3>
-          <p class="glass-card-desc">CES 生产函数 · 边际生产力<br />条件要素需求 · 要素替代弹性</p>
-          <div class="glass-card-chip">第三章 劳动力需求</div>
-          <span class="glass-card-link">进入实验室 →</span>
-        </router-link>
-        <!-- 宏观 -->
-        <router-link class="glass-card glass-card-purple" to="/lab/macro">
-          <div class="glass-card-icon">
-            <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.5"/><circle cx="24" cy="24" r="12" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.7"/><circle cx="24" cy="24" r="5" fill="currentColor" opacity="0.85"/></svg>
-          </div>
-          <h3 class="glass-card-title">宏观政策实验室</h3>
-          <p class="glass-card-desc">贝弗里奇曲线 · 结构性失业<br />AI 冲击 · 技能重塑政策</p>
-          <div class="glass-card-chips">
-            <div class="glass-card-chip">第九章 失业</div>
-            <div class="glass-card-chip">宏观政策</div>
-          </div>
-          <span class="glass-card-link">进入实验室 →</span>
-        </router-link>
-      </div>
-    </section>
-
-    <!-- ===== 深度教学专题 ===== -->
-    <section id="chapters" class="section">
-      <div class="section-header">
-        <span class="section-tag">专题实验</span>
-        <h2 class="section-title">九章全覆盖 · 按教材章节索引</h2>
-      </div>
-      <div class="mini-grid">
-        <router-link class="mini-card mini-card-cyan" to="/lab/supply">
-          <span class="mini-card-chapter">Ch.02</span>
-          <strong>劳动供给决策</strong>
-          <p>收入效应 vs 替代效应 · 固定偏好 · 希克斯补偿</p>
-        </router-link>
-        <router-link class="mini-card mini-card-cyan" to="/lab/factor-allocation">
-          <span class="mini-card-chapter">Ch.03</span>
-          <strong>要素配置沙盘</strong>
-          <p>替代 vs 规模效应 · 等产量曲线 · 等成本线旋转</p>
-        </router-link>
-        <router-link class="mini-card mini-card-purple" to="/lab/migration">
-          <span class="mini-card-chapter">Ch.05</span>
-          <strong>劳动力流动</strong>
-          <p>迁移决策 NPV · 就业概率 · 家庭成本 · 贴现率</p>
-        </router-link>
-        <router-link class="mini-card mini-card-cyan" to="/lab/chengyu-tourism">
-          <span class="mini-card-chapter">应用专题</span>
-          <strong>成渝文旅产业实验室</strong>
-          <p>劳动力需求预测 · 岗位匹配 · 工资决定 · 政策模拟</p>
-        </router-link>
-        <router-link class="mini-card mini-card-gold" to="/lab/wage">
-          <span class="mini-card-chapter">Ch.06</span>
-          <strong>工资决定与工资形式</strong>
-          <p>效率工资 · 补偿性差异 · 激励工资 · 工资经验方程</p>
-        </router-link>
-        <router-link class="mini-card mini-card-red" to="/lab/discrimination">
-          <span class="mini-card-chapter">Ch.07</span>
-          <strong>劳动力市场歧视</strong>
-          <p>贝克尔偏见模型 · 统计性歧视 · Oaxaca-Blinder 分解</p>
-        </router-link>
-        <router-link class="mini-card mini-card-green" to="/lab/income-distribution">
-          <span class="mini-card-chapter">Ch.08</span>
-          <strong>收入分配实验室</strong>
-          <p>洛伦兹曲线 · 基尼系数 · 技能溢价 · 共同富裕政策调节</p>
-        </router-link>
-        <router-link class="mini-card mini-card-indigo" to="/lab/unemployment">
-          <span class="mini-card-chapter">Ch.09</span>
-          <strong>失业经济学</strong>
-          <p>失业类型诊断 · 保留工资 · 贝弗里奇曲线</p>
-        </router-link>
-      </div>
-    </section>
-
-    <!-- ===== 教材覆盖矩阵 ===== -->
-    <section class="section">
-      <div class="section-header">
-        <span class="section-tag">课程矩阵</span>
-        <h2 class="section-title">教材全覆盖 · 九章映射</h2>
-      </div>
-      <div class="matrix-table">
-        <table>
-          <thead>
-            <tr>
-              <th>章节</th>
-              <th>核心内容</th>
-              <th>仿真页面</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="matrix-chapter">Ch.01</span></td>
-              <td>劳动力市场导论</td>
-              <td>🏠 门户首页（概念框架）</td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.02</span></td>
-              <td>劳动力供给分析</td>
-              <td><router-link class="matrix-link" to="/lab/supply">⚖️ 劳动供给决策</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.03</span></td>
-              <td>劳动力需求分析</td>
-              <td>
-                <router-link class="matrix-link" to="/lab/enterprise">🏭 企业实验室</router-link>
-                <span class="matrix-sep">+</span>
-                <router-link class="matrix-link" to="/lab/factor-allocation">🏗️ 要素配置沙盘</router-link>
-              </td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.04</span></td>
-              <td>人力资本投资</td>
-              <td><router-link class="matrix-link" to="/lab/individual">👤 个体职业实验室</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.05</span></td>
-              <td>劳动力流动</td>
-              <td><router-link class="matrix-link" to="/lab/migration">✈️ 迁移决策仿真</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.06</span></td>
-              <td>工资决定与工资形式</td>
-              <td><router-link class="matrix-link" to="/lab/wage">💰 工资决定与工资形式</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">应用</span></td>
-              <td>劳动力需求预测、岗位匹配、工资决定、政策模拟</td>
-              <td><router-link class="matrix-link" to="/lab/chengyu-tourism">🎭 成渝文旅产业实验室</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.07</span></td>
-              <td>劳动力市场歧视</td>
-              <td><router-link class="matrix-link" to="/lab/discrimination">🚫 歧视经济学实验</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.08</span></td>
-              <td>收入分配</td>
-              <td><router-link class="matrix-link" to="/lab/income-distribution">📊 收入分配实验室</router-link></td>
-            </tr>
-            <tr>
-              <td><span class="matrix-chapter">Ch.09</span></td>
-              <td>失业</td>
-              <td>
-                <router-link class="matrix-link" to="/lab/unemployment">📉 失业经济学</router-link>
-                <span class="matrix-sep">+</span>
-                <router-link class="matrix-link" to="/lab/macro">🌍 宏观政策沙盘</router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ===== 版底 ===== -->
-    <footer class="footer">
-      <div class="footer-main">
-        <div class="footer-brand">
-          <span class="footer-logo">{{ appProfile.brandShort }}</span>
-          <span class="footer-version">{{ appProfile.footerVersion }}</span>
         </div>
-        <div class="footer-info">
-          <p class="footer-school">{{ appProfile.footerSchool }}</p>
-          <p class="footer-course">{{ appProfile.footerCourse }}</p>
-          <p class="footer-author">{{ appProfile.footerAuthor }}</p>
+      </section>
+
+      <section v-if="isCompetition" class="competition-route" aria-labelledby="route-title">
+        <div class="section-head"><div><span>5分钟教学展示</span><h2 id="route-title">从数据证据到独立能力</h2></div><p>以下路径用于快速说明课程逻辑，所有页面仍可由学生完整操作。</p></div>
+        <ol><li v-for="item in competitionRoute" :key="item.to"><router-link :to="item.to"><span>{{ item.step }}</span><strong>{{ item.title }}</strong><small>{{ item.desc }}</small></router-link></li></ol>
+        <div class="preset-row"><router-link v-for="item in competitionPresets" :key="item.title" :to="item.to"><strong>{{ item.title }}</strong><span>{{ item.desc }}</span></router-link></div>
+      </section>
+
+      <section v-if="isCompetition || isAnonymous" class="evidence-strip">
+        <article v-for="step in showcaseSteps" :key="step.title"><strong>{{ step.title }}</strong><span>{{ step.desc }}</span></article>
+      </section>
+
+      <section class="workspace-band" aria-labelledby="workspace-title">
+        <div><span>课程作业生产线</span><h2 id="workspace-title">岗位劳动力市场预测报告工作台</h2><p>标准模板采集招聘样本，完成导入校验、统计分析、实验记录与报告草稿。招聘样本只代表所采样本，不自动等同于社会总需求。</p></div>
+        <router-link to="/report/workbench">进入报告工作台</router-link>
+      </section>
+
+      <section class="classic-labs" aria-labelledby="classic-title">
+        <div class="section-head"><div><span>教材机制</span><h2 id="classic-title">经典劳动经济学实验</h2></div><p>保留教材模型与章节逻辑，每个核心页均支持一屏调参、一屏观察。</p></div>
+        <div class="lab-index">
+          <router-link v-for="lab in classicLabs" :key="lab.to" :to="lab.to"><span>{{ lab.chapter }}</span><strong>{{ lab.title }}</strong><p>{{ lab.desc }}</p></router-link>
         </div>
-        <div class="footer-meta">
-          <p>12 个交互式实验模块 · 9 章教材全覆盖</p>
-          <p class="footer-tags">
-            🇨🇳 融入「新质生产力」「乡村振兴」「共同富裕」等国家战略
-          </p>
-        </div>
-      </div>
-      <div class="footer-divider"></div>
-      <div class="footer-bottom">
-        <span>© 2026 {{ appProfile.brandShort }} · Labor Market Digital Twin</span>
-        <span>{{ appProfile.footerPowered }}</span>
-      </div>
-    </footer>
+      </section>
+
+      <section class="assessment-band" aria-labelledby="assessment-title">
+        <div><span>课程评价</span><h2 id="assessment-title">AI可辅助学习，期末检验独立能力</h2><p>训练记录仅供学习诊断，不自动替代教师评价，也不改变课程既定考核权重。</p></div>
+        <dl><div><dt>考勤与过程</dt><dd>10%</dd></div><div><dt>个体作业</dt><dd>10%</dd></div><div><dt>小组作业</dt><dd>20%</dd></div><div><dt>期末考试</dt><dd>60%</dd></div></dl>
+      </section>
+    </main>
+
+    <footer><div><strong>{{ appProfile.brandShort }}</strong><span>{{ appProfile.footerCourse }}</span></div><div v-if="!isAnonymous"><span>{{ appProfile.footerSchool }}</span><span>{{ appProfile.footerAuthor }}</span></div><small>{{ appProfile.footerPowered }}</small></footer>
   </div>
 </template>
 
 <script setup>
-import { appProfile, isAnonymous, isCompetition, showcaseSteps } from '../config/appMode'
+import { appMode, appProfile, isAnonymous, isCompetition, showcaseSteps } from '../config/appMode'
 
+const modeName = { teaching: '教学版', competition: '竞赛展示版', anonymous: '匿名版' }[appMode]
+const learningSpaces = [
+  { title:'看市场', desc:'导入时间序列，检查质量、口径与指标边界。', to:'/analysis/market' },
+  { title:'拆机制', desc:'让供给、需求、工资和匹配曲线随参数变化。', to:'/lab/enterprise' },
+  { title:'推未来', desc:'先判断后回测，比较基础预测方法和人为情景。', to:'/forecast/basic' },
+  { title:'做决策', desc:'汇总样本、实验和预测，生成课程报告证据链。', to:'/report/workbench' },
+  { title:'验能力', desc:'用固定蓝图训练计算、图表、机制和AI错误识别。', to:'/practice/exam' },
+]
 const competitionRoute = [
-  { title: '1 教学痛点', desc: '首页查看抽象曲线如何转化为可操作任务', to: { path: '/', hash: '#labs' } },
-  { title: '2 理论转译', desc: '劳动供给对应教材图2-9至图2-11', to: { path: '/lab/supply', query: { preset: 'moreWork' } } },
-  { title: '3 数据应用', desc: '用成渝文旅情景连接样本与模型', to: { path: '/lab/chengyu-tourism', query: { preset: 'digital' } } },
-  { title: '4 报告成果', desc: '查看学生作业生产线与教师汇总', to: '/report/workbench' },
+  { step:'01', title:'数据质量', desc:'指标不是拿来就算，先审来源和口径。', to:'/analysis/market' },
+  { step:'02', title:'教材机制', desc:'一屏观察劳动需求曲线与均衡变化。', to:'/lab/enterprise' },
+  { step:'03', title:'AI任务重构', desc:'区分替代、规模、互补和新任务效应。', to:'/lab/ai-occupation' },
+  { step:'04', title:'预测回测', desc:'先预测，再用MAE、RMSE、MAPE修订。', to:'/forecast/basic' },
+  { step:'05', title:'报告证据', desc:'数据、实验记录与边界进入课程报告。', to:'/report/workbench' },
+  { step:'06', title:'独立训练', desc:'提交后反馈并返回对应实验修正。', to:'/practice/exam' },
 ]
-
 const competitionPresets = [
-  { title: '替代效应主导', desc: '工资提高后劳动供给增加', to: { path: '/lab/supply', query: { preset: 'moreWork' } } },
-  { title: '结构性失业冲击', desc: '观察贝弗里奇曲线整体外移', to: { path: '/lab/unemployment', query: { preset: 'structural' } } },
-  { title: '数字文旅升级', desc: '比较数字岗位热度与技能缺口', to: { path: '/lab/chengyu-tourism', query: { preset: 'digital' } } },
+  { title:'数字文旅升级', desc:'观察数字岗位与技能缺口。', to:{path:'/lab/chengyu-tourism',query:{preset:'digital'}} },
+  { title:'结构性失业', desc:'观察贝弗里奇曲线外移。', to:{path:'/lab/unemployment',query:{preset:'structural'}} },
+  { title:'AI岗位重构', desc:'比较短期替代与长期互补。', to:'/lab/ai-occupation' },
 ]
-
-const scrollToLabs = () => {
-  document.getElementById('labs')?.scrollIntoView({ behavior: 'smooth' })
-}
-const scrollToChapters = () => {
-  document.getElementById('chapters')?.scrollIntoView({ behavior: 'smooth' })
-}
+const classicLabs = [
+  { chapter:'Ch.02', title:'劳动供给决策', desc:'收入效应、替代效应与劳动时间', to:'/lab/supply' },
+  { chapter:'Ch.03', title:'劳动力需求', desc:'VMP、CES、替代效应与规模效应', to:'/lab/enterprise' },
+  { chapter:'Ch.04', title:'人力资本投资', desc:'明瑟方程、教育投资与职业能力', to:'/lab/individual' },
+  { chapter:'Ch.05', title:'劳动力流动', desc:'迁移净现值、回本时间与家庭约束', to:'/lab/migration' },
+  { chapter:'Ch.06', title:'工资决定', desc:'工资分布、效率工资与补偿性差异', to:'/lab/wage' },
+  { chapter:'Ch.07', title:'市场歧视', desc:'偏见模型、统计性歧视与Oaxaca分解', to:'/lab/discrimination' },
+  { chapter:'Ch.08', title:'收入分配', desc:'洛伦兹曲线、基尼系数与再分配', to:'/lab/income-distribution' },
+  { chapter:'Ch.09', title:'失业与匹配', desc:'DMP、贝弗里奇曲线与技能错配', to:'/lab/unemployment' },
+  { chapter:'应用', title:'成渝文旅产业', desc:'岗位需求、技能缺口、薪酬与政策情景', to:'/lab/chengyu-tourism' },
+]
 </script>
 
 <style scoped>
-/* ========================================
-   DESIGN SYSTEM — Bloomberg Terminal Aesthetic
-   Dark Theme · Glassmorphism · Subtle Animations
-   ======================================== */
-
-/* ── 全局 ────────────────────────────────── */
-.home {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: rgba(30, 41, 59, 0.6);
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-blue: #3b82f6;
-  --accent-cyan: #06b6d4;
-  --accent-purple: #8b5cf6;
-  --accent-gold: #f59e0b;
-  --accent-red: #ef4444;
-  --accent-green: #16a34a;
-  --accent-indigo: #6366f1;
-  --border-subtle: rgba(148, 163, 184, 0.08);
-
-  background: var(--bg-primary);
-  min-height: 100vh;
-  color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  overflow-x: hidden;
-  position: relative;
-}
-
-/* ── 动态网格背景 ─────────────────────────── */
-.bg-grid {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: grid-scroll 20s linear infinite;
-}
-@keyframes grid-scroll {
-  0% { background-position: 0 0; }
-  100% { background-position: 60px 60px; }
-}
-
-/* ── 背景光晕 ────────────────────────────── */
-.bg-glow {
-  position: fixed; border-radius: 50%; z-index: 0; pointer-events: none;
-  filter: blur(120px); opacity: 0.12;
-}
-.bg-glow-1 {
-  width: 600px; height: 600px;
-  background: var(--accent-blue);
-  top: -200px; right: -100px;
-  animation: glow-drift-1 18s ease-in-out infinite;
-}
-.bg-glow-2 {
-  width: 500px; height: 500px;
-  background: var(--accent-purple);
-  bottom: -150px; left: -100px;
-  animation: glow-drift-2 22s ease-in-out infinite;
-}
-@keyframes glow-drift-1 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-40px, 30px); }
-}
-@keyframes glow-drift-2 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(50px, -20px); }
-}
-
-/* ── Hero 首屏 ───────────────────────────── */
-.hero {
-  position: relative; z-index: 1;
-  min-height: calc(100vh - 96px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 80px 24px;
-}
-.hero-content {
-  text-align: center; max-width: 820px;
-}
-.showcase-strip {
-  max-width: 1120px;
-  margin: -80px auto 80px;
-  padding: 0 24px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  position: relative;
-  z-index: 2;
-}
-.showcase-item {
-  background: rgba(30, 41, 59, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 10px;
-  padding: 16px;
-}
-.showcase-item strong {
-  display: block;
-  color: #f8fafc;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-.showcase-item span {
-  display: block;
-  color: #94a3b8;
-  font-size: 13px;
-  line-height: 1.65;
-}
-.competition-guide {
-  max-width: 1120px;
-  margin: -52px auto 72px;
-  padding: 22px 24px;
-  position: relative;
-  z-index: 2;
-  border: 1px solid rgba(245,158,11,.28);
-  border-radius: 8px;
-  background: #172033;
-}
-.guide-head { display: flex; justify-content: space-between; gap: 24px; align-items: end; }
-.guide-head > div > span { color: #fbbf24; font-size: 12px; font-weight: 900; }
-.guide-head h2 { margin: 5px 0 0; color: #f8fafc; font-size: 23px; }
-.guide-head p { max-width: 430px; color: #cbd5e1; font-size: 14px; line-height: 1.6; }
-.guide-route {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 18px 0 14px;
-  padding: 0;
-  list-style: none;
-}
-.guide-route a, .preset-row a {
-  display: block;
-  height: 100%;
-  padding: 13px;
-  border: 1px solid rgba(148,163,184,.16);
-  border-radius: 7px;
-  color: #e2e8f0;
-  background: #111b2e;
-  text-decoration: none;
-}
-.guide-route strong, .preset-row strong { display: block; margin-bottom: 6px; color: #f8fafc; font-size: 14px; }
-.guide-route span, .preset-row span { color: #94a3b8; font-size: 12px; line-height: 1.55; }
-.preset-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.preset-row a { border-color: rgba(34,211,238,.2); }
-.workbench-entry {
-  max-width: 1120px;
-  margin: -44px auto 72px;
-  padding: 22px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  position: relative;
-  z-index: 2;
-  border-radius: 16px;
-  border: 1px solid rgba(6, 182, 212, 0.22);
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(59, 130, 246, 0.08));
-  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
-}
-.workbench-entry-copy span {
-  display: block;
-  margin-bottom: 6px;
-  color: #67e8f9;
-  font-size: 12px;
-  font-weight: 900;
-}
-.workbench-entry-copy h2 {
-  margin: 0 0 8px;
-  color: #f8fafc;
-  font-size: 24px;
-  font-weight: 900;
-}
-.workbench-entry-copy p {
-  margin: 0;
-  color: #94a3b8;
-  font-size: 14px;
-  line-height: 1.7;
-}
-.workbench-entry-btn {
-  flex: 0 0 auto;
-  border-radius: 10px;
-  padding: 12px 18px;
-  color: #fff;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 900;
-  background: linear-gradient(135deg, #06b6d4, #2563eb);
-}
-.scene-entry {
-  max-width: 1120px;
-  margin: -48px auto 78px;
-  padding: 24px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 24px;
-  position: relative;
-  z-index: 2;
-  border-radius: 16px;
-  border: 1px solid rgba(245, 158, 11, 0.22);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(6, 182, 212, 0.08));
-  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.22);
-}
-.scene-entry-copy span {
-  display: block;
-  margin-bottom: 6px;
-  color: #fbbf24;
-  font-size: 12px;
-  font-weight: 900;
-}
-.scene-entry-copy h2 {
-  margin: 0 0 8px;
-  color: #f8fafc;
-  font-size: 25px;
-  font-weight: 900;
-}
-.scene-entry-copy p {
-  margin: 0;
-  max-width: 720px;
-  color: #94a3b8;
-  font-size: 14px;
-  line-height: 1.7;
-}
-.scene-entry-btn {
-  border-radius: 10px;
-  padding: 12px 18px;
-  color: #0f172a;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 900;
-  background: linear-gradient(135deg, #fbbf24, #22d3ee);
-  white-space: nowrap;
-}
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 100px;
-  padding: 6px 18px;
-  font-size: 14px; font-weight: 500; color: var(--accent-blue);
-  letter-spacing: 0.5px; margin-bottom: 32px;
-}
-.hero-badge-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent-blue);
-  box-shadow: 0 0 8px var(--accent-blue);
-  animation: dot-pulse 2s ease-in-out infinite;
-}
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.hero-title {
-  font-size: clamp(42px, 7vw, 72px);
-  font-weight: 900; letter-spacing: -1.5px; line-height: 1.1;
-  margin: 0 0 28px;
-}
-.hero-title-line { display: block; }
-.hero-title-accent {
-  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.hero-desc {
-  font-size: 17px; font-weight: 400; color: var(--text-secondary);
-  line-height: 1.7; margin: 0 auto 40px; max-width: 620px;
-}
-.hero-actions {
-  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
-  margin-bottom: 56px;
-}
-.hero-btn {
-  border: none; cursor: pointer;
-  padding: 14px 32px; border-radius: 12px;
-  font-size: 16px; font-weight: 600; font-family: inherit;
-  display: flex; align-items: center; gap: 8px;
-  transition: all 0.3s ease;
-}
-.hero-btn-primary {
-  background: linear-gradient(135deg, var(--accent-blue), #2563eb);
-  color: white; box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
-}
-.hero-btn-primary:hover {
-  box-shadow: 0 12px 36px rgba(59, 130, 246, 0.5);
-  transform: translateY(-2px);
-}
-.hero-btn-arrow {
-  width: 18px; height: 18px; animation: arrow-bounce 2s ease-in-out infinite;
-}
-@keyframes arrow-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(4px); }
-}
-.hero-btn-secondary {
-  background: rgba(255,255,255,0.06);
-  color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);
-}
-.hero-btn-secondary:hover {
-  background: rgba(255,255,255,0.1); color: var(--text-primary);
-}
-.hero-stats {
-  display: flex; gap: 0; justify-content: center; align-items: center;
-}
-.hero-stat { text-align: center; padding: 0 28px; }
-.hero-stat-num {
-  display: block; font-size: 36px; font-weight: 900; color: var(--text-primary);
-  letter-spacing: -1px;
-}
-.hero-stat-label {
-  font-size: 13px; color: var(--text-muted); font-weight: 500;
-  letter-spacing: 0.5px; text-transform: uppercase;
-}
-.hero-stat-divider {
-  width: 1px; height: 40px; background: rgba(148, 163, 184, 0.15);
-}
-
-/* ── Section 通用 ─────────────────────────── */
-.section {
-  position: relative; z-index: 1;
-  max-width: 1200px; margin: 0 auto;
-  padding: 60px 24px;
-}
-.section-header { text-align: center; margin-bottom: 48px; }
-.section-tag {
-  display: inline-block;
-  font-size: 12px; font-weight: 700; color: var(--accent-blue);
-  letter-spacing: 2px; text-transform: uppercase;
-  margin-bottom: 12px;
-  background: rgba(59, 130, 246, 0.1);
-  padding: 4px 12px; border-radius: 4px;
-}
-.section-title {
-  font-size: clamp(28px, 4vw, 36px); font-weight: 800;
-  letter-spacing: -0.5px; margin: 0 0 12px; color: var(--text-primary);
-}
-.section-subtitle {
-  font-size: 16px; color: var(--text-secondary); margin: 0;
-}
-
-/* ── 三大毛玻璃卡片 ───────────────────────── */
-.core-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-.glass-card {
-  position: relative; border-radius: 8px;
-  padding: 36px 28px;
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  cursor: pointer;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  text-decoration: none;
-}
-.glass-card::before {
-  content: ''; position: absolute; inset: 0; border-radius: 8px;
-  opacity: 0; transition: opacity 0.35s ease;
-}
-.glass-card-blue::before {
-  background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent 60%);
-}
-.glass-card-cyan::before {
-  background: linear-gradient(135deg, rgba(6,182,212,0.08), transparent 60%);
-}
-.glass-card-purple::before {
-  background: linear-gradient(135deg, rgba(139,92,246,0.08), transparent 60%);
-}
-.glass-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255,255,255,0.15);
-  box-shadow: 0 20px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05) inset;
-}
-.glass-card:hover::before { opacity: 1; }
-.glass-card > * { position: relative; z-index: 1; }
-.glass-card-icon {
-  width: 52px; height: 52px; margin-bottom: 20px;
-  color: var(--text-secondary); transition: color 0.3s;
-}
-.glass-card:hover .glass-card-icon { color: var(--text-primary); }
-.glass-card-title {
-  font-size: 22px; font-weight: 800; margin: 0 0 12px;
-  color: var(--text-primary); letter-spacing: -0.3px;
-}
-.glass-card-desc {
-  font-size: 14px; color: var(--text-secondary);
-  line-height: 1.7; margin: 0 0 20px;
-}
-.glass-card-chip {
-  display: inline-block;
-  font-size: 12px; font-weight: 700; padding: 5px 12px;
-  border-radius: 6px; margin-bottom: 20px;
-  background: rgba(59, 130, 246, 0.12); color: var(--accent-blue);
-  letter-spacing: 0.3px;
-}
-.glass-card-chips { display: flex; gap: 8px; margin-bottom: 20px; }
-.glass-card-link {
-  display: block; font-size: 14px; font-weight: 600;
-  color: var(--text-muted); transition: all 0.3s;
-}
-.glass-card:hover .glass-card-link {
-  color: var(--accent-blue); transform: translateX(4px);
-}
-
-/* ── 专题微卡片 ───────────────────────────── */
-.mini-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.mini-card {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px; padding: 20px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  text-decoration: none;
-}
-.mini-card:hover {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255,255,255,0.12);
-  transform: translateX(4px);
-}
-.mini-card-chapter {
-  font-size: 11px; font-weight: 700; letter-spacing: 1px;
-  margin-bottom: 8px; display: block;
-}
-.mini-card strong {
-  display: block; font-size: 15px; font-weight: 700;
-  color: var(--text-primary); margin-bottom: 4px;
-}
-.mini-card p {
-  font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.5;
-}
-.mini-card-cyan .mini-card-chapter { color: var(--accent-cyan); }
-.mini-card-cyan { border-left: 3px solid var(--accent-cyan); }
-.mini-card-purple .mini-card-chapter { color: var(--accent-purple); }
-.mini-card-purple { border-left: 3px solid var(--accent-purple); }
-.mini-card-gold .mini-card-chapter { color: var(--accent-gold); }
-.mini-card-gold { border-left: 3px solid var(--accent-gold); }
-.mini-card-red .mini-card-chapter { color: var(--accent-red); }
-.mini-card-red { border-left: 3px solid var(--accent-red); }
-.mini-card-green .mini-card-chapter { color: var(--accent-green); }
-.mini-card-green { border-left: 3px solid var(--accent-green); }
-.mini-card-indigo .mini-card-chapter { color: var(--accent-indigo); }
-.mini-card-indigo { border-left: 3px solid var(--accent-indigo); }
-
-/* ── 教材矩阵表格 ─────────────────────────── */
-.matrix-table {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px; overflow: hidden;
-}
-.matrix-table table { width: 100%; border-collapse: collapse; }
-.matrix-table th {
-  background: rgba(15, 23, 42, 0.8);
-  text-align: left; padding: 14px 20px;
-  font-size: 12px; font-weight: 700; color: var(--text-muted);
-  letter-spacing: 1px; text-transform: uppercase;
-  border-bottom: 1px solid var(--border-subtle);
-}
-.matrix-table td {
-  padding: 14px 20px; font-size: 14px; color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
-}
-.matrix-table tr:last-child td { border-bottom: none; }
-.matrix-table tr:hover td { background: rgba(255,255,255,0.02); }
-.matrix-chapter {
-  font-size: 12px; font-weight: 700; color: var(--text-muted);
-  letter-spacing: 1px;
-}
-.matrix-link {
-  color: var(--accent-blue); font-weight: 600; text-decoration: none;
-  transition: color 0.2s;
-}
-.matrix-link:hover { color: #60a5fa; }
-.matrix-sep { color: var(--text-muted); margin: 0 8px; }
-
-/* ── 版底 ────────────────────────────────── */
-.footer {
-  position: relative; z-index: 1;
-  background: rgba(15, 23, 42, 0.9);
-  border-top: 1px solid var(--border-subtle);
-  padding: 48px 24px 32px; margin-top: 40px;
-}
-.footer-main {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: auto 1fr auto;
-  gap: 48px; align-items: start;
-}
-.footer-brand { display: flex; flex-direction: column; gap: 4px; }
-.footer-logo {
-  font-size: 24px; font-weight: 900; letter-spacing: -1px;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.footer-version {
-  font-size: 11px; font-weight: 600; color: var(--text-muted);
-  letter-spacing: 1px;
-}
-.footer-info p { margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
-.footer-author { color: var(--text-muted) !important; }
-.footer-meta { text-align: right; }
-.footer-meta p {
-  margin: 0; font-size: 13px; color: var(--text-secondary); line-height: 1.7;
-}
-.footer-tags { color: var(--text-muted) !important; font-size: 12px !important; }
-.footer-divider {
-  max-width: 1200px; margin: 32px auto;
-  height: 1px; background: var(--border-subtle);
-}
-.footer-bottom {
-  max-width: 1200px; margin: 0 auto;
-  display: flex; justify-content: space-between;
-  font-size: 12px; color: var(--text-muted);
-  letter-spacing: 0.3px;
-}
-
-/* ── 响应式 ──────────────────────────────── */
-@media (max-width: 900px) {
-  .core-cards { grid-template-columns: 1fr; }
-  .mini-grid { grid-template-columns: 1fr; }
-  .hero-title { font-size: 36px; }
-  .hero-stats { flex-direction: column; gap: 16px; }
-  .hero-stat-divider { width: 40px; height: 1px; }
-  .footer-main { grid-template-columns: 1fr; gap: 24px; }
-  .footer-meta { text-align: left; }
-  .hero { padding: 60px 16px; min-height: auto; }
-  .showcase-strip { grid-template-columns: 1fr; margin: -24px auto 40px; padding: 0 16px; }
-  .competition-guide { margin: 0 16px 40px; padding: 18px; }
-  .guide-head { display: block; }
-  .guide-head p { margin-top: 10px; }
-  .guide-route, .preset-row { grid-template-columns: 1fr; }
-  .workbench-entry { flex-direction: column; align-items: flex-start; margin: 0 16px 40px; }
-  .workbench-entry-btn { width: 100%; text-align: center; box-sizing: border-box; }
-  .scene-entry { grid-template-columns: 1fr; margin: 0 16px 40px; }
-  .scene-entry-btn { width: 100%; text-align: center; box-sizing: border-box; white-space: normal; }
-  .section { padding: 40px 16px; }
-  .matrix-table { overflow-x: auto; }
-  .matrix-table table { min-width: 600px; }
-  .hero-desc br { display: none; }
-}
+.home-console{min-height:100vh;color:#e2e8f0;background:#0f172a}.course-header{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:32px;max-width:1200px;margin:auto;padding:44px 28px 30px;border-bottom:1px solid rgba(148,163,184,.14)}.course-identity>span,.section-head>div>span,.workspace-band>div>span,.assessment-band>div>span{color:#67e8f9;font-size:11px;font-weight:850}.course-identity h1{max-width:900px;margin:8px 0 10px;color:#f8fafc;font-size:32px;line-height:1.2;letter-spacing:0}.course-identity p{max-width:760px;margin:0;color:#94a3b8;line-height:1.65}.course-status{display:grid;align-content:center;gap:4px;padding-left:22px;border-left:1px solid #263449}.course-status span,.course-status small{color:#64748b;font-size:11px}.course-status strong{font-size:18px;color:#f8fafc}
+main{max-width:1200px;margin:auto;padding:26px 28px 70px}.learning-spaces,.competition-route,.classic-labs{margin-bottom:44px}.section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:16px}.section-head h2,.workspace-band h2,.assessment-band h2{margin:5px 0 0;font-size:22px}.section-head>p{max-width:440px;margin:0;color:#7f8da3;font-size:13px;line-height:1.5}.space-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid #263449;border-radius:8px;overflow:hidden}.space-item{min-width:0;display:grid;grid-template-rows:auto 1fr auto;gap:14px;min-height:190px;padding:18px;border-right:1px solid #263449;color:inherit;background:#111b2e;text-decoration:none}.space-item:last-child{border-right:0}.space-item:hover{background:#17243a}.space-index{color:#475569;font-size:12px;font-weight:900}.space-item strong{font-size:18px}.space-item p{margin:7px 0 0;color:#94a3b8;font-size:13px;line-height:1.55}.space-action{color:#7dd3fc;font-size:12px;font-weight:800}
+.competition-route{padding:20px;border:1px solid rgba(245,158,11,.28);border-radius:8px;background:#111b2e}.competition-route .section-head>div>span{color:#fbbf24}.competition-route ol{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;padding:0;list-style:none}.competition-route li a{height:100%;display:grid;align-content:start;gap:6px;padding:12px;border:1px solid #263449;color:inherit;background:#0f172a;text-decoration:none}.competition-route li span{color:#fbbf24;font-size:10px}.competition-route li strong{font-size:13px}.competition-route li small{color:#94a3b8;line-height:1.45}.preset-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.preset-row a{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-left:3px solid #38bdf8;color:#e2e8f0;background:#152238;text-decoration:none;font-size:12px}.preset-row span{color:#94a3b8}
+.evidence-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:44px}.evidence-strip article{display:grid;gap:7px;padding:13px;border-top:2px solid #334155;background:#111b2e}.evidence-strip strong{font-size:13px}.evidence-strip span{color:#94a3b8;font-size:12px;line-height:1.5}.workspace-band{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:30px;margin-bottom:44px;padding:22px;border:1px solid rgba(34,211,238,.25);border-radius:8px;background:#102033}.workspace-band p,.assessment-band p{max-width:780px;margin:8px 0 0;color:#94a3b8;font-size:13px;line-height:1.6}.workspace-band>a{padding:11px 15px;border:1px solid #0891b2;border-radius:6px;color:#ecfeff;background:#0e7490;text-decoration:none;font-weight:800;white-space:nowrap}
+.lab-index{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.lab-index a{min-height:118px;padding:15px;border:1px solid #263449;border-radius:6px;color:inherit;background:#111b2e;text-decoration:none}.lab-index a:hover{border-color:#475569}.lab-index span{color:#67e8f9;font-size:10px;font-weight:850}.lab-index strong{display:block;margin-top:8px;font-size:15px}.lab-index p{margin:6px 0 0;color:#94a3b8;font-size:12px;line-height:1.5}.assessment-band{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,480px);gap:28px;align-items:center;padding:22px;border:1px solid #263449;background:#111b2e}.assessment-band dl{display:grid;grid-template-columns:repeat(4,1fr);margin:0}.assessment-band dl div{padding:8px 12px;border-left:1px solid #263449;text-align:center}.assessment-band dt{color:#94a3b8;font-size:11px}.assessment-band dd{margin:5px 0 0;color:#f8fafc;font-size:20px;font-weight:900}
+footer{display:grid;grid-template-columns:1fr 1fr auto;gap:28px;align-items:center;padding:22px max(28px,calc((100vw - 1144px)/2));border-top:1px solid #263449;color:#64748b;background:#0b1324;font-size:11px}footer div{display:grid;gap:3px}footer strong{color:#7dd3fc;font-size:14px}
+@media(max-width:900px){.course-header{grid-template-columns:1fr;padding:28px 18px 22px}.course-status{padding:12px 0 0;border-top:1px solid #263449;border-left:0}.course-identity h1{font-size:25px}main{padding:20px 16px 70px}.section-head{display:block}.section-head>p{margin-top:8px}.space-grid{grid-template-columns:1fr}.space-item{grid-template-columns:36px 1fr auto;grid-template-rows:auto;min-height:0;border-right:0;border-bottom:1px solid #263449}.space-item:last-child{border-bottom:0}.competition-route ol,.evidence-strip{grid-template-columns:1fr}.preset-row,.lab-index{grid-template-columns:1fr}.workspace-band,.assessment-band{grid-template-columns:1fr}.assessment-band dl{grid-template-columns:repeat(2,1fr)}.assessment-band dl div{border:1px solid #263449}.workspace-band>a{text-align:center}footer{grid-template-columns:1fr;padding:22px 18px}.course-header p{font-size:13px}}
 </style>

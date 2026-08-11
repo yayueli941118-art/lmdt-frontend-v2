@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cesMarginalProducts, costMinBundle, simulateDemand } from './model'
+import { cesMarginalProducts, costMinBundle, simulateAiDemandScenario, simulateDemand } from './model'
 
 describe('CES labor demand model', () => {
   it('has positive diminishing MPL when capital is fixed', () => {
@@ -26,5 +26,15 @@ describe('CES labor demand model', () => {
   it('finds a short-run point close to VMP equals wage', () => {
     const result = simulateDemand({ wage_initial: 55, wage_new: 42, capital: 700, sigma: 1.2 })
     expect(Math.abs(result.short_run.point_a.vmp - result.short_run.point_a.wage)).toBeLessThan(2)
+  })
+
+  it('lets AI scenarios produce decline, recovery or skill restructuring from explicit parameters', () => {
+    const contraction = simulateAiDemandScenario({ taskSubstitution: 90, demandExpansion: 5, complementarity: 10, trainingInvestment: 5 })
+    const expansion = simulateAiDemandScenario({ taskSubstitution: 30, demandExpansion: 90, complementarity: 85, trainingInvestment: 80, aiProductivity: 80 })
+    expect(contraction.long_term.employment).toBeLessThan(contraction.baseline.employment)
+    expect(expansion.long_term.employment).toBeGreaterThan(expansion.short_term.employment)
+    expect(expansion.effects.substitution).toBeLessThan(0)
+    expect(expansion.effects.scale).toBeGreaterThan(0)
+    expect(expansion.boundary).toContain('情景推演')
   })
 })

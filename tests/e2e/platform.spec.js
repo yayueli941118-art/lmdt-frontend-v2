@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test'
 
 const coreRoutes = [
-  ['/', '劳动经济学机制仿真'],
+  ['/', 'AI劳动力市场分析'],
+  ['/analysis/market', '劳动力市场数据分析中心'],
+  ['/forecast/basic', '基础预测与情景推演实验室'],
+  ['/lab/ai-occupation', 'AI岗位任务重构实验室'],
+  ['/practice/exam', '独立分析能力训练'],
   ['/lab/supply', '劳动供给决策'],
   ['/lab/enterprise', '劳动需求'],
   ['/lab/individual', '在进入实验室之前'],
@@ -50,10 +54,10 @@ test('旗舰实验可调参、恢复并保存到报告工作台', async ({ page 
   await expect(page.locator('.record-list').getByText('劳动供给决策', { exact: true })).toBeVisible()
 })
 
-test('竞赛模式提供导览和三个可操作预设', async ({ page }) => {
+test('竞赛模式提供五分钟教学导览和三个可操作预设', async ({ page }) => {
   await page.goto('/?mode=competition#/')
   await expect(page.getByText('竞赛版', { exact: true })).toBeVisible()
-  await expect(page.getByText('5 分钟评委导览')).toBeVisible()
+  await expect(page.getByText('5分钟教学展示')).toBeVisible()
   await expect(page.locator('.preset-row a')).toHaveCount(3)
   await page.getByRole('link', { name: /数字文旅升级/ }).click()
   await expect(page).toHaveURL(/chengyu-tourism/)
@@ -63,8 +67,8 @@ test('竞赛模式提供导览和三个可操作预设', async ({ page }) => {
 
 test('匿名模式隐藏身份并保留核心功能', async ({ page }) => {
   await page.goto('/?mode=anonymous#/')
-  await expect(page.getByText('匿名版', { exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'LM Simulation', exact: true })).toBeVisible()
+  await expect(page.locator('.mode-badge')).toHaveText('匿名版')
+  await expect(page.getByRole('link', { name: 'Labor Market Lab', exact: true })).toBeVisible()
   const body = await page.locator('body').innerText()
   expect(body).not.toContain('黎雅月')
   expect(body).not.toContain('西南交通大学希望学院')
