@@ -18,6 +18,35 @@ const coreRoutes = [
   ['/report/workbench', '岗位劳动力市场预测报告工作台'],
 ]
 
+test('三种模式均保留沉浸式封面并使用各自入口文案', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
+  const modes = [
+    { url: '/#/', mode: '教学版', primary: '开始课程实验' },
+    { url: '/?mode=competition#/', mode: '竞赛展示版', primary: '启动5分钟展示' },
+    { url: '/?mode=anonymous#/', mode: '匿名版', primary: '进入实验系统' },
+  ]
+
+  for (const item of modes) {
+    await page.goto(item.url)
+    await expect(page.locator('.hero-stage')).toBeInViewport()
+    await expect(page.locator('.hero-kicker strong')).toHaveText(item.mode)
+    await expect(page.getByRole('link', { name: new RegExp(item.primary) })).toBeVisible()
+    await expect(page.locator('.hero-route a')).toHaveCount(5)
+    expect(await page.locator('.hero-scene').evaluate(image => image.complete && image.naturalWidth > 1200)).toBe(true)
+    const heroBox = await page.locator('.hero-stage').boundingBox()
+    expect(heroBox.y + heroBox.height).toBeLessThan(page.viewportSize().height)
+  }
+})
+
+test('移动端封面标题、操作与学习主线同屏且无水平溢出', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/?mode=competition#/')
+  await expect(page.getByRole('heading', { level: 1 })).toBeInViewport()
+  await expect(page.getByRole('link', { name: /启动5分钟展示/ })).toBeInViewport()
+  await expect(page.locator('.hero-route')).toBeInViewport()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
+})
+
 test('教学模式核心路由均可加载且无水平溢出', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   const pageErrors = []

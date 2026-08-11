@@ -49,5 +49,8 @@
 ## 模式截图
 
 - `docs/screenshots/teaching-home.png`
+- `docs/screenshots/teaching-home-mobile.png`
 - `docs/screenshots/competition-home.png`
+- `docs/screenshots/competition-home-mobile.png`
 - `docs/screenshots/anonymous-home.png`
+- `docs/screenshots/anonymous-home-mobile.png`
