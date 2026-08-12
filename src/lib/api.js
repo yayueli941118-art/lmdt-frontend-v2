@@ -31,19 +31,23 @@ function markRuntime(source) {
 }
 
 function offlineAdapter(config) {
-  const data = offlineResponse(config)
-  if (data === null) {
-    return Promise.reject(new Error(`离线教学模型未实现接口：${config.url}`))
+  try {
+    const data = offlineResponse(config)
+    if (data === null) {
+      return Promise.reject(new Error(`离线教学模型未实现接口：${config.url}`))
+    }
+    markRuntime('offline')
+    return Promise.resolve({
+      data,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+      request: null,
+    })
+  } catch (error) {
+    return Promise.reject(error)
   }
-  markRuntime('offline')
-  return Promise.resolve({
-    data,
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config,
-    request: null,
-  })
 }
 
 export function apiUrl(path) {
@@ -65,7 +69,7 @@ axios.interceptors.response.use(
   error => {
     if (API_MODE !== 'auto') return Promise.reject(error)
     const fallback = offlineResponse(error.config)
-    if (fallback) {
+    if (fallback !== null) {
       markRuntime('offline-fallback')
       return Promise.resolve({
         data: fallback,

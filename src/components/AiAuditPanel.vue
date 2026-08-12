@@ -28,17 +28,20 @@
     </div>
     <button type="button" @click="saveAudit">保存审计记录</button>
     <p v-if="saved" class="audit-saved" role="status">已保存在当前浏览器中。</p>
+    <p v-else-if="storageError" class="audit-error" role="alert">{{ storageError }}</p>
   </section>
 </template>
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import RuntimeSourceBadge from './RuntimeSourceBadge.vue'
+import { readJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const emit = defineEmits(['save'])
 const props = defineProps({ storageKey: { type: String, default: 'lmdtAiAuditRecords' } })
 const draft = reactive({ original: '', selectedIssues: [], basis: '', revision: '', unresolved: '' })
 const saved = ref(false)
+const storageError = ref('')
 
 const ruleDefinitions = [
   ['source', '是否说明数据来源', text => !/(来源|统计局|报告|数据集|网址|source)/i.test(text), '未识别到明确来源提示。'],
@@ -58,11 +61,13 @@ const ruleDefinitions = [
 const rules = computed(() => ruleDefinitions.map(([id, label, check, hint]) => ({ id, label, hint, flagged: draft.original.trim() ? check(draft.original) : false })))
 
 function saveAudit() {
-  const records = JSON.parse(localStorage.getItem(props.storageKey) || '[]')
+  const stored = readJsonStorage(props.storageKey, [])
+  const records = Array.isArray(stored) ? stored : []
   const record = { ...draft, ruleSignals: rules.value.filter(item => item.flagged).map(item => item.id), createdAt: new Date().toISOString(), sourceType: '外部AI回答＋规则审计' }
-  localStorage.setItem(props.storageKey, JSON.stringify([...records, record]))
-  saved.value = true
-  emit('save', record)
+  const outcome = writeJsonStorage(props.storageKey, [...records, record].slice(-50), { version: 1 })
+  saved.value = outcome.ok
+  storageError.value = outcome.message
+  if (outcome.ok) emit('save', record)
 }
 </script>
 
@@ -84,5 +89,6 @@ function saveAudit() {
 .audit-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
 .audit-panel > button { justify-self: start; min-height: 40px; padding: 0 16px; border: 0; border-radius: 6px; color: white; background: #2563eb; font-weight: 800; cursor: pointer; }
 .audit-saved { margin: 0; color: #86efac; font-size: 13px; }
+.audit-error { margin: 0; color: #fca5a5; font-size: 13px; }
 @media (max-width: 760px) { .audit-rules, .audit-grid { grid-template-columns: 1fr; } }
 </style>

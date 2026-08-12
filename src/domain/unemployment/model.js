@@ -60,17 +60,23 @@ export function simulateMinimumWage(p = {}) {
   const elasticity = Number(p.demand_elasticity ?? -0.15)
   const kaitz = minimumWage / averageWage
   const bindingGap = Math.max(kaitz - 0.5, 0)
-  const changePct = elasticity * bindingGap * 100
+  const rawChangePct = elasticity * bindingGap * 100
+  const changePct = clamp(rawChangePct, -100, 1000)
+  const validityWarning = rawChangePct < -100
+    ? '原始结果超出线性弹性近似的有效范围，情景就业人数已按不低于 0 处理。'
+    : ''
 
   return {
     kaitz_index: round(kaitz, 3),
     current_employment: round(employment, 1),
-    predicted_employment: round(employment * (1 + changePct / 100), 1),
+    predicted_employment: round(Math.max(0, employment * (1 + changePct / 100)), 1),
     employment_change_pct: round(changePct),
+    raw_employment_change_pct: round(rawChangePct),
+    validity_warning: validityWarning,
     affected_worker_pct: round(clamp(bindingGap * 120, 0, 100)),
     scenarios: [-0.05, -0.1, -0.15, -0.2, -0.3].map(item => ({
       elasticity: item,
-      employment_change_pct: round(item * bindingGap * 100),
+      employment_change_pct: round(clamp(item * bindingGap * 100, -100, 1000)),
     })),
     assumptions: {
       demand_elasticity: elasticity,

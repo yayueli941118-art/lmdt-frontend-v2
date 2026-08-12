@@ -7,6 +7,7 @@
       :chart-tabs="migrationChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability, wageGrowth, familyMigrate, spouseLoss]"
+      :error="simulationError"
       @reset="resetMigration"
       formula="NPV=-C0+Σ[p×ΔW_t-C_t]/(1+r)^t"
       assumptions="目标地就业概率、工资增长率和成本路径由当前情景给定；60岁为默认观察终点。"
@@ -159,6 +160,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
@@ -179,8 +181,10 @@ const employmentProbability = ref(0.9)
 const wageGrowth = ref(0.02)
 const familyMigrate = ref(false)
 const spouseLoss = ref(36000)
-const loading = ref(false)
 const result = ref(null)
+const { loading, error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => { result.value = null },
+})
 const activeChart = ref('npv')
 const migrationChartTabs = [
   { key: 'npv', label: '累计 NPV' },
@@ -349,9 +353,8 @@ const sensitivityChart = computed(() => ({
 }))
 
 async function run() {
-  loading.value = true
-  try {
-    const { data } = await axios.post(apiUrl('/api/v2/migration/npv'), {
+  await runLatest(
+    () => axios.post(apiUrl('/api/v2/migration/npv'), {
       migrate_age: migrateAge.value,
       w_diff: wDiff.value,
       c_move: cMove.value,
@@ -361,11 +364,9 @@ async function run() {
       discount_rate: discountRate.value,
       employment_probability: employmentProbability.value,
       wage_growth: wageGrowth.value,
-    })
-    result.value = data
-  } finally {
-    loading.value = false
-  }
+    }),
+    ({ data }) => { result.value = data },
+  )
 }
 
 function resetMigration() {

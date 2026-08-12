@@ -42,4 +42,15 @@ describe('textbook labor supply model', () => {
     expect(result.point_C.labor_hours).toBeLessThan(result.point_A.labor_hours)
     expect(result.point_B.utility).toBeCloseTo(result.point_A.utility, 4)
   })
+
+  it('rejects a budget that cannot cover the minimum consumption and leisure commitments', () => {
+    expect(() => simulateSupply({
+      ...baseline,
+      wage_initial: 10,
+      wage_new: 12,
+      non_labor_income: 0,
+      consumption_floor: 600,
+      leisure_floor: 8,
+    })).toThrow(/最低消费与最低闲暇/)
+  })
 })

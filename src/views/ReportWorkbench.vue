@@ -453,6 +453,13 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 import { calibrateTourism } from '../domain/tourism/model'
 import { isAnonymous } from '../config/appMode'
+import {
+  readJsonStorage,
+  readTextStorage,
+  removeJsonStorage,
+  writeJsonStorage,
+  writeTextStorage,
+} from '../lib/storage'
 
 use([BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
@@ -673,26 +680,31 @@ onMounted(() => {
 })
 
 watch(samples, () => {
-  localStorage.setItem(SAMPLE_KEY, JSON.stringify(samples.value))
+  persistJson(SAMPLE_KEY, samples.value, 2)
   invalidateStaleTourismCalibration()
   refreshReportIfUntouched()
 }, { deep: true })
 
 watch(target, () => {
-  localStorage.setItem(TARGET_KEY, JSON.stringify(target))
+  persistJson(TARGET_KEY, target, 2)
   invalidateStaleTourismCalibration()
   refreshReportIfUntouched()
 }, { deep: true })
 
 watch(reportText, () => {
-  localStorage.setItem(REPORT_KEY, reportText.value)
+  persistText(REPORT_KEY, reportText.value, 2)
 })
 
 function loadState() {
-  Object.assign(target, readJson(TARGET_KEY, { industry: '', position: '', region: '' }))
-  samples.value = readJson(SAMPLE_KEY, []).map((sample) => normalizeSample(sample))
-  experimentRecords.value = readJson(RECORD_KEY, [])
-  reportText.value = localStorage.getItem(REPORT_KEY) || ''
+  const savedTarget = readJsonStorage(TARGET_KEY, null)
+  const savedSamples = readJsonStorage(SAMPLE_KEY, [])
+  const savedRecords = readJsonStorage(RECORD_KEY, [])
+  if (savedTarget && typeof savedTarget === 'object' && !Array.isArray(savedTarget)) {
+    Object.assign(target, savedTarget)
+  }
+  samples.value = (Array.isArray(savedSamples) ? savedSamples : []).map((sample) => normalizeSample(sample))
+  experimentRecords.value = Array.isArray(savedRecords) ? savedRecords : []
+  reportText.value = readTextStorage(REPORT_KEY, '')
   reportEdited.value = Boolean(reportText.value)
 }
 
@@ -1068,11 +1080,13 @@ function saveTourismCalibration() {
     setMessage(`暂不能校准：${tourismCalibration.value.reasons.join('；')}`)
     return
   }
-  localStorage.setItem(TOURISM_CALIBRATION_KEY, JSON.stringify({
+  const outcome = writeJsonStorage(TOURISM_CALIBRATION_KEY, {
     ...tourismCalibration.value,
     input_fingerprint: tourismCalibrationFingerprint(),
-  }))
-  setMessage('校准参数已保存。进入成渝文旅实验室后会明确显示样本覆盖、参数前后值和不确定性。')
+  }, { version: 1 })
+  setMessage(outcome.ok
+    ? '校准参数已保存。进入成渝文旅实验室后会明确显示样本覆盖、参数前后值和不确定性。'
+    : outcome.message)
 }
 
 function tourismCalibrationFingerprint() {
@@ -1091,13 +1105,9 @@ function tourismCalibrationFingerprint() {
 }
 
 function invalidateStaleTourismCalibration() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(TOURISM_CALIBRATION_KEY) || 'null')
-    if (saved && saved.input_fingerprint !== tourismCalibrationFingerprint()) {
-      localStorage.removeItem(TOURISM_CALIBRATION_KEY)
-    }
-  } catch {
-    localStorage.removeItem(TOURISM_CALIBRATION_KEY)
+  const saved = readJsonStorage(TOURISM_CALIBRATION_KEY, null)
+  if (saved && saved.input_fingerprint !== tourismCalibrationFingerprint()) {
+    removeJsonStorage(TOURISM_CALIBRATION_KEY)
   }
 }
 
@@ -1227,9 +1237,11 @@ async function importAssignmentPackage(event) {
     reportEdited.value = Boolean(reportText.value)
     csvPreview.value = null
     resetDraft()
-    localStorage.setItem(RECORD_KEY, JSON.stringify(experimentRecords.value))
-    localStorage.setItem(REPORT_KEY, reportText.value)
-    setMessage(`已导入作业数据包：${samples.value.length} 条样本，${experimentRecords.value.length} 条实验记录。`)
+    const recordsOutcome = writeJsonStorage(RECORD_KEY, experimentRecords.value, { version: 2 })
+    const reportOutcome = writeTextStorage(REPORT_KEY, reportText.value, { version: 2 })
+    setMessage(recordsOutcome.ok && reportOutcome.ok
+      ? `已导入作业数据包：${samples.value.length} 条样本，${experimentRecords.value.length} 条实验记录。`
+      : recordsOutcome.message || reportOutcome.message)
   } catch {
     setMessage('导入失败。请选择从本工作台导出的 JSON 作业数据包。')
   } finally {
@@ -1241,11 +1253,8 @@ function clearLocalWorkbenchData() {
   const ok = window.confirm('确定清空当前浏览器里的研究对象、招聘样本、实验记录和报告草稿吗？此操作不会影响其他同学的数据。')
   if (!ok) return
   reportEdited.value = true
-  localStorage.removeItem(SAMPLE_KEY)
-  localStorage.removeItem(TARGET_KEY)
-  localStorage.removeItem(RECORD_KEY)
-  localStorage.removeItem(REPORT_KEY)
-  localStorage.removeItem(TOURISM_CALIBRATION_KEY)
+  const storageKeys = [SAMPLE_KEY, TARGET_KEY, RECORD_KEY, REPORT_KEY, TOURISM_CALIBRATION_KEY]
+  storageKeys.forEach((key) => removeJsonStorage(key))
   Object.assign(target, { industry: '', position: '', region: '' })
   samples.value = []
   experimentRecords.value = []
@@ -1290,13 +1299,16 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]))
 }
 
-function readJson(key, fallback) {
-  try {
-    const value = JSON.parse(localStorage.getItem(key) || 'null')
-    return value || fallback
-  } catch {
-    return fallback
-  }
+function persistJson(key, value, version) {
+  const outcome = writeJsonStorage(key, value, { version })
+  if (!outcome.ok) setMessage(outcome.message)
+  return outcome.ok
+}
+
+function persistText(key, value, version) {
+  const outcome = writeTextStorage(key, value, { version })
+  if (!outcome.ok) setMessage(outcome.message)
+  return outcome.ok
 }
 
 function formatDate(value) {

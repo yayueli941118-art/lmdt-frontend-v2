@@ -44,7 +44,11 @@
 
       <main class="workspace-observation">
         <div class="workspace-metrics" data-testid="workspace-metrics">
-          <slot name="metrics"></slot>
+          <div v-if="error" class="workspace-error" role="alert">
+            <strong>当前情景无法计算</strong>
+            <span>{{ error }}</span>
+          </div>
+          <slot v-else name="metrics"></slot>
         </div>
 
         <nav v-if="chartTabs.length > 1" class="workspace-chart-tabs" aria-label="主图视角">
@@ -126,6 +130,7 @@ const props = defineProps({
   defaultBasis: { type: String, default: '用于课堂演示的可解释默认情景，不代表实证估计或地区统计。' },
   modelVersion: { type: String, default: __APP_VERSION__ },
   realityStatus: { type: String, default: '否。当前页面用于机制解释或教学情景比较。' },
+  error: { type: String, default: '' },
 })
 
 defineEmits(['reset', 'update:activeChart'])
@@ -331,6 +336,19 @@ onUnmounted(() => {
   min-width: 0;
   min-height: 0;
 }
+.workspace-error {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 13px;
+  border: 1px solid rgba(248, 113, 113, 0.34);
+  border-radius: 7px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.2);
+}
+.workspace-error strong { flex: 0 0 auto; color: #fca5a5; }
+.workspace-error span { min-width: 0; line-height: 1.45; }
 .workspace-chart-tabs {
   grid-area: tabs;
   display: flex;

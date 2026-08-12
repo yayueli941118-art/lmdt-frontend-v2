@@ -26,4 +26,18 @@ describe('教学组件契约', () => {
       expect(source).toContain(label)
     }
   })
+
+  it('统一实验容器向学生显示计算错误而不是保留旧结果', () => {
+    const source = readFileSync(new URL('./ExperimentWorkspace.vue', import.meta.url), 'utf8')
+    expect(source).toContain("error: { type: String")
+    expect(source).toContain('role="alert"')
+  })
+
+  it('AI岗位实验保存与报告工作台兼容的记录结构', () => {
+    const source = readFileSync(new URL('../views/AiOccupationLab.vue', import.meta.url), 'utf8')
+    for (const field of ['parameters:', 'modelVersion:', 'dataSourceType:', 'initialPrediction:']) {
+      expect(source).toContain(field)
+    }
+    expect(source).not.toContain('params: { 岗位:')
+  })
 })

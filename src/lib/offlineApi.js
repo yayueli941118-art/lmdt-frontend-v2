@@ -27,8 +27,8 @@ function payload(config) {
   if (typeof config.data === 'string') {
     try {
       return JSON.parse(config.data)
-    } catch {
-      return {}
+    } catch (error) {
+      throw new SyntaxError(`请求数据不是有效 JSON：${error.message}`)
     }
   }
   return config.data

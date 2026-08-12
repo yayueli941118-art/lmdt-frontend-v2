@@ -7,6 +7,7 @@
       :chart-tabs="chartTabs"
       v-model:active-chart="activeChart"
       :change-key="[scenarioMode, wageInitial, wageNew, nonLaborIncome, nonLaborShock, beta, consumptionFloor, leisureFloor]"
+      :error="simulationError"
       @reset="applyScenarioPreset"
       formula="U=(R-R0)^β(C-C0)^(1-β)，C=V+W(T-R)"
       assumptions="偏好参数在一次实验中固定；闲暇和消费均为正常品；不考虑税收与工时制度约束。"
@@ -36,7 +37,7 @@
             <label>非劳动收入 <span class="val">{{ nonLaborIncome }} 元</span></label>
             <input type="range" v-model.number="nonLaborIncome" min="0" max="800" step="20">
           </div>
-          <div class="control-group">
+          <div v-if="scenarioMode === 'income'" class="control-group">
             <label>新增非劳动收入 ΔY <span class="val">{{ nonLaborShock }} 元</span></label>
             <input type="range" v-model.number="nonLaborShock" min="0" max="900" step="20">
           </div>
@@ -193,6 +194,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
@@ -220,8 +222,10 @@ const beta = ref(0.3)
 const consumptionFloor = ref(20)
 const leisureFloor = ref(2)
 const timeEndowment = ref(24)
-const loading = ref(false)
 const result = ref(null)
+const { loading, error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => { result.value = null },
+})
 
 const scenarioFigure = computed(() => ({
   income: '对应图2-9',
@@ -456,9 +460,8 @@ const supplyCurveOption = computed(() => {
 })
 
 async function run() {
-  loading.value = true
-  try {
-    const { data } = await axios.post(apiUrl('/api/v2/supply/decompose'), {
+  await runLatest(
+    () => axios.post(apiUrl('/api/v2/supply/decompose'), {
       wage_initial: wageInitial.value,
       wage_new: wageNew.value,
       beta: beta.value,
@@ -467,13 +470,9 @@ async function run() {
       consumption_floor: consumptionFloor.value,
       leisure_floor: leisureFloor.value,
       T: timeEndowment.value,
-    })
-    result.value = data
-  } catch (e) {
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
+    }),
+    ({ data }) => { result.value = data },
+  )
 }
 
 const scheduleRun = createRealtimeScheduler(run, 80)

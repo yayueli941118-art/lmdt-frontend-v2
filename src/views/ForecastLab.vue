@@ -13,6 +13,7 @@
     :variables="`${targetMeta.label}（${targetMeta.unit}）；测试期 ${testSize}；预测期 ${horizon}`"
     default-basis="默认使用教学示例时间序列与可解释的基础方法。"
     reality-status="仅当学生导入并核实真实历史数据时，输出才可称为基于该数据的统计预测；情景区间仍不是置信区间。"
+    :error="workspaceError"
     @reset="resetForecast"
   >
     <template #controls>
@@ -47,9 +48,9 @@
     <template #metrics>
       <div class="metric-strip">
         <article><span>当前方法</span><strong class="metric-text">{{ submitted ? methodMeta.label : '等待第一次判断' }}</strong></article>
-        <article><span>MAE</span><strong>{{ submitted ? forecast.backtest.errors.mae : '—' }}</strong></article>
-        <article><span>RMSE</span><strong>{{ submitted ? forecast.backtest.errors.rmse : '—' }}</strong></article>
-        <article><span>MAPE</span><strong>{{ submitted ? formatMape(forecast.backtest.errors) : '—' }}</strong></article>
+        <article><span>MAE</span><strong>{{ submitted && forecast ? forecast.backtest.errors.mae : '—' }}</strong></article>
+        <article><span>RMSE</span><strong>{{ submitted && forecast ? forecast.backtest.errors.rmse : '—' }}</strong></article>
+        <article><span>MAPE</span><strong>{{ submitted && forecast ? formatMape(forecast.backtest.errors) : '—' }}</strong></article>
       </div>
     </template>
 
@@ -103,6 +104,7 @@ import RuntimeSourceBadge from '../components/RuntimeSourceBadge.vue'
 import { calculateIndicators } from '../domain/indicators/model'
 import { forecastMethods, runForecast } from '../domain/forecast/model'
 import { parseCsv } from '../lib/csv'
+import { readJsonStorage, removeJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const directions = [{ value: 'expand', label: '扩张' }, { value: 'stable', label: '稳定' }, { value: 'contract', label: '收缩' }, { value: 'restructure', label: '结构性调整' }]
 const targets = [
@@ -127,26 +129,29 @@ const deviationExplanation = ref('')
 const revisedJudgment = ref('')
 const decisionImplication = ref('')
 const recordSaved = ref(false)
+const storageError = ref('')
 
 const indicatorRows = computed(() => calculateIndicators(rows.value).series)
 const targetMeta = computed(() => targets.find(item => item.value === target.value))
 const values = computed(() => indicatorRows.value.map(row => Number(row[target.value])).filter(Number.isFinite))
 const periods = computed(() => indicatorRows.value.filter(row => Number.isFinite(Number(row[target.value]))).map(row => row.period))
 const methodMeta = computed(() => forecastMethods[method.value])
-const forecast = computed(() => runForecast(values.value, { method: method.value, k: k.value, testSize: testSize.value, horizon: horizon.value, optimisticRate: optimisticRate.value, pessimisticRate: pessimisticRate.value }))
-const methodComparison = computed(() => Object.entries(forecastMethods).map(([id, meta]) => ({ id, label: meta.label, errors: runForecast(values.value, { method: id, k: k.value, testSize: testSize.value, horizon: horizon.value }).backtest.errors })))
-const canSubmitPrediction = computed(() => initialDirection.value && initialReason.value.trim().length >= 10)
+const forecastError = computed(() => values.value.length < 4 ? '预测至少需要 4 期有效历史数据，请返回数据分析中心补充或修正数据。' : '')
+const workspaceError = computed(() => forecastError.value || storageError.value)
+const forecast = computed(() => forecastError.value ? null : runForecast(values.value, { method: method.value, k: k.value, testSize: testSize.value, horizon: horizon.value, optimisticRate: optimisticRate.value, pessimisticRate: pessimisticRate.value }))
+const methodComparison = computed(() => forecastError.value ? [] : Object.entries(forecastMethods).map(([id, meta]) => ({ id, label: meta.label, errors: runForecast(values.value, { method: id, k: k.value, testSize: testSize.value, horizon: horizon.value }).backtest.errors })))
+const canSubmitPrediction = computed(() => !forecastError.value && initialDirection.value && initialReason.value.trim().length >= 10)
 const directionLabel = computed(() => directions.find(item => item.value === initialDirection.value)?.label || '')
 const changeKey = computed(() => `${submitted.value}-${target.value}-${method.value}-${k.value}-${testSize.value}-${horizon.value}-${optimisticRate.value}-${pessimisticRate.value}`)
 const sourceDescription = computed(() => sourceType.value === '用户导入数据' ? '来自数据分析中心中由用户导入并保存在当前浏览器的时间序列。' : '内置教学示例时间序列，不对应现实地区。')
-const decisionTitle = computed(() => `基准情景未来${horizon.value}期为 ${forecast.value.future.baseline.at(-1)?.toLocaleString('zh-CN')}`)
-const decisionText = computed(() => `${methodMeta.value.label}在留出期的 MAE 为 ${forecast.value.backtest.errors.mae}。请比较你的“${directionLabel.value}”判断，解释偏差后再形成决策。`)
+const decisionTitle = computed(() => forecast.value ? `基准情景未来${horizon.value}期为 ${forecast.value.future.baseline.at(-1)?.toLocaleString('zh-CN')}` : '历史数据不足')
+const decisionText = computed(() => forecast.value ? `${methodMeta.value.label}在留出期的 MAE 为 ${forecast.value.backtest.errors.mae}。请比较你的“${directionLabel.value}”判断，解释偏差后再形成决策。` : forecastError.value)
 
 const chartOption = computed(() => {
   const futureLabels = Array.from({ length: horizon.value }, (_, index) => `未来${index + 1}`)
   const xData = [...periods.value, ...futureLabels]
   const history = [...values.value, ...Array(horizon.value).fill(null)]
-  if (!submitted.value) return baseChart(xData, [{ name: sourceType.value, type: 'line', data: history, symbolSize: 7, lineStyle: { width: 3 } }])
+  if (!submitted.value || !forecast.value) return baseChart(xData, [{ name: sourceType.value, type: 'line', data: history, symbolSize: 7, lineStyle: { width: 3 } }])
   const split = forecast.value.splitIndex
   const fitted = [...forecast.value.fitted, ...Array(horizon.value).fill(null)]
   const testPrediction = Array(periods.value.length).fill(null)
@@ -169,18 +174,18 @@ function baseChart(xData, series) {
 }
 
 onMounted(async () => {
-  const marketSaved = localStorage.getItem('lmdtMarketTimeseries')
-  if (marketSaved) { try { rows.value = JSON.parse(marketSaved); sourceType.value = '用户导入数据' } catch { await loadSample() } } else await loadSample()
-  const state = JSON.parse(localStorage.getItem('lmdtForecastDraft') || 'null')
+  const marketSaved = readJsonStorage('lmdtMarketTimeseries', null)
+  if (Array.isArray(marketSaved)) { rows.value = marketSaved; sourceType.value = '用户导入数据' } else await loadSample()
+  const state = readJsonStorage('lmdtForecastDraft', null)
   if (state) { initialDirection.value = state.initialDirection || ''; initialReason.value = state.initialReason || ''; submitted.value = Boolean(state.submitted) }
 })
 
 async function loadSample() { const response = await fetch(`${import.meta.env.BASE_URL}data/teaching-sample-timeseries.csv`); rows.value = parseCsv(await response.text()).rows }
-function submitPrediction() { if (!canSubmitPrediction.value) return; submitted.value = true; localStorage.setItem('lmdtForecastDraft', JSON.stringify({ initialDirection: initialDirection.value, initialReason: initialReason.value.trim(), submitted: true })) }
-function resetForecast() { method.value = 'naive'; k.value = 3; testSize.value = 3; horizon.value = 3; optimisticRate.value = 6; pessimisticRate.value = -5; initialDirection.value = ''; initialReason.value = ''; submitted.value = false; localStorage.removeItem('lmdtForecastDraft') }
+function submitPrediction() { if (!canSubmitPrediction.value) return; submitted.value = true; const outcome = writeJsonStorage('lmdtForecastDraft', { initialDirection: initialDirection.value, initialReason: initialReason.value.trim(), submitted: true }, { version: 1 }); storageError.value = outcome.message }
+function resetForecast() { method.value = 'naive'; k.value = 3; testSize.value = 3; horizon.value = 3; optimisticRate.value = 6; pessimisticRate.value = -5; initialDirection.value = ''; initialReason.value = ''; submitted.value = false; storageError.value = ''; removeJsonStorage('lmdtForecastDraft') }
 function formatMape(errors) { return errors.mape === null ? `不适用（0/${errors.samples}）` : `${errors.mape}%（${errors.mapeSamples}/${errors.samples}）` }
 function recordPayload() { return { experiment: '基础预测与情景推演', target: targetMeta.value.label, sourceType: sourceType.value, initialPrediction: directionLabel.value, initialReason: initialReason.value, method: methodMeta.value.label, parameters: { k: k.value, testSize: testSize.value, horizon: horizon.value, optimisticRate: optimisticRate.value, pessimisticRate: pessimisticRate.value }, errors: forecast.value.backtest.errors, future: forecast.value.future, deviationExplanation: deviationExplanation.value, revisedJudgment: revisedJudgment.value, decisionImplication: decisionImplication.value, createdAt: new Date().toISOString(), modelVersion: __APP_VERSION__ } }
-function saveRecord() { const records = JSON.parse(localStorage.getItem('lmdtForecastRecords') || '[]'); localStorage.setItem('lmdtForecastRecords', JSON.stringify([...records, recordPayload()])); recordSaved.value = true }
+function saveRecord() { const records = readJsonStorage('lmdtForecastRecords', []); const outcome = writeJsonStorage('lmdtForecastRecords', [...(Array.isArray(records) ? records : []), recordPayload()].slice(-50), { version: 1 }); recordSaved.value = outcome.ok; storageError.value = outcome.message }
 function downloadRecord(format) { const data = recordPayload(); const content = format === 'json' ? JSON.stringify(data, null, 2) : `# 基础预测实验记录\n\n- 指标：${data.target}\n- 来源：${data.sourceType}\n- 第一次判断：${data.initialPrediction}\n- 理由：${data.initialReason}\n- 方法：${data.method}\n- MAE：${data.errors.mae}\n- RMSE：${data.errors.rmse}\n- MAPE：${data.errors.mape ?? '不适用'}\n\n## 偏差解释\n${data.deviationExplanation || '待填写'}\n\n## 修订判断\n${data.revisedJudgment || '待填写'}\n\n## 决策含义\n${data.decisionImplication || '待填写'}\n`; const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/markdown' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lmdt-forecast-record.${format}`; a.click(); URL.revokeObjectURL(url) }
 </script>
 

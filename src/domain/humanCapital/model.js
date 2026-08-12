@@ -85,6 +85,7 @@ export function buildCapabilityInvestmentPlan(input = {}) {
 
 export function simulateHumanCapital(input = {}) {
   const education = clamp(Number(input.edu ?? 16), 9, 22)
+  const observationYears = clamp(Math.round(Number(input.exp_peak ?? 40)), 5, 40)
   const baselineEducation = 12
   const discrimination = clamp(Number(input.disc ?? 0) / 100, 0, 0.8)
   const discountRate = clamp(Number(input.discount_rate ?? 0.04), 0, 0.25)
@@ -95,7 +96,7 @@ export function simulateHumanCapital(input = {}) {
     : trainingType.includes('特殊')
       ? { workerCost: 3000, firmCost: 9000, factor: 1.045, label: '特殊培训：企业专属收益需要企业与劳动者共同分担。' }
       : { workerCost: 0, firmCost: 0, factor: 1, label: '未设置额外在职培训。' }
-  const ages = Array.from({ length: 43 }, (_, index) => index + 18)
+  const ages = Array.from({ length: observationYears + 1 }, (_, index) => index + 18)
   const baselineGraduationAge = baselineEducation + 6
   const selectedGraduationAge = education + 6
   const baselineWages = ages.map(age => monthlyWage({
@@ -138,6 +139,7 @@ export function simulateHumanCapital(input = {}) {
       result_type: '教材机制模拟',
     },
     metrics: {
+      observation_years: observationYears,
       lifetime_premium_pct: round(((selectedLifetime / baselineLifetime) - 1) * 100),
       discrimination_loss_pct: round(discrimination * 100),
       breakeven_age: paybackIndex >= 0 ? ages[paybackIndex] : null,

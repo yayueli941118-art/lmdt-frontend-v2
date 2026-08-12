@@ -36,6 +36,19 @@ describe('unemployment and matching models', () => {
     expect(result).not.toHaveProperty('benchmarks')
   })
 
+  it('never reports negative employment when an extreme elasticity leaves the linear range', () => {
+    const result = simulateMinimumWage({
+      min_wage: 60,
+      avg_wage: 20,
+      employment: 200,
+      demand_elasticity: -0.5,
+    })
+
+    expect(result.predicted_employment).toBe(0)
+    expect(result.employment_change_pct).toBe(-100)
+    expect(result.validity_warning).toContain('线性弹性近似')
+  })
+
   it('does not double count the natural rate as frictional unemployment', () => {
     const result = simulateUnemployment({ natural_rate: 5, skill_mismatch: 0.8 })
     expect(result.natural_unemployment_rate).toBeCloseTo(

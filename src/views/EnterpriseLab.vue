@@ -7,6 +7,7 @@
       :chart-tabs="demandChartTabs"
       v-model:active-chart="activeTab"
       :change-key="[activeTab, wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType, aiProductivity, taskSubstitution, complementarity, demandExpansion, trainingInvestment]"
+      :error="simulationError"
       @reset="resetDemand"
       formula="Q=A[αK^ρ+(1-α)L^ρ]^(1/ρ)，VMP=P×MPL，完全竞争下 VMP=W"
       assumptions="产品与要素市场完全竞争；短期资本固定，长期资本可调；生产函数规模报酬不变。"
@@ -204,6 +205,8 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
+import { readJsonStorage } from '../lib/storage'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
@@ -247,8 +250,10 @@ const taskSubstitution = ref(55)
 const demandExpansion = ref(45)
 const complementarity = ref(60)
 const trainingInvestment = ref(50)
-const loading = ref(false)
 const result = ref(null)
+const { loading, error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => { result.value = null },
+})
 
 const activeFigure = computed(() => ({
   short: '图3-1 / 图3-2',
@@ -493,9 +498,8 @@ const elasticityChartOption = computed(() => {
 })
 
 async function runDemand() {
-  loading.value = true
-  try {
-    const { data } = await axios.post(apiUrl('/api/v2/demand/textbook'), {
+  await runLatest(
+    () => axios.post(apiUrl('/api/v2/demand/textbook'), {
       wage_initial: wageInitial.value,
       wage_new: wageNew.value,
       product_price: productPrice.value,
@@ -506,13 +510,9 @@ async function runDemand() {
       labor_cost_share: laborCostShare.value,
       market_feedback: marketFeedback.value,
       tech_type: techType.value,
-    })
-    result.value = data
-  } catch (e) {
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
+    }),
+    ({ data }) => { result.value = data },
+  )
 }
 
 function resetDemand() {
@@ -538,7 +538,20 @@ function resetDemand() {
 const scheduleDemand = createRealtimeScheduler(runDemand, 80)
 
 watch([wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType], scheduleDemand)
-onMounted(runDemand)
+onMounted(() => {
+  if (route.query.preset === 'ai') {
+    const saved = readJsonStorage('lmdtAiDemandScenario', null)
+    if (saved) {
+      activeTab.value = 'ai'
+      aiProductivity.value = Number(saved.aiProductivity ?? aiProductivity.value)
+      taskSubstitution.value = Number(saved.taskSubstitution ?? taskSubstitution.value)
+      demandExpansion.value = Number(saved.demandExpansion ?? demandExpansion.value)
+      complementarity.value = Number(saved.complementarity ?? complementarity.value)
+      trainingInvestment.value = Number(saved.trainingInvestment ?? trainingInvestment.value)
+    }
+  }
+  runDemand()
+})
 </script>
 
 <style scoped>

@@ -23,4 +23,9 @@ describe('migration NPV model', () => {
     expect(lowProbability.migration.required_monthly_premium)
       .toBeGreaterThan(highProbability.migration.required_monthly_premium)
   })
+
+  it('rejects non-numeric economic inputs instead of returning NaN values', () => {
+    expect(() => simulateMigration({ ...positiveCase, w_diff: 'not-a-number' }))
+      .toThrow(/月工资溢价必须是有效数字/)
+  })
 })

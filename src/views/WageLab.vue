@@ -7,6 +7,7 @@
       :chart-tabs="wageChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[activeTab, referenceWage, theoryWage, effortSensitivity, risk, inconvenience, performanceShare, targetCompletion, education, experience, industry, region]"
+      :error="simulationError"
       @reset="resetWage"
       :result-type="resultType"
       :formula="modelFormula"
@@ -194,6 +195,7 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
@@ -229,6 +231,16 @@ const industry = ref('信息技术')
 const region = ref('一线城市')
 const distribution = ref(null)
 const mincer = ref(null)
+const theorySession = useSimulationSession({ clearResult: () => { theoryResult.value = null } })
+const mincerSession = useSimulationSession({
+  clearResult: () => {
+    distribution.value = null
+    mincer.value = null
+  },
+})
+const simulationError = computed(() => activeTab.value === 'mincer'
+  ? mincerSession.error.value
+  : activeTab.value === 'concepts' ? '' : theorySession.error.value)
 
 const industries = ['信息技术', '金融业', '制造业', '建筑业', '批发零售', '住宿餐饮', '教育', '医疗', '交通运输', '农业']
 const regions = ['一线城市', '新一线城市', '二线城市', '三线及以下']
@@ -381,37 +393,43 @@ const decileOption = computed(() => {
 
 async function runTheory() {
   if (activeTab.value === 'concepts' || activeTab.value === 'mincer') return
-  const { data } = await axios.post(apiUrl('/api/v2/wage/theory'), {
-    mode: activeTab.value,
-    reference_wage: referenceWage.value,
-    wage: theoryWage.value,
-    effort_sensitivity: effortSensitivity.value,
-    risk: risk.value,
-    inconvenience: inconvenience.value,
-    performance_share: performanceShare.value,
-    target_completion: targetCompletion.value,
-  })
-  theoryResult.value = data
+  await theorySession.runLatest(
+    () => axios.post(apiUrl('/api/v2/wage/theory'), {
+      mode: activeTab.value,
+      reference_wage: referenceWage.value,
+      wage: theoryWage.value,
+      effort_sensitivity: effortSensitivity.value,
+      risk: risk.value,
+      inconvenience: inconvenience.value,
+      performance_share: performanceShare.value,
+      target_completion: targetCompletion.value,
+    }),
+    ({ data }) => { theoryResult.value = data },
+  )
 }
 
 async function runMincer() {
-  const [distributionResponse, mincerResponse] = await Promise.all([
-    axios.post(apiUrl('/api/v2/wage/distribution'), {
-      edu_years: education.value,
-      exp_years: experience.value,
-      industry: industry.value,
-      region: region.value,
-    }),
-    axios.post(apiUrl('/api/v2/wage/mincer'), {
-      edu_years: education.value,
-      exp_years: experience.value,
-      gender: 'all',
-      ownership: 'all',
-      union_member: false,
-    }),
-  ])
-  distribution.value = distributionResponse.data
-  mincer.value = mincerResponse.data
+  await mincerSession.runLatest(
+    () => Promise.all([
+      axios.post(apiUrl('/api/v2/wage/distribution'), {
+        edu_years: education.value,
+        exp_years: experience.value,
+        industry: industry.value,
+        region: region.value,
+      }),
+      axios.post(apiUrl('/api/v2/wage/mincer'), {
+        edu_years: education.value,
+        exp_years: experience.value,
+        gender: 'all',
+        ownership: 'all',
+        union_member: false,
+      }),
+    ]),
+    ([distributionResponse, mincerResponse]) => {
+      distribution.value = distributionResponse.data
+      mincer.value = mincerResponse.data
+    },
+  )
 }
 
 function resetWage() {

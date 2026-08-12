@@ -13,6 +13,7 @@
     :variables="`${currentMeta.numerator}；${currentMeta.denominator}；单位 ${currentMeta.unit}`"
     default-basis="默认加载明确标注的教学示例数据，学生可替换为自行核实的数据。"
     :reality-status="realityStatus"
+    :error="storageError"
     @reset="loadTeachingSample"
   >
     <template #controls>
@@ -120,8 +121,10 @@ import LmdtChart from '../components/LmdtChart.vue'
 import RuntimeSourceBadge from '../components/RuntimeSourceBadge.vue'
 import { calculateIndicators, indicatorMeta, validateTimeSeries } from '../domain/indicators/model'
 import { parseCsv } from '../lib/csv'
+import { readJsonStorage, removeJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const rows = ref([])
+const storageError = ref('')
 const indicator = ref('unemployment_rate')
 const sourceType = ref('教学示例数据')
 const importErrors = ref([])
@@ -161,10 +164,8 @@ const chartOption = computed(() => ({
 }))
 
 onMounted(async () => {
-  const saved = localStorage.getItem('lmdtMarketTimeseries')
-  if (saved) {
-    try { rows.value = JSON.parse(saved); sourceType.value = '用户导入数据'; return } catch { /* load sample below */ }
-  }
+  const saved = readJsonStorage('lmdtMarketTimeseries', null)
+  if (Array.isArray(saved)) { rows.value = saved; sourceType.value = '用户导入数据'; return }
   await loadTeachingSample()
 })
 
@@ -174,7 +175,8 @@ async function loadTeachingSample() {
   rows.value = parsed.rows
   importErrors.value = parsed.errors
   sourceType.value = '教学示例数据'
-  localStorage.removeItem('lmdtMarketTimeseries')
+  storageError.value = ''
+  removeJsonStorage('lmdtMarketTimeseries')
 }
 
 async function importFile(event) {
@@ -184,7 +186,8 @@ async function importFile(event) {
   rows.value = parsed.rows
   importErrors.value = parsed.errors
   sourceType.value = '用户导入数据'
-  localStorage.setItem('lmdtMarketTimeseries', JSON.stringify(parsed.rows))
+  const outcome = writeJsonStorage('lmdtMarketTimeseries', parsed.rows, { version: 1 })
+  storageError.value = outcome.message
   event.target.value = ''
 }
 

@@ -93,6 +93,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { APP_VERSION } from '../config/release'
+import { readJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const STORAGE_KEY = 'lmdtReportExperimentRecords'
 
@@ -192,8 +193,8 @@ function saveToWorkbench() {
     createdAt,
     timestamp: createdAt,
   })
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 30)))
-  setMessage('已保存到当前浏览器的报告工作台。')
+  const outcome = writeJsonStorage(STORAGE_KEY, records.slice(0, 30), { version: 2 })
+  setMessage(outcome.ok ? '已保存到当前浏览器的报告工作台。' : outcome.message)
 }
 
 function captureBaseline() {
@@ -223,12 +224,8 @@ function snapshotSummary(value) {
 }
 
 function readRecords() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  const parsed = readJsonStorage(STORAGE_KEY, [])
+  return Array.isArray(parsed) ? parsed : []
 }
 
 function setMessage(text) {

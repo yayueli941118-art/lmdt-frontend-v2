@@ -52,7 +52,7 @@
     </template>
 
     <template #record>
-      <div class="record-box"><h3>实验记录</h3><p>{{ result.conclusion }}</p><button type="button" @click="saveRecord">保存到报告工作台</button><router-link to="/report/workbench">进入报告工作台</router-link><span v-if="saved">已保存到当前浏览器。</span></div>
+      <div class="record-box"><h3>实验记录</h3><p>{{ result.conclusion }}</p><button type="button" @click="saveRecord">保存到报告工作台</button><router-link to="/lab/enterprise?preset=ai">带入劳动需求实验</router-link><router-link to="/report/workbench">进入报告工作台</router-link><span v-if="saved">已保存到当前浏览器。</span><span v-else-if="storageMessage" class="storage-error" role="alert">{{ storageMessage }}</span></div>
     </template>
 
     <template #analysis>
@@ -83,12 +83,14 @@ import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LmdtChart from '../components/LmdtChart.vue'
 import RuntimeSourceBadge from '../components/RuntimeSourceBadge.vue'
 import { analyzeOccupationTasks, occupationTemplates } from '../domain/aiImpact/model'
+import { readJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const chartTabs = [{ key: 'tasks', label: '任务结构' }, { key: 'effects', label: '就业效应' }, { key: 'skills', label: '技能缺口' }]
 const activeChart = ref('tasks')
 const occupation = ref('人力资源专员')
 const tasks = ref(cloneTemplate(occupation.value))
 const saved = ref(false)
+const storageMessage = ref('')
 const parameters = reactive({ baselineEmployment: 100, taskSubstitution: 55, aiProductivity: 50, demandExpansion: 45, complementarity: 60, trainingInvestment: 50, aiCost: 35 })
 const controls = [
   { key: 'taskSubstitution', label: '任务替代强度', min: 0, max: 100, unit: '' },
@@ -111,7 +113,18 @@ const chartOption = computed(() => {
   return { ...common, yAxis: { type: 'category', inverse: true, data: result.value.tasks.map(item => item.name), axisLabel: { color: '#cbd5e1', width: 100, overflow: 'truncate' } }, xAxis: { ...common.xAxis, type: 'value', min: 0, max: shareMax, interval: 5, name: '标准化占比(%)' }, series: Object.entries(categoryLabels).map(([key, label]) => ({ type: 'bar', stack: 'task', name: label, barMaxWidth: 20, label: { show: true, position: 'right', color: '#cbd5e1', formatter: p => p.value ? `${p.value}%` : '' }, data: result.value.tasks.map(item => item.category === key ? item.normalizedShare : 0) })) }
 })
 
-watch([tasks, () => ({ ...parameters })], () => { saved.value = false; localStorage.setItem('lmdtAiOccupationDraft', JSON.stringify({ occupation: occupation.value, tasks: tasks.value, parameters })) }, { deep: true })
+const savedDraft = readJsonStorage('lmdtAiOccupationDraft', null)
+if (savedDraft && occupationTemplates[savedDraft.occupation] && Array.isArray(savedDraft.tasks)) {
+  occupation.value = savedDraft.occupation
+  tasks.value = savedDraft.tasks
+  Object.assign(parameters, savedDraft.parameters || {})
+}
+
+watch([tasks, () => ({ ...parameters })], () => {
+  saved.value = false
+  const outcome = writeJsonStorage('lmdtAiOccupationDraft', { occupation: occupation.value, tasks: tasks.value, parameters }, { version: 1 })
+  storageMessage.value = outcome.message
+}, { deep: true })
 
 function cloneTemplate(name) { return JSON.parse(JSON.stringify(occupationTemplates[name])) }
 function loadTemplate() { tasks.value = cloneTemplate(occupation.value) }
@@ -119,11 +132,42 @@ function resetAll() { occupation.value = '人力资源专员'; tasks.value = clo
 function signed(value) { return `${value > 0 ? '+' : ''}${value}` }
 function saveRecord() {
   const key = 'lmdtReportExperimentRecords'
-  const records = JSON.parse(localStorage.getItem(key) || '[]')
-  const record = { id: `ai-occupation-${Date.now()}`, experimentName: 'AI岗位任务重构', name: 'AI岗位任务重构', createdAt: new Date().toISOString(), params: { 岗位: occupation.value, 替代强度: parameters.taskSubstitution, 需求扩张: parameters.demandExpansion, 互补性: parameters.complementarity, 培训投入: parameters.trainingInvestment }, metrics: { 任务暴露指数: result.value.exposureIndex, 短期就业指数: result.value.shortTermEmployment, 长期就业指数: result.value.longTermEmployment, 最大技能缺口: result.value.topSkillGaps[0]?.name || '无' }, conclusion: result.value.conclusion, sourceType: '情景推演结果' }
-  localStorage.setItem(key, JSON.stringify([...records, record]))
-  localStorage.setItem('lmdtAiDemandScenario', JSON.stringify({ ...parameters, occupation: occupation.value, result: result.value }))
-  saved.value = true
+  const stored = readJsonStorage(key, [])
+  const records = Array.isArray(stored) ? stored : []
+  const createdAt = new Date().toISOString()
+  const record = {
+    id: `ai-occupation-${Date.now()}`,
+    experimentName: 'AI岗位任务重构',
+    parameters: {
+      岗位: occupation.value,
+      替代强度: parameters.taskSubstitution,
+      需求扩张: parameters.demandExpansion,
+      互补性: parameters.complementarity,
+      培训投入: parameters.trainingInvestment,
+    },
+    metrics: {
+      任务暴露指数: result.value.exposureIndex,
+      短期就业指数: result.value.shortTermEmployment,
+      长期就业指数: result.value.longTermEmployment,
+      最大技能缺口: result.value.topSkillGaps[0]?.name || '无',
+    },
+    conclusion: result.value.conclusion,
+    initialPrediction: '',
+    initialReason: '',
+    baselineResult: null,
+    counterfactualResult: null,
+    studentExplanation: '',
+    ruleFeedback: null,
+    revisedExplanation: '',
+    modelVersion: 'ai-occupation-3.0',
+    dataSourceType: '教学情景参数',
+    createdAt,
+    timestamp: createdAt,
+  }
+  const recordOutcome = writeJsonStorage(key, [record, ...records].slice(0, 30), { version: 2 })
+  const scenarioOutcome = writeJsonStorage('lmdtAiDemandScenario', { ...parameters, occupation: occupation.value, result: result.value }, { version: 1 })
+  saved.value = recordOutcome.ok && scenarioOutcome.ok
+  storageMessage.value = recordOutcome.message || scenarioOutcome.message
 }
 </script>
 
@@ -131,5 +175,6 @@ function saveRecord() {
 .control-stack,.analysis-stack { display:grid; gap:14px; }.select-field,.range-field { display:grid; gap:7px; color:#cbd5e1; font-size:13px; font-weight:700 }.select-field select { min-height:40px; padding:0 10px; border:1px solid #334155; border-radius:6px; color:#f8fafc; background:#0f172a }.range-field span { display:flex; justify-content:space-between; gap:8px }.range-field strong { color:#7dd3fc }.range-field input { width:100%; accent-color:#38bdf8 }.control-boundary { margin:0; padding:10px; border-left:3px solid #fb923c; color:#fed7aa; background:rgba(251,146,60,.08); font-size:12px; line-height:1.5 }
 .metric-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px }.metric-strip article { min-width:0; padding:10px 12px; border:1px solid rgba(148,163,184,.14); border-radius:6px; background:#111b2e }.metric-strip span { display:block; color:#7f8da3; font-size:11px }.metric-strip strong { display:block; margin-top:4px; color:#f8fafc; font-size:20px }
 .chart-card { height:100%; display:grid; grid-template-rows:auto minmax(0,1fr); padding:14px; border:1px solid rgba(148,163,184,.14); border-radius:7px; background:#111b2e }.chart-heading { display:flex; justify-content:space-between; gap:14px }.chart-heading span { color:#64748b; font-size:11px }.chart-heading h2 { margin:3px 0 0; font-size:17px }.chart-frame { min-height:0 }.drawer-copy,.record-box { display:grid; gap:12px; color:#cbd5e1; line-height:1.7 }.record-box button,.record-box a { min-height:40px; display:inline-flex; align-items:center; justify-content:center; padding:0 14px; border:1px solid #2563eb; border-radius:6px; color:#eff6ff; background:#1d4ed8; text-decoration:none; font-weight:800 }.record-box span { color:#86efac }.analysis-stack section { padding-bottom:14px; border-bottom:1px solid #263449 }.task-table { display:grid; gap:8px }.task-row { display:grid; grid-template-columns:minmax(150px,2fr) repeat(2,74px) 110px repeat(2,74px); gap:6px; padding:8px; border:1px solid #263449; background:#0f172a }.task-row label { display:grid; gap:3px; color:#64748b; font-size:10px }.task-row input,.task-row select { min-width:0; min-height:34px; padding:5px 7px; border:1px solid #334155; border-radius:4px; color:#e2e8f0; background:#111b2e }
+.record-box .storage-error { color:#fca5a5; }
 @media(max-width:760px){.metric-strip{grid-template-columns:repeat(2,1fr)}.task-row{grid-template-columns:1fr 1fr}.task-row>input{grid-column:1/-1}.metric-strip strong{font-size:16px}}
 </style>
