@@ -56,6 +56,9 @@ export function calculateErrors(actual = [], predicted = []) {
 
 export function runForecast(inputSeries = [], options = {}) {
   const values = inputSeries.map(Number).filter(Number.isFinite)
+  if (values.length < 4) {
+    throw new RangeError('预测至少需要 4 期有效历史数据（3 期训练、1 期测试）。')
+  }
   const method = forecastMethods[options.method] ? options.method : 'naive'
   const testSize = Math.max(1, Math.min(Number(options.testSize ?? 3), Math.max(1, values.length - 3)))
   const horizon = Math.max(1, Math.min(Number(options.horizon ?? 3), 12))

@@ -33,6 +33,7 @@
       :chart-tabs="humanCapitalTabs"
       v-model:active-chart="activeChart"
       :change-key="[params, capabilityRatings, capabilityInputs, activeChart]"
+      :error="simulationError"
       result-type="教材公式与教学情景参数"
       formula="ln(W)=α+βS+γX+δX²；NPV=ΣΔCFt/(1+r)^t"
       assumptions="在校期逐年计入直接成本和放弃的对照组工资；培训成本按一般培训或特殊培训分担。"
@@ -82,7 +83,7 @@
 
           <div class="param-group">
             <label class="param-label">
-              <span class="param-icon">📈</span> 观察年限
+              <span class="param-icon">📈</span> 分析期（从18岁起）
               <span class="param-val">{{ params.exp_peak }}年</span>
             </label>
             <input type="range" v-model.number="params.exp_peak" min="5" max="40" step="1" @input="scheduleFetch" class="slider" />
@@ -256,6 +257,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
@@ -294,6 +296,12 @@ const params = reactive({
 })
 
 const response = ref(null)
+const { error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => {
+    response.value = null
+    chartInstance?.clear()
+  },
+})
 const activeChart = ref('income')
 const humanCapitalTabs = [{ key: 'income', label: '教育回报' }, { key: 'capability', label: '职业能力' }]
 const capabilityRatings = reactive(Object.fromEntries(CAPABILITY_DIMENSIONS.map((item,index) => [item.id, 45 + (index % 5) * 5])))
@@ -316,6 +324,7 @@ const individualConclusion = computed(() => {
 
 const recordParameters = computed(() => ({
   '受教育年限': `${params.edu} 年`,
+  '分析期': `18岁起 ${params.exp_peak} 年`,
   '培训类型': params.train_type,
   '年直接成本': `${params.direct_cost} 元`,
   '贴现率': `${(params.discount_rate * 100).toFixed(1)}%`,
@@ -352,12 +361,14 @@ function resetIndividual() {
 }
 
 const fetchData = async () => {
-  try {
-    const { data } = await axios.post(apiUrl('/api/v1/individual-lab/simulate'), { ...params })
-    response.value = data
-    await nextTick()
-    renderChart()
-  } catch (e) { console.error('API error:', e) }
+  await runLatest(
+    () => axios.post(apiUrl('/api/v1/individual-lab/simulate'), { ...params }),
+    async ({ data }) => {
+      response.value = data
+      await nextTick()
+      renderChart()
+    },
+  )
 }
 
 // ── ECharts 图表 ──────────────────────────────
@@ -430,6 +441,9 @@ const renderChart = () => {
     })
   }
 
+  if (marks.length > 0) series[1].markPoint = { data: marks }
+  if (markLines.length > 0) series[1].markLine = { silent: true, symbol: 'none', data: markLines }
+
   const option = {
     backgroundColor: 'transparent',
     animationDuration: 400,
@@ -439,8 +453,6 @@ const renderChart = () => {
     yAxis: { type: 'value', name: '月收入 (元)', nameTextStyle: { color: '#94a3b8', fontSize: 12 }, axisLine: { lineStyle: { color: 'rgba(148,163,184,0.2)' } }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(148,163,184,0.06)' } } },
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(148, 163, 184, 0.2)', textStyle: { color: '#f1f5f9', fontSize: 13 } },
     series,
-    markPoint: marks.length > 0 ? { data: marks } : undefined,
-    markLine: markLines.length > 0 ? { silent: true, symbol: 'none', data: markLines } : undefined,
   }
 
   chartInstance.setOption(option, { notMerge: false, lazyUpdate: true })

@@ -24,4 +24,9 @@ describe('basic forecast model', () => {
       expect(result.future.baseline.every(Number.isFinite)).toBe(true)
     }
   })
+
+  it('rejects an empty or too-short series instead of reporting zero-error forecasts', () => {
+    expect(() => runForecast([], { testSize: 3 })).toThrow(/至少需要 4 期/)
+    expect(() => runForecast([10, 12, 14], { testSize: 1 })).toThrow(/至少需要 4 期/)
+  })
 })

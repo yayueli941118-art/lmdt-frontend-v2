@@ -7,6 +7,7 @@
       :chart-tabs="tourismChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[city, sector, touristGrowth, digitalLevel, eventIntensity, seasonality, digitalSkill, dataSkill, serviceSkill, planningSkill, mediaSkill, cultureSkill, salary, stability, training, promotion, policy]"
+      :error="workspaceError"
       @reset="resetScenario"
       :result-type="calibration?.status === 'ready' ? '用户导入样本校准后的情景推演' : '教学情景参数推演'"
       formula="岗位热度指数=岗位类型基准×游客增长×数字化×活动强度；吸引力由薪酬与非工资收益加权。"
@@ -222,6 +223,8 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
+import { readJsonStorage, removeJsonStorage } from '../lib/storage'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
@@ -277,9 +280,13 @@ const planningSkill = ref(55)
 const mediaSkill = ref(60)
 const cultureSkill = ref(64)
 
-const loading = ref(false)
 const result = ref(null)
+const { loading, error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => { result.value = null },
+})
 const calibration = ref(null)
+const storageError = ref('')
+const workspaceError = computed(() => simulationError.value || storageError.value)
 
 const skillControls = [
   { key: 'digital_skill', label: '数字技能水平', model: digitalSkill },
@@ -445,19 +452,15 @@ const policyChart = computed(() => ({
 }))
 
 async function run() {
-  loading.value = true
-  try {
-    const { data } = await axios.post(apiUrl('/api/v2/tourism/chengyu/simulate'), payload.value)
-    result.value = data
-  } catch (error) {
-    console.error(error)
-  } finally {
-    loading.value = false
-  }
+  await runLatest(
+    () => axios.post(apiUrl('/api/v2/tourism/chengyu/simulate'), payload.value),
+    ({ data }) => { result.value = data },
+  )
 }
 
 function clearCalibration() {
-  localStorage.removeItem(CALIBRATION_KEY)
+  removeJsonStorage(CALIBRATION_KEY)
+  storageError.value = ''
   calibration.value = null
   resetScenario()
 }
@@ -498,15 +501,11 @@ watch([
 ], scheduleRun)
 
 onMounted(() => {
-  try {
-    const stored = JSON.parse(localStorage.getItem(CALIBRATION_KEY) || 'null')
-    if (stored?.status === 'ready') {
-      calibration.value = stored
-      salary.value = stored.parameters?.salary_reference || salaryRange.default
-      digitalLevel.value = stored.parameters?.digital_level || 62
-    }
-  } catch {
-    localStorage.removeItem(CALIBRATION_KEY)
+  const stored = readJsonStorage(CALIBRATION_KEY, null)
+  if (stored?.status === 'ready') {
+    calibration.value = stored
+    salary.value = stored.parameters?.salary_reference || salaryRange.default
+    digitalLevel.value = stored.parameters?.digital_level || 62
   }
   if (route.query.preset === 'digital') {
     sector.value = '数字文博'

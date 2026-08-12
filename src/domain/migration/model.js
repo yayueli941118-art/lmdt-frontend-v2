@@ -1,4 +1,5 @@
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+import { boundedNumber, finiteNumber, nonNegativeNumber } from '../shared/numbers'
+
 const round = (value, digits = 2) => Number(value.toFixed(digits))
 
 function npvAtRate(cashFlows, rate) {
@@ -19,16 +20,16 @@ function estimateIrr(cashFlows) {
 }
 
 export function simulateMigration(input = {}) {
-  const migrateAge = clamp(Number(input.migrate_age ?? 25), 18, 59)
-  const retirementAge = clamp(Number(input.retirement_age ?? 60), migrateAge + 1, 70)
-  const monthlyPremium = Number(input.w_diff ?? 3000)
-  const movingCost = Math.max(Number(input.c_move ?? 20000), 0)
-  const annualPsychologicalCost = Math.max(Number(input.c_psych ?? 3000), 0)
+  const migrateAge = boundedNumber(input.migrate_age, 25, 18, 59, '迁移年龄')
+  const retirementAge = boundedNumber(input.retirement_age, 60, migrateAge + 1, 70, '退休年龄')
+  const monthlyPremium = finiteNumber(input.w_diff, 3000, '月工资溢价')
+  const movingCost = nonNegativeNumber(input.c_move, 20000, '搬迁成本')
+  const annualPsychologicalCost = nonNegativeNumber(input.c_psych, 3000, '年度心理成本')
   const familyMigrate = Boolean(input.family_migrate)
-  const annualSpouseLoss = familyMigrate ? Math.max(Number(input.spouse_loss ?? 0), 0) : 0
-  const discountRate = clamp(Number(input.discount_rate ?? 0.04), 0, 0.3)
-  const employmentProbability = clamp(Number(input.employment_probability ?? 0.9), 0, 1)
-  const wageGrowth = clamp(Number(input.wage_growth ?? 0.02), -0.2, 0.2)
+  const annualSpouseLoss = familyMigrate ? nonNegativeNumber(input.spouse_loss, 0, '配偶年度收入损失') : 0
+  const discountRate = boundedNumber(input.discount_rate, 0.04, 0, 0.3, '贴现率')
+  const employmentProbability = boundedNumber(input.employment_probability, 0.9, 0, 1, '就业概率')
+  const wageGrowth = boundedNumber(input.wage_growth, 0.02, -0.2, 0.2, '工资增长率')
   const years = Array.from(
     { length: retirementAge - migrateAge },
     (_, index) => migrateAge + index + 1,

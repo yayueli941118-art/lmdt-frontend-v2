@@ -5,6 +5,7 @@
       subtitle="贝克尔雇主偏见 · 统计性歧视 · Oaxaca-Blinder 分解"
       kicker="CH.07 · 劳动力市场歧视"
       :change-key="[mechanismMode, discPct, eduGap, marketWage, demandElasticity, individualSignal, groupPrior, signalReliability, decompositionMode]"
+      :error="simulationError"
       @reset="resetDiscrimination"
       :result-type="resultType"
       :formula="formula"
@@ -170,6 +171,7 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
@@ -193,6 +195,12 @@ const decompositionMode = ref('two')
 const beckerResult = ref(null)
 const statisticalResult = ref(null)
 const oaxacaResult = ref(null)
+const { error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => {
+    const targets = { becker: beckerResult, statistical: statisticalResult, oaxaca: oaxacaResult }
+    targets[mechanismMode.value].value = null
+  },
+})
 
 const resultType = computed(() =>
   mechanismMode.value === 'oaxaca' ? '合成样本真实回归' : '教材机制模拟')
@@ -333,22 +341,24 @@ function generateData() {
 }
 
 async function run() {
-  const [becker, statistical, oaxaca] = await Promise.all([
-    axios.post(apiUrl('/api/v2/discrimination/becker'), {
+  const requests = {
+    becker: () => axios.post(apiUrl('/api/v2/discrimination/becker'), {
       market_wage: marketWage.value,
       discrimination_coefficient: discPct.value / 100,
       demand_elasticity: demandElasticity.value,
     }),
-    axios.post(apiUrl('/api/v2/discrimination/statistical'), {
+    statistical: () => axios.post(apiUrl('/api/v2/discrimination/statistical'), {
       signal: individualSignal.value,
       group_prior: groupPrior.value,
       signal_reliability: signalReliability.value,
     }),
-    axios.post(apiUrl('/api/v2/discrimination/decompose'), generateData()),
-  ])
-  beckerResult.value = becker.data
-  statisticalResult.value = statistical.data
-  oaxacaResult.value = oaxaca.data
+    oaxaca: () => axios.post(apiUrl('/api/v2/discrimination/decompose'), generateData()),
+  }
+  const targets = { becker: beckerResult, statistical: statisticalResult, oaxaca: oaxacaResult }
+  await runLatest(
+    requests[mechanismMode.value],
+    ({ data }) => { targets[mechanismMode.value].value = data },
+  )
 }
 
 function resetDiscrimination() {
@@ -366,6 +376,7 @@ function resetDiscrimination() {
 const scheduleRun = createRealtimeScheduler(run, 80)
 
 watch([
+  mechanismMode,
   discPct,
   eduGap,
   marketWage,

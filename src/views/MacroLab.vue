@@ -5,6 +5,7 @@
       subtitle="贝弗里奇曲线 · 结构性失业诊断 · AI冲击 · 政策组合"
       kicker="CH.09 · 宏观失业"
       :change-key="[aiRisk, mismatchIndex, activePolicies]"
+      :error="simulationError"
       @reset="resetMacro"
       formula="v=a+k/u；错配冲击使 UV 曲线外移，匹配效率改善使其向原点移动。"
       assumptions="失业率和岗位空缺率采用相同比率口径；图示范围限定为课堂可读区间。"
@@ -106,6 +107,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
@@ -117,7 +119,10 @@ import { CanvasRenderer } from 'echarts/renderers'
 use([LineChart, GridComponent, LegendComponent, MarkPointComponent, TooltipComponent, CanvasRenderer])
 
 
-const aiRisk = ref(30); const mismatchIndex = ref(0.5); const loading = ref(false); const result = ref(null)
+const aiRisk = ref(30); const mismatchIndex = ref(0.5); const result = ref(null)
+const { loading, error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => { result.value = null },
+})
 const policies = [
   { value: '最低工资调整', label: '最低工资调整' },
   { value: '失业救济金', label: '失业救济金' },
@@ -181,14 +186,12 @@ const beveridgeChart = computed(() => {
 })
 
 async function run() {
-  loading.value = true
-  try {
-    const { data } = await axios.post(apiUrl('/api/v2/macro/beveridge'), {
+  await runLatest(
+    () => axios.post(apiUrl('/api/v2/macro/beveridge'), {
       ai_risk: aiRisk.value, mismatch_index: mismatchIndex.value, active_policies: activePolicies.value
-    })
-    result.value = data
-  } catch(e) { console.error(e) }
-  finally { loading.value = false }
+    }),
+    ({ data }) => { result.value = data },
+  )
 }
 
 function resetMacro() {

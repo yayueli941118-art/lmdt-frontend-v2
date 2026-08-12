@@ -7,6 +7,7 @@
       :chart-tabs="tabs"
       v-model:active-chart="activeTab"
       :change-key="[activeTab, naturalRate, mismatch, aiRisk, demandShock, benefit, searchCost, expectedOffer, patience, dmpUnemployed, dmpVacancies, dmpEfficiency, dmpSeparation, skillTraining, minimumWage, averageWage, employment, demandElasticity]"
+      :error="simulationError"
       @reset="resetCurrent"
       :result-type="resultType"
       :formula="formula"
@@ -125,6 +126,7 @@ import { GridComponent, LegendComponent, MarkPointComponent, TooltipComponent } 
 import { CanvasRenderer } from 'echarts/renderers'
 import { apiUrl } from '../lib/api'
 import { createRealtimeScheduler } from '../lib/realtime'
+import { useSimulationSession } from '../lib/simulationSession'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
@@ -193,6 +195,18 @@ const searchResult = ref(null)
 const dmpResult = ref(null)
 const beveridgeResult = ref(null)
 const minimumWageResult = ref(null)
+const { error: simulationError, runLatest } = useSimulationSession({
+  clearResult: () => {
+    const targets = {
+      stock: unemploymentResult,
+      search: searchResult,
+      dmp: dmpResult,
+      beveridge: beveridgeResult,
+      minimum: minimumWageResult,
+    }
+    targets[activeTab.value].value = null
+  },
+})
 
 const resultType = computed(() =>
   activeTab.value === 'minimum' ? '教学情景参数' : '教材机制模拟')
@@ -386,9 +400,9 @@ function lineOption(x, series, xName, yName) {
   }
 }
 
-async function runAll() {
-  const [unemployment, search, dmp, beveridge, minimum] = await Promise.all([
-    axios.post(apiUrl('/api/v2/macro/unemployment'), {
+async function runCurrent() {
+  const requests = {
+    stock: () => axios.post(apiUrl('/api/v2/macro/unemployment'), {
       natural_rate: naturalRate.value,
       min_wage: minimumWage.value,
       unemployment_benefit: benefit.value,
@@ -396,39 +410,45 @@ async function runAll() {
       ai_risk: aiRisk.value,
       labor_demand_shock: demandShock.value,
     }),
-    axios.post(apiUrl('/api/v2/macro/search'), {
+    search: () => axios.post(apiUrl('/api/v2/macro/search'), {
       benefit: benefit.value,
       search_cost: searchCost.value,
       expected_offer: expectedOffer.value,
       patience: patience.value,
     }),
-    axios.post(apiUrl('/api/v2/macro/dmp'), {
+    dmp: () => axios.post(apiUrl('/api/v2/macro/dmp'), {
       unemployed: dmpUnemployed.value,
       vacancies: dmpVacancies.value,
       matching_efficiency: dmpEfficiency.value,
       separation_rate: dmpSeparation.value,
       alpha: 0.5,
     }),
-    axios.post(apiUrl('/api/v2/macro/beveridge'), {
+    beveridge: () => axios.post(apiUrl('/api/v2/macro/beveridge'), {
       mismatch_index: mismatch.value,
       ai_risk: aiRisk.value,
       active_policies: skillTraining.value ? ['技能重塑补贴'] : [],
     }),
-    axios.post(apiUrl('/api/v2/macro/min-wage-impact'), {
+    minimum: () => axios.post(apiUrl('/api/v2/macro/min-wage-impact'), {
       min_wage: minimumWage.value,
       avg_wage: averageWage.value,
       employment: employment.value,
       demand_elasticity: demandElasticity.value,
     }),
-  ])
-  unemploymentResult.value = unemployment.data
-  searchResult.value = search.data
-  dmpResult.value = dmp.data
-  beveridgeResult.value = beveridge.data
-  minimumWageResult.value = minimum.data
+  }
+  const targets = {
+    stock: unemploymentResult,
+    search: searchResult,
+    dmp: dmpResult,
+    beveridge: beveridgeResult,
+    minimum: minimumWageResult,
+  }
+  await runLatest(
+    requests[activeTab.value],
+    ({ data }) => { targets[activeTab.value].value = data },
+  )
 }
 
-const scheduleRun = createRealtimeScheduler(runAll, 80)
+const scheduleRun = createRealtimeScheduler(runCurrent, 80)
 
 function resetCurrent() {
   const resets = {
@@ -442,6 +462,7 @@ function resetCurrent() {
 }
 
 watch([
+  activeTab,
   naturalRate,
   mismatch,
   aiRisk,
@@ -467,7 +488,7 @@ onMounted(() => {
     aiRisk.value = 60
     skillTraining.value = false
   }
-  runAll()
+  runCurrent()
 })
 </script>
 

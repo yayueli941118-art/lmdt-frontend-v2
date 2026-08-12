@@ -24,7 +24,10 @@ export function stoneGearyChoice({
 }) {
   const fullIncome = nonLaborIncome + wage * timeEndowment
   const committedCost = consumptionFloor + wage * leisureFloor
-  const surplus = Math.max(fullIncome - committedCost, 1e-8)
+  if (fullIncome <= committedCost) {
+    throw new RangeError('当前预算不足以同时满足最低消费与最低闲暇，请降低基本消费/闲暇或提高收入。')
+  }
+  const surplus = fullIncome - committedCost
   const leisure = clamp(
     leisureFloor + (beta * surplus) / wage,
     leisureFloor + 1e-6,

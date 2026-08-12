@@ -14,6 +14,16 @@ describe('human capital cash-flow model', () => {
     expect(high.metrics.npv).toBeLessThan(low.metrics.npv)
   })
 
+  it('uses the selected observation horizon for wage paths and investment returns', () => {
+    const short = simulateHumanCapital({ edu: 16, exp_peak: 10 })
+    const long = simulateHumanCapital({ edu: 16, exp_peak: 40 })
+
+    expect(short.charts.age_years.at(-1)).toBe(28)
+    expect(long.charts.age_years.at(-1)).toBe(58)
+    expect(long.charts.age_years.length).toBeGreaterThan(short.charts.age_years.length)
+    expect(long.metrics.npv).not.toBe(short.metrics.npv)
+  })
+
   it('assigns part of special-training cost to the firm', () => {
     const result = simulateHumanCapital({ edu: 16, train_type: '特殊培训 (企业专属技能)' })
     expect(result.metrics.training_firm_cost).toBeGreaterThan(0)

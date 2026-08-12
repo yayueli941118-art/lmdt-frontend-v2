@@ -12,6 +12,7 @@
     limitation="不能证明真实考试成绩、长期能力或外部AI使用情况。"
     default-basis="题型比例对应指标、模型、曲线、数据图表、预测与AI错误识别五类能力。"
     reality-status="否。当前是规则评分的教学训练记录。"
+    :error="storageError"
     @reset="restart"
   >
     <template #controls>
@@ -63,6 +64,7 @@ import AiAuditPanel from '../components/AiAuditPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import { assessmentBlueprint, buildPracticeSet } from '../domain/assessment/questionBank'
 import { scoreAttempt } from '../domain/assessment/scoring'
+import { readJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const baseSeed = 20260811
 const attempt = ref(1)
@@ -73,6 +75,7 @@ const answers = ref({})
 const submitted = ref(false)
 const startedAt = ref(Date.now())
 const previousScore = ref(null)
+const storageError = ref('')
 const current = computed(() => questions.value[currentIndex.value])
 const result = computed(() => scoreAttempt(questions.value, answers.value))
 const answeredCount = computed(() => questions.value.filter(hasAnswer).length)
@@ -87,7 +90,7 @@ watch(current, question => {
 
 function hasAnswer(question) { const value=answers.value[question.id]; return Array.isArray(value)?value.length>0:value!==undefined&&value!=='' }
 function answerClass(value) { if(!submitted.value) return ''; const answer=current.value.answer; const selected=Array.isArray(answers.value[current.value.id])?answers.value[current.value.id].includes(value):answers.value[current.value.id]===value; const correct=Array.isArray(answer)?answer.includes(value):answer===value; return {selected,correct,incorrect:selected&&!correct} }
-function submitAttempt(){ submitted.value=true; const records=JSON.parse(localStorage.getItem('lmdtExamPracticeRecords')||'[]'); const record={id:`practice-${Date.now()}`,seed:seed.value,attempt:attempt.value,score:result.value.score,answers:{...answers.value},dimensions:result.value.dimensions,errorTypes:result.value.errorTypes,durationSeconds:Math.round((Date.now()-startedAt.value)/1000),createdAt:new Date().toISOString()}; localStorage.setItem('lmdtExamPracticeRecords',JSON.stringify([...records,record])) }
+function submitAttempt(){ submitted.value=true; const stored=readJsonStorage('lmdtExamPracticeRecords',[]); const records=Array.isArray(stored)?stored:[]; const record={id:`practice-${Date.now()}`,seed:seed.value,attempt:attempt.value,score:result.value.score,answers:{...answers.value},dimensions:result.value.dimensions,errorTypes:result.value.errorTypes,durationSeconds:Math.round((Date.now()-startedAt.value)/1000),createdAt:new Date().toISOString()}; const outcome=writeJsonStorage('lmdtExamPracticeRecords',[...records,record].slice(-50),{version:1}); storageError.value=outcome.message }
 function restart(){ previousScore.value=submitted.value?result.value.score:previousScore.value; attempt.value+=1; currentIndex.value=0; answers.value={}; submitted.value=false; startedAt.value=Date.now() }
 </script>
 
