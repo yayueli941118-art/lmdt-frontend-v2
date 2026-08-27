@@ -4,6 +4,9 @@
       title="成渝文旅产业实验室"
       subtitle="岗位需求预测 · 技能缺口诊断 · 薪酬吸引力 · 政策情景"
       kicker="应用专题 · 成渝双城经济圈"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="tourismChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[city, sector, touristGrowth, digitalLevel, eventIntensity, seasonality, digitalSkill, dataSkill, serviceSkill, planningSkill, mediaSkill, cultureSkill, salary, stability, training, promotion, policy]"
@@ -229,6 +232,7 @@ import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import { sliderRanges } from '../config/sliderRanges'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, GaugeChart } from 'echarts/charts'
@@ -236,6 +240,8 @@ import { AriaComponent, GridComponent, TooltipComponent, LegendComponent } from 
 import { CanvasRenderer } from 'echarts/renderers'
 
 use([BarChart, LineChart, GaugeChart, AriaComponent, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
+
+const classroom = classroomProfile('tourism')
 
 const route = useRoute()
 const cityOptions = ['成都', '重庆', '成渝双城联动']
@@ -489,6 +495,15 @@ function resetScenario() {
   training.value = 58
   promotion.value = 62
   policy.value = '组合政策'
+  run()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    controlMode, activeChart, city, sector, touristGrowth, digitalLevel, eventIntensity,
+    seasonality, salary, stability, training, promotion, policy,
+  })
+  if (preset.chart) activeChart.value = preset.chart
   run()
 }
 

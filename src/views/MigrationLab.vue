@@ -4,6 +4,9 @@
       title="城市迁移决策模拟"
       subtitle="工资溢价 · 一次性成本 · 心理成本 · 家庭联动 · 回本窗口"
       kicker="CH.05 · 劳动力流动"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="migrationChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability, wageGrowth, familyMigrate, spouseLoss]"
@@ -164,6 +167,7 @@ import { useSimulationSession } from '../lib/simulationSession'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -171,6 +175,8 @@ import { GridComponent, LegendComponent, MarkLineComponent, MarkPointComponent, 
 import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, MarkPointComponent, CanvasRenderer])
+
+const classroom = classroomProfile('migration')
 
 const migrateAge = ref(25)
 const wDiff = ref(3000)
@@ -379,6 +385,15 @@ function resetMigration() {
   wageGrowth.value = 0.02
   familyMigrate.value = false
   spouseLoss.value = 36000
+  run()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    migrateAge, wDiff, cMove, cPsych, discountRate, employmentProbability,
+    wageGrowth, familyMigrate, spouseLoss,
+  })
+  if (preset.chart) activeChart.value = preset.chart
   run()
 }
 

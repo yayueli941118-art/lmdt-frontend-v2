@@ -30,6 +30,9 @@
       title="人力资本投资实验室"
       subtitle="教育成本 · 机会成本 · 工资路径 · 净现值 · 内部收益率"
       kicker="CH.04 · 人力资本投资"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="humanCapitalTabs"
       v-model:active-chart="activeChart"
       :change-key="[params, capabilityRatings, capabilityInputs, activeChart]"
@@ -244,7 +247,7 @@
 <script setup>
 import { ref, reactive, watch, onMounted, nextTick, onUnmounted, computed } from 'vue'
 import * as echarts from 'echarts/core'
-import { LineChart } from 'echarts/charts'
+import { LineChart, RadarChart } from 'echarts/charts'
 import {
   GridComponent,
   LegendComponent,
@@ -263,9 +266,11 @@ import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LmdtChart from '../components/LmdtChart.vue'
 import { CAPABILITY_DIMENSIONS, buildCapabilityInvestmentPlan } from '../domain/humanCapital/model'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 
 echarts.use([
   LineChart,
+  RadarChart,
   GridComponent,
   LegendComponent,
   MarkAreaComponent,
@@ -274,6 +279,8 @@ echarts.use([
   TooltipComponent,
   CanvasRenderer,
 ])
+
+const classroom = classroomProfile('individual')
 
 // ── 预测门禁 ──────────────────────────────────
 const gateOptions = ['10%–20%', '30%–50%', '50%–60%', '60%–80%']
@@ -357,6 +364,20 @@ function resetIndividual() {
   })
   Object.assign(capabilityRatings, Object.fromEntries(CAPABILITY_DIMENSIONS.map((item,index) => [item.id, 45 + (index % 5) * 5])))
   Object.assign(capabilityInputs, { weeklyHours: 6, moneyCost: 1500, opportunityCost: 2500, monthlyBenefit: 400, discountRate: 0.04 })
+  fetchData()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    activeChart,
+    edu: value => { params.edu = value },
+    train_type: value => { params.train_type = value },
+    disc: value => { params.disc = value },
+    exp_peak: value => { params.exp_peak = value },
+    direct_cost: value => { params.direct_cost = value },
+    discount_rate: value => { params.discount_rate = value },
+  })
+  if (preset.chart) activeChart.value = preset.chart
   fetchData()
 }
 

@@ -4,6 +4,9 @@
       title="劳动供给决策"
       subtitle="预算线 · 无差异曲线 · 收入效应 · 替代效应 · 后弯劳动供给"
       kicker="CH.02 · 劳动力供给"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="chartTabs"
       v-model:active-chart="activeChart"
       :change-key="[scenarioMode, wageInitial, wageNew, nonLaborIncome, nonLaborShock, beta, consumptionFloor, leisureFloor]"
@@ -198,6 +201,7 @@ import { useSimulationSession } from '../lib/simulationSession'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
@@ -205,6 +209,8 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
+
+const classroom = classroomProfile('supply')
 
 const route = useRoute()
 const activeChart = ref('choice')
@@ -320,6 +326,15 @@ function applyScenarioPreset() {
     consumptionFloor.value = 420
     leisureFloor.value = 2
   }
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    scenarioMode: value => { scenarioMode.value = value; applyScenarioPreset() },
+    wageInitial, wageNew, nonLaborIncome, nonLaborShock, beta, consumptionFloor, leisureFloor,
+  })
+  if (preset.chart) activeChart.value = preset.chart
+  run()
 }
 
 function budgetSeries(name, data, color, dashed = false) {

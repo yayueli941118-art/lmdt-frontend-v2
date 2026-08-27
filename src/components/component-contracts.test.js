@@ -22,7 +22,7 @@ describe('教学组件契约', () => {
 
   it('学习任务卡明确呈现预测到修改的步骤', () => {
     const source = readFileSync(new URL('./LearningTaskCard.vue', import.meta.url), 'utf8')
-    for (const label of ['先预测', '调参数', '看证据', '做解释', '再修改']) {
+    for (const label of ['先预测', '调一个参数', '看主图', '记两项证据', '解释机制', '保存并提交']) {
       expect(source).toContain(label)
     }
   })
@@ -31,6 +31,15 @@ describe('教学组件契约', () => {
     const source = readFileSync(new URL('./ExperimentWorkspace.vue', import.meta.url), 'utf8')
     expect(source).toContain("error: { type: String")
     expect(source).toContain('role="alert"')
+  })
+
+  it('产品版本与领域模型版本保持独立', () => {
+    const layout = readFileSync(new URL('./LabDashboardLayout.vue', import.meta.url), 'utf8')
+    const forecast = readFileSync(new URL('../views/ForecastLab.vue', import.meta.url), 'utf8')
+    expect(layout).toContain('default: DOMAIN_MODEL_FAMILY_VERSION')
+    expect(forecast).toContain('modelVersion: DOMAIN_MODEL_FAMILY_VERSION')
+    expect(layout).not.toContain('default: __APP_VERSION__')
+    expect(forecast).not.toContain('modelVersion: __APP_VERSION__')
   })
 
   it('AI岗位实验保存与报告工作台兼容的记录结构', () => {

@@ -80,6 +80,7 @@ test('旗舰实验可调参、恢复并保存到报告工作台', async ({ page 
   await page.getByRole('button', { name: '保存到报告工作台' }).click()
   await expect(page.getByText('已保存到当前浏览器的报告工作台')).toBeVisible()
   await page.goto('/#/report/workbench')
+  await page.getByRole('button', { name: '完整项目版' }).click()
   await expect(page.locator('.record-list').getByText('劳动供给决策', { exact: true })).toBeVisible()
 })
 

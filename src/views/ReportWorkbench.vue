@@ -15,6 +15,129 @@
     </header>
 
     <template v-if="workbenchMode === 'student'">
+    <nav class="student-view-tabs" aria-label="学生工作台视图">
+      <button type="button" :class="{ active: studentView === 'classroom' }" @click="studentView = 'classroom'">
+        课堂五步简版
+      </button>
+      <button type="button" :class="{ active: studentView === 'project' }" @click="studentView = 'project'">
+        完整项目版
+      </button>
+      <span>两种视图共用同一份样本、实验记录和报告草稿。</span>
+    </nav>
+
+    <section v-if="studentView === 'classroom'" class="classroom-workflow" data-testid="classroom-workflow">
+      <nav class="classroom-progress" aria-label="课堂五步进度">
+        <button
+          v-for="item in classroomSteps"
+          :key="item.step"
+          type="button"
+          :class="{ active: classroomStep === item.step, complete: classroomStepComplete(item.step) }"
+          :disabled="!canOpenClassroomStep(item.step)"
+          :data-testid="`classroom-step-${item.step}`"
+          @click="classroomStep = item.step"
+        >
+          <span>{{ item.step }}</span><strong>{{ item.title }}</strong><small>{{ classroomStepComplete(item.step) ? '已完成' : item.done }}</small>
+        </button>
+      </nav>
+
+      <article v-if="classroomStep === 1" class="panel classroom-step-card">
+        <header><span>01</span><div><h2>载入数据</h2><p>先建立可追溯的小样本，再讨论岗位市场。</p></div></header>
+        <div class="classroom-step-layout">
+          <div class="classroom-action-area">
+            <div class="target-grid compact-targets">
+              <label>行业<input v-model.trim="target.industry" list="industry-options" placeholder="如：现代服务业"></label>
+              <label>岗位<input v-model.trim="target.position" placeholder="如：人力资源专员"></label>
+              <label>地区<input v-model.trim="target.region" list="region-options" placeholder="如：成渝双城经济圈"></label>
+            </div>
+            <div class="form-actions">
+              <button class="primary-btn" type="button" data-testid="load-teaching-example" @click="loadTeachingExample">一键载入教学示例</button>
+              <label class="file-btn">选择 CSV 并预览<input type="file" accept=".csv,text/csv" @change="previewCsv"></label>
+              <button class="ghost-btn" type="button" @click="studentView = 'project'">进入完整录入</button>
+            </div>
+            <p class="boundary-callout">教学示例是虚构样本，只用于熟悉流程；学生正式作业应提交自行采集且保留截图或链接编号的样本。</p>
+          </div>
+          <ClassroomStepGuide doing="载入示例或导入自己的 CSV，并补齐行业、岗位、地区。" why="没有来源和口径清楚的数据，后面的统计与仿真就没有证据基础。" :completion="`${samples.length} 条样本已进入当前浏览器`" next="进入质量检查，确认缺失薪资和技能字段。" />
+        </div>
+      </article>
+
+      <article v-else-if="classroomStep === 2" class="panel classroom-step-card">
+        <header><span>02</span><div><h2>检查质量</h2><p>先看有效性，再决定是否可以解释。</p></div></header>
+        <div class="classroom-step-layout">
+          <div class="classroom-action-area">
+            <div class="preview-cards classroom-cards">
+              <div class="stat-card"><span>样本数量</span><strong>{{ stats.count }} 条</strong></div>
+              <div class="stat-card"><span>有效薪资</span><strong>{{ stats.salaryCount }} 条</strong></div>
+              <div class="stat-card"><span>缺失薪资</span><strong>{{ stats.missingSalary }} 条</strong></div>
+              <div class="stat-card"><span>技能关键词</span><strong>{{ totalSkillTokens }} 个</strong></div>
+            </div>
+            <div class="quality-check" :class="{ warning: classroomQualityIssues.length }">
+              <strong>{{ classroomQualityIssues.length ? '仍有字段需要说明' : '基础字段可以进入统计' }}</strong>
+              <p>{{ classroomQualityIssues.join('；') || '岗位、地区、薪资和技能字段已具备基础统计条件。' }}</p>
+            </div>
+            <button class="primary-btn" type="button" data-testid="confirm-classroom-quality" @click="confirmClassroomQuality">我已检查并理解样本边界</button>
+          </div>
+          <ClassroomStepGuide doing="查看有效薪资、缺失薪资、技能词总数和字段问题。" why="招聘广告只是所采样本，缺失值和样本偏差会限制结论强度。" :completion="classroomQualityConfirmed ? '已确认数据质量与边界' : '点击确认后完成本步'" next="读取三个核心统计结果，形成描述性判断。" />
+        </div>
+      </article>
+
+      <article v-else-if="classroomStep === 3" class="panel classroom-step-card">
+        <header><span>03</span><div><h2>读取统计</h2><p>用三个关键数字概括样本，而不是只看图形印象。</p></div></header>
+        <div class="classroom-step-layout">
+          <div class="classroom-action-area">
+            <div class="classroom-core-stats">
+              <div><span>平均薪资</span><strong>{{ salaryText(stats.average) }}</strong><small>受极端值影响</small></div>
+              <div><span>中位薪资</span><strong>{{ salaryText(stats.median) }}</strong><small>代表样本中间位置</small></div>
+              <div><span>高频技能</span><strong>{{ topSkills.slice(0, 3).map(item => item.name).join('、') || '待补充' }}</strong><small>来自关键词词频</small></div>
+            </div>
+            <div class="mini-chart"><v-chart :option="salaryChart" autoresize /></div>
+            <button class="primary-btn" type="button" data-testid="confirm-classroom-stats" @click="confirmClassroomStats">我已记录三项统计证据</button>
+          </div>
+          <ClassroomStepGuide doing="比较平均薪资与中位薪资，并记录前三项高频技能。" why="两个薪资指标能提示分布偏斜，技能词频为后续仿真提供岗位结构线索。" :completion="classroomStatsConfirmed ? '已记录平均数、中位数和高频技能' : '点击确认后完成本步'" next="进入一个最相关的实验，用模型解释统计现象。" />
+        </div>
+      </article>
+
+      <article v-else-if="classroomStep === 4" class="panel classroom-step-card">
+        <header><span>04</span><div><h2>完成一个仿真实验</h2><p>把描述性统计转化为有前提的机制解释。</p></div></header>
+        <div class="classroom-step-layout">
+          <div class="classroom-action-area">
+            <div class="primary-simulation-card">
+              <span>当前推荐</span>
+              <h3>{{ classroomPrimarySimulation.title }}</h3>
+              <p>{{ classroomPrimarySimulation.desc }}</p>
+              <router-link :to="classroomPrimarySimulation.to" data-testid="classroom-simulation-link" @click="markClassroomSimulationVisited">进入实验并保存记录</router-link>
+            </div>
+            <p class="boundary-callout">实验中至少改变一个参数，记录基准值与当前值，并按“前提—机制—结果—边界”写出解释。返回后，本步会保留完成状态。</p>
+            <button v-if="experimentRecords.length" class="ghost-btn" type="button" @click="classroomSimulationVisited = true">已检测到 {{ experimentRecords.length }} 条实验记录</button>
+          </div>
+          <ClassroomStepGuide doing="进入推荐实验，使用一个教师预设，再只改变一个参数。" why="统计只能描述样本，劳动经济学模型用于解释条件变化为何产生不同结果。" :completion="classroomStepComplete(4) ? '已进入实验或已保存实验记录' : '进入实验后完成本步'" next="回到工作台，生成带证据边界的结论。" />
+        </div>
+      </article>
+
+      <article v-else class="panel classroom-step-card">
+        <header><span>05</span><div><h2>写出结论</h2><p>结论必须同时包含样本证据、机制和不能推出的内容。</p></div></header>
+        <div class="classroom-step-layout">
+          <div class="classroom-action-area">
+            <div v-if="classroomConclusionGenerated" class="classroom-conclusion" data-testid="classroom-conclusion">
+              <strong>课堂结论草稿</strong><p>{{ classroomConclusion }}</p>
+            </div>
+            <button class="primary-btn" type="button" data-testid="generate-classroom-conclusion" @click="generateClassroomConclusion">生成课堂结论并写入报告草稿</button>
+            <div class="form-actions">
+              <button class="ghost-btn" type="button" :disabled="!classroomConclusionGenerated" @click="copyClassroomConclusion">复制结论</button>
+              <button class="ghost-btn" type="button" @click="studentView = 'project'">继续完整项目报告</button>
+            </div>
+          </div>
+          <ClassroomStepGuide doing="生成后检查结论是否包含样本量、统计结果、模型机制和证据边界。" why="课堂任务的目标不是得到唯一答案，而是形成可复核、有边界的判断。" :completion="classroomConclusionGenerated ? '课堂结论已生成并进入报告草稿' : '生成结论后完成课堂五步'" next="导出作业数据包，或切换完整项目版继续完善七部分报告。" />
+        </div>
+      </article>
+
+      <footer class="classroom-nav-actions">
+        <button type="button" :disabled="classroomStep === 1" @click="classroomStep -= 1">上一步</button>
+        <button v-if="classroomStep < 5" class="primary-btn" type="button" :disabled="!classroomStepComplete(classroomStep)" data-testid="classroom-next" @click="classroomStep += 1">下一步</button>
+        <button v-else class="primary-btn" type="button" :disabled="!classroomStepComplete(5)" @click="exportAssignmentPackage">导出作业数据包</button>
+      </footer>
+    </section>
+
+    <div v-if="studentView === 'project'" class="project-workflow" data-testid="project-workflow">
     <section class="panel target-panel">
       <div class="panel-title">
         <span>01</span>
@@ -120,6 +243,10 @@
         <button class="primary-btn" type="button" @click="confirmCsvImport">确认导入 {{ csvPreview.importableRows.length }} 条</button>
         <button class="ghost-btn" type="button" @click="cancelCsvPreview">取消预览</button>
       </div>
+    </section>
+    <section v-else class="panel preview-panel preview-empty">
+      <div class="panel-title"><span>03</span><h2>CSV 导入前预览</h2></div>
+      <p>选择 CSV 后，这里会显示可导入样本、有效薪资、缺失项、技能词和问题行；确认导入后继续第 04 步补充样本。</p>
     </section>
 
     <section class="panel">
@@ -332,7 +459,10 @@
             导入作业数据包
             <input type="file" accept=".json,application/json" @change="importAssignmentPackage">
           </label>
-          <button class="danger-btn" type="button" @click="clearLocalWorkbenchData">清空本机数据</button>
+          <div class="danger-zone">
+            <span>危险操作 · 两次确认</span>
+            <button class="danger-btn" type="button" @click="clearLocalWorkbenchData">清空本机数据</button>
+          </div>
         </div>
       </div>
       <p class="hint">数据包会包含研究对象、招聘样本、{{ simulationLabel }}实验记录和当前报告草稿，方便换电脑继续做或提交给老师留档。</p>
@@ -354,6 +484,7 @@
       <p class="hint">建议先用 Markdown 草稿完成报告主体，再补充解释、截图编号和仿真实验结论。</p>
       <p v-if="message" class="message">{{ message }}</p>
     </section>
+    </div>
     </template>
 
     <section v-else class="teacher-workbench">
@@ -453,6 +584,8 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 import { calibrateTourism } from '../domain/tourism/model'
 import { isAnonymous } from '../config/appMode'
+import ClassroomStepGuide from '../components/ClassroomStepGuide.vue'
+import { RECORD_SCHEMA_VERSION } from '../config/release'
 import {
   readJsonStorage,
   readTextStorage,
@@ -468,6 +601,7 @@ const TARGET_KEY = 'lmdtReportTarget'
 const RECORD_KEY = 'lmdtReportExperimentRecords'
 const REPORT_KEY = 'lmdtReportDraft'
 const TOURISM_CALIBRATION_KEY = 'lmdtTourismCalibration'
+const CLASSROOM_PROGRESS_KEY = 'lmdtReportClassroomProgress'
 const PACKAGE_SCHEMA = 'lmdt-report-workbench-package-v1'
 
 const simulationLabel = __ANONYMOUS_BUILD__ || isAnonymous ? '课程' : 'LMDT '
@@ -508,8 +642,22 @@ const reportText = ref('')
 const reportEdited = ref(false)
 const message = ref('')
 const workbenchMode = ref('student')
+const studentView = ref('classroom')
+const classroomStep = ref(1)
+const classroomQualityConfirmed = ref(false)
+const classroomStatsConfirmed = ref(false)
+const classroomSimulationVisited = ref(false)
+const classroomConclusionGenerated = ref(false)
 const teacherPackages = ref([])
 const teacherMessage = ref('')
+
+const classroomSteps = [
+  { step: 1, title: '载入数据', done: '至少1条样本' },
+  { step: 2, title: '检查质量', done: '确认边界' },
+  { step: 3, title: '读取统计', done: '记录3项指标' },
+  { step: 4, title: '完成实验', done: '进入或保存记录' },
+  { step: 5, title: '写出结论', done: '生成有边界结论' },
+]
 
 const salaryValues = computed(() => samples.value
   .map((sample) => salaryMidpoint(sample))
@@ -674,10 +822,48 @@ const recommendedLinks = computed(() => {
   return links
 })
 
+const classroomQualityIssues = computed(() => {
+  const issues = []
+  const countMissing = key => samples.value.filter(sample => !sample[key]).length
+  const missingPosition = countMissing('position')
+  const missingCity = countMissing('city')
+  const missingSkills = samples.value.filter(sample => splitSkills(sample.skills).length === 0).length
+  if (missingPosition) issues.push(`${missingPosition} 条缺岗位名称`)
+  if (missingCity) issues.push(`${missingCity} 条缺地区`)
+  if (stats.value.missingSalary) issues.push(`${stats.value.missingSalary} 条缺有效薪资`)
+  if (missingSkills) issues.push(`${missingSkills} 条缺技能关键词`)
+  return issues
+})
+
+const classroomPrimarySimulation = computed(() => {
+  const recommendedTitles = recommendedLinks.value.map(item => item.title)
+  return simulationLinks.find(item => recommendedTitles.includes(item.title) && item.to.startsWith('/lab/'))
+    || simulationLinks.find(item => item.to === '/lab/ai-occupation')
+})
+
+const classroomConclusion = computed(() => {
+  const subject = `${target.region || '当前地区'}${target.industry || '当前行业'}的${target.position || '目标岗位'}`
+  const skills = topSkills.value.slice(0, 3).map(item => item.name).join('、') || '核心技能仍待补充'
+  const record = experimentRecords.value[0]
+  const mechanism = record?.conclusion || `可通过${classroomPrimarySimulation.value.title}继续检验工资、需求、匹配或技术冲击机制`
+  return `基于当前浏览器中 ${stats.value.count} 条招聘样本，${subject}的样本平均薪资为${salaryText(stats.value.average)}、中位薪资为${salaryText(stats.value.median)}，高频技能包括${skills}。仿真证据提示：${mechanism}。这一判断只在当前样本口径与模型参数前提下成立；招聘广告样本和教学仿真不能直接推出社会真实岗位总量、因果效应或个人就业结果。`
+})
+
 onMounted(() => {
   loadState()
   if (!reportText.value) generateReportDraft(false)
 })
+
+watch(
+  [classroomStep, classroomQualityConfirmed, classroomStatsConfirmed, classroomSimulationVisited, classroomConclusionGenerated],
+  () => persistJson(CLASSROOM_PROGRESS_KEY, {
+    step: classroomStep.value,
+    qualityConfirmed: classroomQualityConfirmed.value,
+    statsConfirmed: classroomStatsConfirmed.value,
+    simulationVisited: classroomSimulationVisited.value,
+    conclusionGenerated: classroomConclusionGenerated.value,
+  }, 1),
+)
 
 watch(samples, () => {
   persistJson(SAMPLE_KEY, samples.value, 2)
@@ -706,6 +892,105 @@ function loadState() {
   experimentRecords.value = Array.isArray(savedRecords) ? savedRecords : []
   reportText.value = readTextStorage(REPORT_KEY, '')
   reportEdited.value = Boolean(reportText.value)
+  const progress = readJsonStorage(CLASSROOM_PROGRESS_KEY, null)
+  if (progress && typeof progress === 'object') {
+    classroomStep.value = Math.min(5, Math.max(1, Number(progress.step) || 1))
+    classroomQualityConfirmed.value = Boolean(progress.qualityConfirmed)
+    classroomStatsConfirmed.value = Boolean(progress.statsConfirmed)
+    classroomSimulationVisited.value = Boolean(progress.simulationVisited)
+    classroomConclusionGenerated.value = Boolean(progress.conclusionGenerated)
+  }
+}
+
+function classroomStepComplete(step) {
+  return {
+    1: samples.value.length > 0,
+    2: classroomQualityConfirmed.value,
+    3: classroomStatsConfirmed.value,
+    4: classroomSimulationVisited.value || experimentRecords.value.length > 0,
+    5: classroomConclusionGenerated.value,
+  }[step]
+}
+
+function canOpenClassroomStep(step) {
+  if (step === 1) return true
+  return classroomSteps.slice(0, step - 1).every(item => classroomStepComplete(item.step))
+}
+
+function loadTeachingExample() {
+  Object.assign(target, { industry: '现代服务业', position: '人力资源专员', region: '成渝双城经济圈' })
+  const exampleRows = [
+    ['成都', 6000, 8500, '本科', '1-3年', '招聘；Excel；沟通协调；劳动法'],
+    ['重庆', 5500, 8000, '本科', '1-3年', '招聘；员工关系；劳动法；数据分析'],
+    ['成都', 7000, 10000, '本科', '3-5年', '薪酬核算；Excel；数据分析；绩效管理'],
+    ['重庆', 6500, 9000, '本科', '3-5年', '培训；沟通协调；人才盘点；PPT'],
+    ['成都', 5000, 7000, '大专', '应届生', '招聘；办公软件；沟通协调；档案管理'],
+    ['重庆', 8000, 12000, '本科', '3-5年', 'HRBP；业务分析；组织发展；数据分析'],
+    ['成都', 9000, 14000, '硕士', '5年以上', '组织发展；人才发展；数据分析；项目管理'],
+    ['重庆', 5800, 7800, '本科', '1-3年', '社保公积金；薪酬核算；Excel；劳动法'],
+  ]
+  samples.value = exampleRows.map((row, index) => normalizeSample({
+    id: `teaching-example-${Date.now()}-${index}`,
+    sampleNo: `T${String(index + 1).padStart(3, '0')}`,
+    platform: '课堂教学示例',
+    collectDate: today(),
+    company: `虚构样本企业${String(index + 1).padStart(2, '0')}`,
+    position: '人力资源专员',
+    industry: '现代服务业',
+    city: row[0],
+    salaryMin: row[1],
+    salaryMax: row[2],
+    education: row[3],
+    experience: row[4],
+    skills: row[5],
+    employmentType: '全职',
+    screenshotNo: `教学示例${String(index + 1).padStart(2, '0')}`,
+    notes: '虚构教学样本，不对应真实企业或招聘广告。',
+  }))
+  classroomQualityConfirmed.value = false
+  classroomStatsConfirmed.value = false
+  classroomSimulationVisited.value = false
+  classroomConclusionGenerated.value = false
+  setMessage('已载入 8 条明确标注为虚构的教学示例。')
+}
+
+function confirmClassroomQuality() {
+  if (!samples.value.length) return setMessage('请先载入或导入样本。')
+  classroomQualityConfirmed.value = true
+  setMessage(classroomQualityIssues.value.length ? '已记录缺失项，请在结论中保留样本边界。' : '基础质量检查已完成。')
+}
+
+function confirmClassroomStats() {
+  if (!stats.value.count) return setMessage('没有可统计的样本。')
+  classroomStatsConfirmed.value = true
+  setMessage('已记录平均薪资、中位薪资和高频技能。')
+}
+
+function markClassroomSimulationVisited() {
+  classroomSimulationVisited.value = true
+  persistJson(CLASSROOM_PROGRESS_KEY, {
+    step: classroomStep.value,
+    qualityConfirmed: classroomQualityConfirmed.value,
+    statsConfirmed: classroomStatsConfirmed.value,
+    simulationVisited: true,
+    conclusionGenerated: classroomConclusionGenerated.value,
+  }, 1)
+}
+
+function generateClassroomConclusion() {
+  reportText.value = `${generateReport()}\n\n## 课堂五步结论\n${classroomConclusion.value}`
+  reportEdited.value = false
+  classroomConclusionGenerated.value = true
+  setMessage('课堂结论已生成，并写入完整报告草稿。')
+}
+
+async function copyClassroomConclusion() {
+  try {
+    await navigator.clipboard.writeText(classroomConclusion.value)
+    setMessage('课堂结论已复制。')
+  } catch {
+    setMessage('当前浏览器不支持自动复制，请在完整项目版中复制报告。')
+  }
 }
 
 function saveSample() {
@@ -1213,6 +1498,7 @@ function exportAssignmentPackage() {
     schema: PACKAGE_SCHEMA,
     exportedAt: new Date().toISOString(),
     app: packageAppName,
+    recordSchemaVersion: RECORD_SCHEMA_VERSION,
     target: { ...target },
     samples: samples.value,
     experimentRecords: experimentRecords.value,
@@ -1250,16 +1536,23 @@ async function importAssignmentPackage(event) {
 }
 
 function clearLocalWorkbenchData() {
-  const ok = window.confirm('确定清空当前浏览器里的研究对象、招聘样本、实验记录和报告草稿吗？此操作不会影响其他同学的数据。')
-  if (!ok) return
+  const firstConfirmed = window.confirm('确定清空当前浏览器里的研究对象、招聘样本、实验记录和报告草稿吗？此操作不会影响其他同学的数据。')
+  if (!firstConfirmed) return
+  const secondConfirmed = window.confirm(`请再次确认：将永久清空 ${samples.value.length} 条样本、${experimentRecords.value.length} 条实验记录和当前报告草稿。此操作无法撤销。`)
+  if (!secondConfirmed) return
   reportEdited.value = true
-  const storageKeys = [SAMPLE_KEY, TARGET_KEY, RECORD_KEY, REPORT_KEY, TOURISM_CALIBRATION_KEY]
+  const storageKeys = [SAMPLE_KEY, TARGET_KEY, RECORD_KEY, REPORT_KEY, TOURISM_CALIBRATION_KEY, CLASSROOM_PROGRESS_KEY]
   storageKeys.forEach((key) => removeJsonStorage(key))
   Object.assign(target, { industry: '', position: '', region: '' })
   samples.value = []
   experimentRecords.value = []
   reportText.value = ''
   csvPreview.value = null
+  classroomStep.value = 1
+  classroomQualityConfirmed.value = false
+  classroomStatsConfirmed.value = false
+  classroomSimulationVisited.value = false
+  classroomConclusionGenerated.value = false
   resetDraft()
   setMessage('当前浏览器的工作台数据已清空。')
 }
@@ -1385,6 +1678,10 @@ function setMessage(text) {
   border-color: rgba(34, 211, 238, 0.45);
   background: rgba(6, 182, 212, 0.15);
 }
+.student-view-tabs{position:sticky;top:66px;z-index:12;display:flex;align-items:center;gap:8px;margin:0 0 16px;padding:8px;border:1px solid rgba(148,163,184,.14);border-radius:7px;background:rgba(11,18,32,.96);backdrop-filter:blur(12px)}
+.student-view-tabs button{padding:8px 13px}.student-view-tabs button.active{border-color:#22d3ee;color:#ecfeff;background:#0e7490}.student-view-tabs span{margin-left:auto;color:#7f8da3;font-size:11px}
+.classroom-workflow{display:grid;gap:14px}.classroom-progress{position:sticky;top:124px;z-index:11;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;border:1px solid #27354a;border-radius:7px;overflow:hidden;background:#27354a}.classroom-progress button{min-width:0;display:grid;grid-template-columns:24px minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;min-height:62px;padding:9px 10px;border:0;border-radius:0;background:#111b2e;text-align:left}.classroom-progress button span{grid-row:1/3;align-self:center;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;color:#8da0b5;background:#0b1220;font-size:10px}.classroom-progress button strong{overflow:hidden;color:#cbd5e1;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.classroom-progress button small{color:#64748b;font-size:9px}.classroom-progress button.active{background:#153047}.classroom-progress button.active span{color:#03232b;background:#67e8f9}.classroom-progress button.complete:not(.active) span{color:#d1fae5;background:#047857}.classroom-progress button:disabled{opacity:.58}
+.classroom-step-card{margin:0}.classroom-step-card>header{display:flex;align-items:center;gap:12px;margin-bottom:16px}.classroom-step-card>header>span{display:grid;place-items:center;width:40px;height:40px;border:1px solid #22d3ee;border-radius:6px;color:#67e8f9;background:#0c2934;font-weight:900}.classroom-step-card h2{margin:0;color:#f8fafc;font-size:20px}.classroom-step-card header p{margin:4px 0 0;color:#8da0b5;font-size:12px}.classroom-step-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,.65fr);gap:16px}.classroom-action-area{min-width:0}.compact-targets{grid-template-columns:repeat(3,minmax(0,1fr))}.boundary-callout{margin:12px 0 0;padding:10px 12px;border-left:3px solid #f5b849;color:#cbd5e1;background:rgba(120,74,5,.1);font-size:12px;line-height:1.6}.classroom-cards{grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 12px}.quality-check{padding:13px;border-left:3px solid #22c55e;background:rgba(20,83,45,.14)}.quality-check.warning{border-left-color:#f5b849;background:rgba(120,74,5,.1)}.quality-check strong{color:#f8fafc}.quality-check p{margin:5px 0 0;color:#cbd5e1;font-size:12px;line-height:1.55}.classroom-core-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.classroom-core-stats div{min-width:0;padding:14px;border-top:2px solid #38bdf8;background:#111b2e}.classroom-core-stats span,.classroom-core-stats small{display:block;color:#7f8da3;font-size:10px}.classroom-core-stats strong{display:block;min-height:38px;margin:6px 0;color:#f8fafc;font-size:17px;overflow-wrap:anywhere}.mini-chart{height:220px;margin-top:10px;border:1px solid #263449;background:#101a2c}.primary-simulation-card{padding:18px;border:1px solid rgba(34,211,238,.28);background:#102235}.primary-simulation-card>span{color:#67e8f9;font-size:10px;font-weight:900}.primary-simulation-card h3{margin:6px 0;color:#f8fafc}.primary-simulation-card p{color:#a5b4c7;line-height:1.6}.primary-simulation-card a{display:inline-flex;padding:9px 12px;border-radius:5px;color:#fff;background:#0e7490;text-decoration:none;font-size:12px;font-weight:850}.classroom-conclusion{padding:16px;border-left:3px solid #22c55e;background:rgba(20,83,45,.13)}.classroom-conclusion strong{color:#d1fae5}.classroom-conclusion p{margin:7px 0 0;color:#dbe7f5;line-height:1.75}.classroom-nav-actions{display:flex;justify-content:space-between;gap:10px;padding:10px 0}.preview-empty{border-style:dashed}.preview-empty p{margin:0;color:#7f8da3;line-height:1.65}
 .panel {
   margin-bottom: 20px;
   padding: 20px;
@@ -1761,6 +2058,7 @@ th {
   justify-content: flex-end;
   gap: 10px;
 }
+.danger-zone{display:grid;gap:5px;padding-left:12px;border-left:1px solid rgba(248,113,113,.3)}.danger-zone span{color:#fca5a5;font-size:10px;font-weight:800}
 .danger-btn {
   color: #fecaca;
   border-color: rgba(248, 113, 113, 0.28);
@@ -1927,6 +2225,8 @@ textarea:focus-visible {
   .workbench-tabs,
   .teacher-workbench,
   .form-actions,
+  .student-view-tabs,
+  .classroom-workflow,
   .hint {
     display: none !important;
   }
@@ -1979,6 +2279,7 @@ textarea:focus-visible {
   .data-actions {
     justify-content: flex-start;
   }
+  .student-view-tabs{top:58px;flex-wrap:wrap}.student-view-tabs span{width:100%;margin-left:0}.classroom-progress{top:142px}.classroom-step-layout{grid-template-columns:1fr}.compact-targets,.classroom-core-stats{grid-template-columns:1fr}.classroom-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width: 640px) {
   .workbench {
@@ -2005,5 +2306,6 @@ textarea:focus-visible {
   .report-textarea {
     min-height: 460px;
   }
+  .classroom-progress{top:154px;grid-template-columns:repeat(5,1fr)}.classroom-progress button{display:grid;place-items:center;min-height:52px;padding:7px 2px;text-align:center}.classroom-progress button span{grid-row:auto}.classroom-progress button strong{font-size:9px}.classroom-progress button small{display:none}.classroom-cards{grid-template-columns:1fr}
 }
 </style>

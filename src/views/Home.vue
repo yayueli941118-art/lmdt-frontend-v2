@@ -90,8 +90,8 @@
       </section>
 
       <section class="assessment-band" aria-labelledby="assessment-title">
-        <div><span>课程评价</span><h2 id="assessment-title">AI可辅助学习，期末检验独立能力</h2><p>训练记录仅供学习诊断，不自动替代教师评价，也不改变课程既定考核权重。</p></div>
-        <dl><div><dt>考勤与过程</dt><dd>10%</dd></div><div><dt>个体作业</dt><dd>10%</dd></div><div><dt>小组作业</dt><dd>20%</dd></div><div><dt>期末考试</dt><dd>60%</dd></div></dl>
+        <div><span>{{ appProfile.course.assessmentType }}课 · {{ appProfile.course.hours.total }}学时</span><h2 id="assessment-title">AI可辅助练习，综合实践检验独立能力</h2><p>理论 {{ appProfile.course.hours.theory }} 学时、实践 {{ appProfile.course.hours.practice }} 学时。训练记录仅供学习诊断，不自动替代教师评价。</p></div>
+        <dl><div v-for="item in appProfile.course.assessments" :key="item.id"><dt>{{ item.label }}</dt><dd>{{ item.weight }}%</dd></div></dl>
       </section>
     </main>
 
