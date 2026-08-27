@@ -4,6 +4,8 @@
 
 LMDT 3.0 服务课程《劳动力市场分析与预测》，使用 Vue 3、Vite、Vue Router 与 ECharts，把“看市场—拆机制—推未来—做决策—验能力”组织为连续学习流程。项目支持 GitHub Pages 纯前端部署，不依赖后端，不抓取招聘平台，也不把规则反馈伪装成大模型评价。
 
+正式课程口径为：课程代码 `2132036`，2学分，32学时（理论16、实践16），考核方式为考查；权重为课堂实践与过程证据10%、个人实践档案30%、小组综合项目30%、个人综合实践考查30%。完整来源和冲突处理见 [课程口径单一事实源](docs/course-profile.md)。
+
 ## 教学问题
 
 - 静态教材图难以同时呈现参数变化、均衡移动和经济含义。
@@ -29,7 +31,7 @@ LMDT 3.0 服务课程《劳动力市场分析与预测》，使用 Vue 3、Vite�
 | 第7章 歧视 | `/lab/discrimination` | Becker、统计性歧视、真实 OLS 的 Oaxaca-Blinder |
 | 第8章 收入分配 | `/lab/income-distribution` | Lorenz、Gini、十分位、预算平衡再分配 |
 | 第9章 失业 | `/lab/unemployment` | 存量流量、搜寻、DMP、Beveridge、最低工资情景 |
-| 报告决策 | `/report/workbench` | 招聘样本校验、统计、实验记录、报告与匿名汇总 |
+| 报告决策 | `/report/workbench` | 课堂五步简版、完整项目版、招聘样本校验、统计、实验记录、报告与匿名汇总 |
 
 逐图审计见 [教材对齐](docs/textbook-alignment.md)，模型公式和边界见 [模型方法](docs/model-methodology.md)。
 
@@ -65,6 +67,16 @@ localStorage 实验记录/样本/报告
 - 匿名独立构建：`npm run build:anonymous`，构建后扫描禁用身份字符串。
 
 真正匿名还需要中性域名和中性发布账号；代码无法隐藏 GitHub Pages URL 中的账号名。
+
+`?mode=anonymous` 只是在当前已部署站点中预览匿名文案和功能，不会隐藏地址栏中的账号、仓库、提交历史或发布主体。正式匿名交付必须使用 `npm run build:anonymous` 的产物，并部署到中性账号、仓库和域名。
+
+## 版本边界
+
+- 产品版本：`LMDT 3.0.0`，描述前端页面和课堂功能发布。
+- 领域模型族版本：`2.1.0`，描述公式与计算实现；细分模型可有自己的版本号。
+- 本地记录结构版本：`2`，描述 `localStorage` 与作业包的兼容结构。
+
+三个版本解决的问题不同，不要求使用相同数字。
 
 ## 本地运行
 
@@ -109,3 +121,4 @@ Vitest 验证数学恒等式、数据质量、预测误差、固定题库、滑�
 - [操作手册](docs/operation-manual.md)
 - [测试报告](docs/test-report.md)
 - [LMDT 3.0 方法与边界](docs/lmdt-3-methodology.md)
+- [课程口径单一事实源](docs/course-profile.md)

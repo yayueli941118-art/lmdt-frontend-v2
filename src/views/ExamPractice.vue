@@ -53,7 +53,7 @@
     </template>
 
     <template #change><strong>{{ feedbackTitle }}</strong><span>{{ feedbackText }}</span></template>
-    <template #task><div class="drawer-copy"><h3>课程评价位置</h3><p>平时考勤与过程10分、个体作业10分、小组作业20分、期末考试60分。本训练只服务独立能力形成，不改变课程既定权重。</p><p>课堂学习可以使用AI辅助，但期末考试检验学生不依赖AI完成概念、计算、图表与机制分析的能力。</p></div></template>
+    <template #task><div class="drawer-copy"><h3>课程评价位置</h3><p>{{ assessmentSummary }}。本训练只服务独立能力形成，不自动替代教师评价。</p><p>课堂学习可以使用AI辅助；个人综合实践考查要求学生在新数据和新情境下独立完成指标、机制、预测、风险审计与决策建议。</p></div></template>
     <template #analysis><div class="analysis-stack"><section><h3>能力蓝图</h3><dl><div v-for="item in assessmentBlueprint" :key="item.dimension"><dt>{{ item.dimension }}</dt><dd>{{ item.points }}分</dd></div></dl></section><section v-if="submitted"><h3>本次诊断</h3><p>优先复习：{{ result.errorTypes.join('、') || '本次各维度均通过' }}</p><p v-if="previousScore!==null">较上次 {{ result.score-previousScore>=0?'+':'' }}{{ result.score-previousScore }} 分。</p></section><AiAuditPanel storage-key="lmdtPracticeAiAuditRecords" /></div></template>
   </ExperimentWorkspace>
 </template>
@@ -65,6 +65,7 @@ import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import { assessmentBlueprint, buildPracticeSet } from '../domain/assessment/questionBank'
 import { scoreAttempt } from '../domain/assessment/scoring'
 import { readJsonStorage, writeJsonStorage } from '../lib/storage'
+import { COURSE_PROFILE } from '../config/courseProfile'
 
 const baseSeed = 20260811
 const attempt = ref(1)
@@ -76,6 +77,7 @@ const submitted = ref(false)
 const startedAt = ref(Date.now())
 const previousScore = ref(null)
 const storageError = ref('')
+const assessmentSummary = COURSE_PROFILE.assessments.map(item => `${item.label}${item.weight}%`).join('、')
 const current = computed(() => questions.value[currentIndex.value])
 const result = computed(() => scoreAttempt(questions.value, answers.value))
 const answeredCount = computed(() => questions.value.filter(hasAnswer).length)

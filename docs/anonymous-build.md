@@ -11,7 +11,7 @@ npm run build:anonymous
 
 ## 匿名版差异
 
-- 品牌改为 `LM Simulation`。
+- 品牌改为 `Labor Market Lab`。
 - 学校、作者和课程负责人信息在匿名 bundle 中不可达。
 - HTML metadata、favicon 和页面文案使用中性表述。
 - 不生成 source map。
@@ -25,3 +25,9 @@ npm run build:anonymous
 4. 检查提交历史、PR 作者、Actions 日志和外部分析服务。
 
 代码无法隐藏当前 GitHub Pages URL 中的用户名，因此匿名评审正式提交必须使用中性发布地址。
+
+## 预览与正式交付的区别
+
+`/?mode=anonymous#/` 只用于在当前站点快速核查匿名文案和功能逻辑。它仍会暴露地址栏中的发布账号、仓库名、域名以及可能关联的提交历史，因此不构成正式匿名部署。
+
+正式匿名交付必须同时满足：使用 `npm run build:anonymous` 生成并通过禁用字符串扫描的产物；使用中性账号与中性仓库；使用中性域名；人工复查页面标题、favicon、下载文件名、截图、Actions日志和外部分析服务。

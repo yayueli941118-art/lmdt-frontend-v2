@@ -23,6 +23,7 @@
     <div class="workspace-body">
       <aside class="workspace-control-panel" data-testid="workspace-controls">
         <div class="workspace-control-scroll">
+          <ClassroomPresetPanel :presets="classroomPresets" @apply="$emit('apply-preset', $event)" />
           <slot name="controls"></slot>
         </div>
         <footer class="workspace-actions">
@@ -86,7 +87,8 @@
           <button type="button" aria-label="关闭展开面板" @click="closeDrawer">×</button>
         </header>
         <div class="workspace-drawer-content">
-          <slot v-if="activeDrawer === 'task'" name="task"></slot>
+          <LearningTaskCard v-if="activeDrawer === 'task' && classroomTask" v-bind="classroomTask" />
+          <slot v-else-if="activeDrawer === 'task'" name="task"></slot>
           <slot v-else-if="activeDrawer === 'record'" name="record"></slot>
           <slot v-else-if="activeDrawer === 'analysis'" name="analysis"></slot>
           <div v-else class="model-disclosure-grid">
@@ -111,6 +113,9 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import RuntimeSourceBadge from './RuntimeSourceBadge.vue'
+import ClassroomPresetPanel from './ClassroomPresetPanel.vue'
+import LearningTaskCard from './LearningTaskCard.vue'
+import { DOMAIN_MODEL_FAMILY_VERSION } from '../config/release'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -128,12 +133,14 @@ const props = defineProps({
   limitation: { type: String, default: '真实地区、行业或个体的精确预测结果。' },
   variables: { type: String, default: '变量名称、当前值与单位显示在参数控件和图表坐标轴中。' },
   defaultBasis: { type: String, default: '用于课堂演示的可解释默认情景，不代表实证估计或地区统计。' },
-  modelVersion: { type: String, default: __APP_VERSION__ },
+  modelVersion: { type: String, default: DOMAIN_MODEL_FAMILY_VERSION },
   realityStatus: { type: String, default: '否。当前页面用于机制解释或教学情景比较。' },
   error: { type: String, default: '' },
+  classroomTask: { type: Object, default: null },
+  classroomPresets: { type: Array, default: () => [] },
 })
 
-defineEmits(['reset', 'update:activeChart'])
+defineEmits(['reset', 'update:activeChart', 'apply-preset'])
 
 const workspace = ref(null)
 const activeDrawer = ref('')

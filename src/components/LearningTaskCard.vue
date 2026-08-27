@@ -1,13 +1,21 @@
 <template>
   <section class="learning-card">
-    <div class="learning-flow" aria-label="学习流程">
-      <span>先预测</span><i>→</i><span>写理由</span><i>→</i><span>调参数</span><i>→</i><span>看证据</span><i>→</i><span>做反事实</span><i>→</i><span>做解释</span><i>→</i><span>规则反馈</span><i>→</i><span>再修改并保存</span>
+    <div class="learning-flow" aria-label="学生实验六步流程">
+      <span v-for="(item, index) in structuredSteps" :key="item.label">
+        {{ index + 1 }}. {{ item.label }}<i v-if="index < structuredSteps.length - 1">→</i>
+      </span>
     </div>
-    <div class="learning-block">
+    <div v-if="hasStructuredTask" class="step-grid">
+      <div v-for="(item, index) in structuredSteps" :key="item.label" class="learning-block">
+        <span class="learning-label">{{ index + 1 }} · {{ item.label }}</span>
+        <strong>{{ item.text }}</strong>
+      </div>
+    </div>
+    <div v-else class="learning-block">
       <span class="learning-label">学习任务</span>
       <strong>{{ task }}</strong>
     </div>
-    <div class="learning-block">
+    <div v-if="!hasStructuredTask" class="learning-block">
       <span class="learning-label">观察重点</span>
       <strong>{{ observe }}</strong>
     </div>
@@ -19,11 +27,29 @@
 </template>
 
 <script setup>
-defineProps({
-  task: { type: String, required: true },
-  observe: { type: String, required: true },
+import { computed } from 'vue'
+
+const props = defineProps({
+  task: { type: String, default: '' },
+  observe: { type: String, default: '' },
   conclusion: { type: String, default: '' },
+  prediction: { type: String, default: '' },
+  adjustment: { type: String, default: '' },
+  chart: { type: String, default: '' },
+  records: { type: String, default: '' },
+  explanation: { type: String, default: '' },
+  submission: { type: String, default: '' },
 })
+
+const structuredSteps = computed(() => [
+  { label: '先预测', text: props.prediction },
+  { label: '调一个参数', text: props.adjustment },
+  { label: '看主图', text: props.chart },
+  { label: '记两项证据', text: props.records },
+  { label: '解释机制', text: props.explanation },
+  { label: '保存并提交', text: props.submission },
+].filter(item => item.text))
+const hasStructuredTask = computed(() => structuredSteps.value.length > 0)
 </script>
 
 <style scoped>
@@ -44,7 +70,8 @@ defineProps({
   font-weight: 800;
 }
 .learning-flow span { color: #93c5fd; }
-.learning-flow i { font-style: normal; color: #475569; }
+.learning-flow i { margin-left:7px;font-style: normal; color: #475569; }
+.step-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .learning-block {
   min-width: 0;
   border-radius: 8px;
@@ -79,5 +106,6 @@ defineProps({
   .learning-card {
     grid-template-columns: 1fr;
   }
+  .step-grid{grid-template-columns:1fr}
 }
 </style>

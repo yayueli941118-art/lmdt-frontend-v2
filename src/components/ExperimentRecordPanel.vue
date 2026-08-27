@@ -92,7 +92,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { APP_VERSION } from '../config/release'
+import { DOMAIN_MODEL_FAMILY_VERSION, RECORD_SCHEMA_VERSION } from '../config/release'
 import { readJsonStorage, writeJsonStorage } from '../lib/storage'
 
 const STORAGE_KEY = 'lmdtReportExperimentRecords'
@@ -102,7 +102,7 @@ const props = defineProps({
   parameters: { type: Object, default: () => ({}) },
   metrics: { type: Object, default: () => ({}) },
   conclusion: { type: String, default: '' },
-  modelVersion: { type: String, default: APP_VERSION },
+  modelVersion: { type: String, default: DOMAIN_MODEL_FAMILY_VERSION },
   sourceType: { type: String, default: '教材机制模拟' },
 })
 
@@ -193,7 +193,7 @@ function saveToWorkbench() {
     createdAt,
     timestamp: createdAt,
   })
-  const outcome = writeJsonStorage(STORAGE_KEY, records.slice(0, 30), { version: 2 })
+  const outcome = writeJsonStorage(STORAGE_KEY, records.slice(0, 30), { version: RECORD_SCHEMA_VERSION })
   setMessage(outcome.ok ? '已保存到当前浏览器的报告工作台。' : outcome.message)
 }
 

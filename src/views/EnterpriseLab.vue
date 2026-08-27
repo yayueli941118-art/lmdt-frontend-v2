@@ -4,6 +4,9 @@
       :title="pageTitle"
       :subtitle="pageSubtitle"
       kicker="CH.03 · 劳动力需求"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="demandChartTabs"
       v-model:active-chart="activeTab"
       :change-key="[activeTab, wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity, capitalFlexibility, laborCostShare, marketFeedback, techType, aiProductivity, taskSubstitution, complementarity, demandExpansion, trainingInvestment]"
@@ -212,6 +215,7 @@ import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import { sliderRanges } from '../config/sliderRanges'
 import { simulateAiDemandScenario } from '../domain/demand/model'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart, ScatterChart } from 'echarts/charts'
@@ -219,6 +223,8 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 
 use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
+
+const classroom = classroomProfile('enterprise')
 
 const route = useRoute()
 const isFactorAllocation = computed(() => route.path === '/lab/factor-allocation')
@@ -532,6 +538,16 @@ function resetDemand() {
   demandExpansion.value = 45
   complementarity.value = 60
   trainingInvestment.value = 50
+  runDemand()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    activeTab, wageInitial, wageNew, productPrice, capital, sigma, productDemandElasticity,
+    capitalFlexibility, laborCostShare, marketFeedback, techType, aiProductivity,
+    taskSubstitution, demandExpansion, complementarity, trainingInvestment,
+  })
+  if (preset.chart) activeTab.value = preset.chart
   runDemand()
 }
 

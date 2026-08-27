@@ -1,4 +1,5 @@
 import { RELEASE_LABEL } from './release'
+import { COURSE_PROFILE } from './courseProfile'
 
 const MODES = new Set(['teaching', 'competition', 'anonymous'])
 
@@ -21,6 +22,7 @@ export const modeLabel = {
 }[appMode]
 
 const sharedProfile = {
+  course: COURSE_PROFILE,
   brandFull: 'AI劳动力市场分析、机制仿真与预测实验室',
   titleLines: ['劳动力市场分析与预测', '数据、机制、预测与能力训练'],
   heroDesc: '从数据质量检查出发，连接劳动经济学机制实验、基础预测、AI岗位影响分析和独立能力训练。',

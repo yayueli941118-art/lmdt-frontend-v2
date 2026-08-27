@@ -4,6 +4,9 @@
       title="失业、工作搜寻与匹配"
       subtitle="存量—流量 · 保留工资 · DMP匹配 · 贝弗里奇曲线 · 最低工资"
       kicker="CH.09 · 失业"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="tabs"
       v-model:active-chart="activeTab"
       :change-key="[activeTab, naturalRate, mismatch, aiRisk, demandShock, benefit, searchCost, expectedOffer, patience, dmpUnemployed, dmpVacancies, dmpEfficiency, dmpSeparation, skillTraining, minimumWage, averageWage, employment, demandElasticity]"
@@ -130,8 +133,11 @@ import { useSimulationSession } from '../lib/simulationSession'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, MarkPointComponent, TooltipComponent, CanvasRenderer])
+
+const classroom = classroomProfile('unemployment')
 
 const route = useRoute()
 const ControlRange = defineComponent({
@@ -459,6 +465,16 @@ function resetCurrent() {
     minimum: () => { minimumWage.value = 28; averageWage.value = 54; employment.value = 870; demandElasticity.value = -0.15 },
   }
   resets[activeTab.value]()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    activeTab, naturalRate, mismatch, aiRisk, demandShock, benefit, searchCost,
+    expectedOffer, patience, dmpUnemployed, dmpVacancies, dmpEfficiency,
+    dmpSeparation, skillTraining, minimumWage, averageWage, employment, demandElasticity,
+  })
+  if (preset.chart) activeTab.value = preset.chart
+  runCurrent()
 }
 
 watch([

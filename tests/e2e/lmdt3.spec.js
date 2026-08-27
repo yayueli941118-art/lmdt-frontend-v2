@@ -35,6 +35,7 @@ test('AI岗位实验实时更新并保存兼容报告记录', async ({ page }) =
   await expect(page.getByRole('button', { name: 'AI情景' })).toHaveClass(/active/)
   await expect(page.getByText('短期就业', { exact: true })).toBeVisible()
   await page.goto('/#/report/workbench')
+  await page.getByRole('button', { name: '完整项目版' }).click()
   await expect(page.locator('.record-list').getByText('AI岗位任务重构', { exact: true })).toBeVisible()
 })
 

@@ -4,6 +4,9 @@
       title="工资决定与工资形式"
       subtitle="工资概念 · 效率工资 · 补偿性差异 · 激励工资 · 工资经验方程"
       kicker="CH.06 · 工资理论"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="wageChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[activeTab, referenceWage, theoryWage, effortSensitivity, risk, inconvenience, performanceShare, targetCompletion, education, experience, industry, region]"
@@ -199,8 +202,11 @@ import { useSimulationSession } from '../lib/simulationSession'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
+
+const classroom = classroomProfile('wage')
 
 const tabs = [
   { key: 'concepts', label: '工资概念与形式' },
@@ -446,6 +452,14 @@ function resetWage() {
   region.value = '一线城市'
   runTheory()
   runMincer()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    activeTab, activeChart, referenceWage, theoryWage, effortSensitivity, risk,
+    inconvenience, performanceShare, targetCompletion, education, experience, industry, region,
+  })
+  if (preset.chart) activeChart.value = preset.chart
 }
 
 const schedule = createRealtimeScheduler(

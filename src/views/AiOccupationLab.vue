@@ -3,6 +3,9 @@
     title="AI岗位任务重构实验室"
     subtitle="拆分工作任务 · 识别暴露与互补 · 比较短期和长期就业情景"
     kicker="拆机制 · AI TASKS"
+    :classroom-task="classroom.task"
+    :classroom-presets="classroom.presets"
+    @apply-preset="applyClassroomPreset"
     :chart-tabs="chartTabs"
     :active-chart="activeChart"
     :change-key="changeKey"
@@ -84,6 +87,9 @@ import LmdtChart from '../components/LmdtChart.vue'
 import RuntimeSourceBadge from '../components/RuntimeSourceBadge.vue'
 import { analyzeOccupationTasks, occupationTemplates } from '../domain/aiImpact/model'
 import { readJsonStorage, writeJsonStorage } from '../lib/storage'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
+
+const classroom = classroomProfile('aiOccupation')
 
 const chartTabs = [{ key: 'tasks', label: '任务结构' }, { key: 'effects', label: '就业效应' }, { key: 'skills', label: '技能缺口' }]
 const activeChart = ref('tasks')
@@ -129,6 +135,18 @@ watch([tasks, () => ({ ...parameters })], () => {
 function cloneTemplate(name) { return JSON.parse(JSON.stringify(occupationTemplates[name])) }
 function loadTemplate() { tasks.value = cloneTemplate(occupation.value) }
 function resetAll() { occupation.value = '人力资源专员'; tasks.value = cloneTemplate(occupation.value); Object.assign(parameters, { baselineEmployment: 100, taskSubstitution: 55, aiProductivity: 50, demandExpansion: 45, complementarity: 60, trainingInvestment: 50, aiCost: 35 }); activeChart.value = 'tasks' }
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    occupation: value => { occupation.value = value; tasks.value = cloneTemplate(value) },
+    taskSubstitution: value => { parameters.taskSubstitution = value },
+    aiProductivity: value => { parameters.aiProductivity = value },
+    demandExpansion: value => { parameters.demandExpansion = value },
+    complementarity: value => { parameters.complementarity = value },
+    trainingInvestment: value => { parameters.trainingInvestment = value },
+    aiCost: value => { parameters.aiCost = value },
+  })
+  if (preset.chart) activeChart.value = preset.chart
+}
 function signed(value) { return `${value > 0 ? '+' : ''}${value}` }
 function saveRecord() {
   const key = 'lmdtReportExperimentRecords'

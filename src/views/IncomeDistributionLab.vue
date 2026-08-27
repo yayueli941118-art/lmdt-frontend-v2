@@ -4,6 +4,9 @@
       title="收入分配实验室"
       subtitle="洛伦兹曲线 · 基尼系数 · 技能溢价 · 预算平衡再分配"
       kicker="CH.08 · 收入分配"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :chart-tabs="distributionChartTabs"
       v-model:active-chart="activeChart"
       :change-key="[skillPremium, topShareShock, transferIntensity, educationEqualizer]"
@@ -129,6 +132,7 @@ import LearningTaskCard from '../components/LearningTaskCard.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import { simulateDistribution } from '../domain/distribution/model'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { BarChart, LineChart } from 'echarts/charts'
@@ -136,6 +140,8 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { CanvasRenderer } from 'echarts/renderers'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
+
+const classroom = classroomProfile('distribution')
 
 const skillPremium = ref(35)
 const activeChart = ref('lorenz')
@@ -152,6 +158,11 @@ function resetDistribution() {
   topShareShock.value = 25
   transferIntensity.value = 20
   educationEqualizer.value = 15
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, { skillPremium, topShareShock, transferIntensity, educationEqualizer })
+  if (preset.chart) activeChart.value = preset.chart
 }
 
 const distribution = computed(() => simulateDistribution({

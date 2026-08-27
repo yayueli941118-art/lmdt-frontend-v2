@@ -4,6 +4,9 @@
       title="歧视机制与工资差距分解"
       subtitle="贝克尔雇主偏见 · 统计性歧视 · Oaxaca-Blinder 分解"
       kicker="CH.07 · 劳动力市场歧视"
+      :classroom-task="classroom.task"
+      :classroom-presets="classroom.presets"
+      @apply-preset="applyClassroomPreset"
       :change-key="[mechanismMode, discPct, eduGap, marketWage, demandElasticity, individualSignal, groupPrior, signalReliability, decompositionMode]"
       :error="simulationError"
       @reset="resetDiscrimination"
@@ -175,8 +178,11 @@ import { useSimulationSession } from '../lib/simulationSession'
 import ExperimentRecordPanel from '../components/ExperimentRecordPanel.vue'
 import ExperimentWorkspace from '../components/ExperimentWorkspace.vue'
 import LearningTaskCard from '../components/LearningTaskCard.vue'
+import { applyPresetValues, classroomProfile } from '../config/classroomExperiments'
 
 use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
+
+const classroom = classroomProfile('discrimination')
 
 const tabs = [
   { key: 'becker', label: '贝克尔雇主偏见' },
@@ -371,6 +377,13 @@ function resetDiscrimination() {
   signalReliability.value = 0.55
   decompositionMode.value = 'two'
   run()
+}
+
+function applyClassroomPreset(preset) {
+  applyPresetValues(preset, {
+    mechanismMode, discPct, eduGap, marketWage, demandElasticity,
+    individualSignal, groupPrior, signalReliability, decompositionMode,
+  })
 }
 
 const scheduleRun = createRealtimeScheduler(run, 80)

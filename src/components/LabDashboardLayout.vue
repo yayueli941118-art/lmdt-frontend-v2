@@ -36,6 +36,7 @@
 
 <script setup>
 import RuntimeSourceBadge from './RuntimeSourceBadge.vue'
+import { DOMAIN_MODEL_FAMILY_VERSION } from '../config/release'
 
 defineProps({
   resultType: { type: String, default: '教材机制模拟' },
@@ -46,7 +47,7 @@ defineProps({
   limitation: { type: String, default: '真实地区、行业或个体的精确预测结果。' },
   variables: { type: String, default: '变量名称、当前值与单位显示在参数控件和图表坐标轴中。' },
   defaultBasis: { type: String, default: '用于课堂演示的可解释默认情景，不代表实证估计或地区统计。' },
-  modelVersion: { type: String, default: __APP_VERSION__ },
+  modelVersion: { type: String, default: DOMAIN_MODEL_FAMILY_VERSION },
 })
 </script>
 
