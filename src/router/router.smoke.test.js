@@ -7,6 +7,7 @@ const requiredRoutes = [
   '/',
   '/analysis/market',
   '/forecast/basic',
+  '/practice/labor-market-indicators',
   '/practice/exam',
   '/lab/individual',
   '/lab/enterprise',

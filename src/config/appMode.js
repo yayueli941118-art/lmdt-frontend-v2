@@ -34,6 +34,7 @@ const sharedProfile = {
 
 const anonymousProfile = {
   ...sharedProfile,
+  auditSystemLabel: '核验系统',
   brandShort: 'Labor Market Lab',
   brandFull: 'Labor Market Analysis & Forecast Lab',
   heroBadge: '课程实验系统',
@@ -47,6 +48,7 @@ const anonymousProfile = {
 const namedProfiles = __ANONYMOUS_BUILD__ ? null : {
   teaching: {
     ...sharedProfile,
+    auditSystemLabel: 'LMDT',
     brandShort: 'LMDT 3.0',
     heroBadge: '《劳动力市场分析与预测》课程实验',
     footerSchool: '西南交通大学希望学院 · 商学院',
@@ -56,6 +58,7 @@ const namedProfiles = __ANONYMOUS_BUILD__ ? null : {
   },
   competition: {
     ...sharedProfile,
+    auditSystemLabel: 'LMDT',
     brandShort: 'LMDT 3.0',
     heroBadge: '课程教学展示',
     heroDesc: '以“看市场—拆机制—推未来—做决策—验能力”为主线，展示数据证据、机制解释、预测回测和学习评价。',

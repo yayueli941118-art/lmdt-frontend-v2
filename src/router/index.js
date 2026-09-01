@@ -6,6 +6,7 @@ const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/analysis/market', name: 'MarketAnalysis', component: () => import('../views/MarketAnalysisLab.vue'), meta: { title: '劳动力市场数据分析中心' } },
   { path: '/forecast/basic', name: 'BasicForecast', component: () => import('../views/ForecastLab.vue'), meta: { title: '基础预测与情景推演实验室' } },
+  { path: '/practice/labor-market-indicators', name: 'LaborMarketIndicatorPractice', component: () => import('../views/LaborMarketIndicatorPractice.vue'), meta: { title: '实践一｜劳动力市场指标诊断' } },
   { path: '/practice/exam', name: 'ExamPractice', component: () => import('../views/ExamPractice.vue'), meta: { title: '独立分析能力训练' } },
   { path: '/report/workbench', name: 'ReportWorkbench', component: () => import('../views/ReportWorkbench.vue'), meta: { title: '岗位劳动力市场预测报告工作台' } },
 
