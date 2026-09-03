@@ -19,7 +19,7 @@ export const COURSE_PROFILE = Object.freeze({
   ]),
   learningLine: Object.freeze(['看市场', '拆机制', '推未来', '做决策', '验能力']),
   practiceLessons: Object.freeze([
-    '新城市劳动力市场指标诊断',
+    '实践一：劳动力市场指标诊断',
     '劳动参与与群体差异分析',
     '劳动需求弹性与技术冲击仿真',
     '岗位错配诊断与政策建议',

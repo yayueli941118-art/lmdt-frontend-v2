@@ -62,6 +62,7 @@ test('人力资本职业能力页签展示13项自评与90天计划', async ({ p
 
 test('能力训练提交前不泄露答案，提交后保存100分蓝图结果', async ({ page }) => {
   await page.goto('/#/practice/exam')
+  await expect(page.locator('.question-card')).toBeVisible()
   await expect(page.getByText('判断正确')).toBeHidden()
   for (let index = 0; index < 10; index += 1) {
     const current = page.locator('.question-card')
