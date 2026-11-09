@@ -3,6 +3,7 @@
     <!-- ===== 预测门禁 ===== -->
     <section v-if="!gateUnlocked" class="gate-section">
       <div class="gate-card">
+        <router-link class="investment-entry" to="/lab/education-investment"><strong>个人教育投资测算</strong><span>填投入和收益假设，逐年看现金流、回本，再写下三句判断 →</span></router-link>
         <div class="gate-icon">
           <svg viewBox="0 0 48 48"><path d="M24 4 L44 14 L44 34 L24 44 L4 34 L4 14 Z" fill="none" stroke="currentColor" stroke-width="2"/><text x="24" y="30" text-anchor="middle" fill="currentColor" font-size="18" font-weight="800">?</text></svg>
         </div>
@@ -46,6 +47,7 @@
       @reset="resetIndividual"
     >
       <template #controls>
+        <router-link class="investment-entry" to="/lab/education-investment"><strong>个人教育投资测算</strong><span>用自己的假设看逐年现金流与折现回本 →</span></router-link>
         <div class="sidebar-card">
           <h3 class="sidebar-title">{{ activeChart === 'income' ? '明瑟方程与现金流参数' : '职业能力投资参数' }}</h3>
 
@@ -158,7 +160,7 @@
           </div>
           <div class="metric-card">
             <span class="metric-label">教育内部收益率 (IRR)</span>
-            <span class="metric-value metric-green">{{ (response.metrics.irr_pct || 0).toFixed(2) }}%</span>
+            <span class="metric-value metric-green">{{ response.metrics.irr_pct === null ? '无有效IRR' : `${response.metrics.irr_pct.toFixed(2)}%` }}</span>
           </div>
           <div class="metric-card">
             <span class="metric-label">歧视折损率</span>
@@ -326,7 +328,7 @@ const individualConclusion = computed(() => {
   if (!response.value) return ''
   const m = response.value.metrics
   const payback = m.breakeven_age !== null ? `${m.breakeven_age}岁回本` : '观察期内未回本'
-  return `当前学历方案带来 ${m.lifetime_premium_pct}% 的终身收入溢价，${payback}，教育内部收益率约为 ${(m.irr_pct || 0).toFixed(2)}%。`
+  return `当前学历方案带来 ${m.lifetime_premium_pct}% 的终身收入溢价，${payback}，教育内部收益率${m.irr_pct === null ? '在当前现金流下无有效数值' : `约为 ${m.irr_pct.toFixed(2)}%`}。`
 })
 
 const recordParameters = computed(() => ({
@@ -710,6 +712,10 @@ watch(gateUnlocked, (val) => {
 }
 
 /* ── 响应式 ────────────────────────────────── */
+.investment-entry { display: grid; gap: 5px; margin-bottom: 12px; padding: 13px 15px; border: 1px solid #0891b2; border-left: 4px solid #22d3ee; border-radius: 6px; color: #ecfeff; background: #103047; text-align: left; text-decoration: none; }
+.investment-entry strong { font-size: 15px; }
+.investment-entry span { color: #bae6fd; font-size: 12px; line-height: 1.45; }
+.investment-entry:hover { background: #15445d; }
 @media (max-width: 900px) {
   .lab-grid { grid-template-columns: 1fr; }
   .lab-sidebar { position: static; }
