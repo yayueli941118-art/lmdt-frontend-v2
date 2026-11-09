@@ -12,6 +12,7 @@ const routes = [
 
   // 核心实验室
   { path: '/lab/individual', name: 'Individual', component: IndividualLab, meta: { title: '👤 个体职业实验室' } },
+  { path: '/lab/education-investment', name: 'EducationInvestment', component: () => import('../views/EducationInvestmentLab.vue'), meta: { title: '个人教育投资测算' } },
   { path: '/lab/enterprise', name: 'Enterprise', component: () => import('../views/EnterpriseLab.vue'), meta: { title: '🏭 企业市场实验室' } },
   { path: '/lab/macro', name: 'Macro', component: () => import('../views/MacroLab.vue'), meta: { title: '🌍 宏观政策实验室' } },
 

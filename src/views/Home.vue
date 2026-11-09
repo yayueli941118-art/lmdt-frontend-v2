@@ -153,7 +153,7 @@ const competitionPresets = [
 const classicLabs = [
   { chapter:'Ch.02', title:'劳动供给决策', desc:'收入效应、替代效应与劳动时间', to:'/lab/supply' },
   { chapter:'Ch.03', title:'劳动力需求', desc:'VMP、CES、替代效应与规模效应', to:'/lab/enterprise' },
-  { chapter:'Ch.04', title:'人力资本投资', desc:'明瑟方程、教育投资与职业能力', to:'/lab/individual' },
+  { chapter:'Ch.04', title:'人力资本投资', desc:'个人教育投资测算、明瑟方程与职业能力', to:'/lab/individual' },
   { chapter:'Ch.05', title:'劳动力流动', desc:'迁移净现值、回本时间与家庭约束', to:'/lab/migration' },
   { chapter:'Ch.06', title:'工资决定', desc:'工资分布、效率工资与补偿性差异', to:'/lab/wage' },
   { chapter:'Ch.07', title:'市场歧视', desc:'偏见模型、统计性歧视与Oaxaca分解', to:'/lab/discrimination' },

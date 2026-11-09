@@ -26,9 +26,9 @@ export const CLASSROOM_EXPERIMENTS = Object.freeze({
     ],
   },
   individual: {
-    task: task('先判断增加教育年限能否在观察期内回本。', '只调整“年直接成本”。', '查看“收入路径”页签中的累计净现值曲线。', '记录回本年龄、内部收益率和净现值。', '用直接成本、机会成本、收益路径和贴现率解释。', '保存记录，并写明不能把情景值当成个人终身收入承诺。'),
+    task: task('先判断增加教育年限能否在观察期内回本。', '只调整“年直接成本”。', '查看“教育回报”页签中的工资路径、回本年龄和净现值指标；逐年累计折现曲线可进入“个人教育投资测算”。', '记录回本年龄、内部收益率和净现值。', '用直接成本、机会成本、收益路径和贴现率解释。', '保存记录，并写明不能把情景值当成个人终身收入承诺。'),
     presets: [
-      preset('baseline','教材基准：教育投资回报','教材基准','复现人力资本现金流。','教育成本何时被工资差覆盖？','累计NPV先下降后回升并可能穿过零线。',{activeChart:'income',edu:16,train_type:'一般培训 (通用技能)',disc:0,exp_peak:30,direct_cost:12000,discount_rate:.04},'income'),
+      preset('baseline','教材基准：教育投资回报','教材基准','复现人力资本现金流。','教育成本何时被工资差覆盖？','观察教育回报页签中的工资路径、回本年龄与净现值；逐年现金流可进入个人教育投资测算。',{activeChart:'income',edu:16,train_type:'一般培训 (通用技能)',disc:0,exp_peak:30,direct_cost:12000,discount_rate:.04},'income'),
       preset('conflict','冲突情景：高成本未必回本','反常冲突','识别教育投资风险。','教育越多是否必然净收益越高？','高直接成本和高贴现率会推迟回本或使NPV为负。',{activeChart:'income',edu:20,train_type:'一般培训 (通用技能)',disc:15,exp_peak:20,direct_cost:48000,discount_rate:.13},'income'),
       preset('reality','AI时代：能力组合投资','AI时代','从学历转向能力组合。','有限时间应优先补哪类能力？','数字、证据和持续学习能力的缺口会改变投资排序。',{activeChart:'capability'},'capability'),
     ],
